@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Payment Process</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="20" cy="20" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="40" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="80" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>') repeat;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .payment-container {
+            position: relative;
+            z-index: 2;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .payment-card {
+            background: rgba(20, 20, 30, 0.8);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 3rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .payment-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+        }
+
+        .payment-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: rotate(45deg);
+            animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            50% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+            100% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+        }
+
+        .payment-card h4 {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 2rem;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+
+        .payment-card h4 i {
+            margin-right: 10px;
+            color: #ffd700;
+            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-control, .form-select {
+            background: rgba(30, 30, 45, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: #fff;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .form-control:focus, .form-select:focus {
+            background: rgba(40, 40, 60, 0.9);
+            border-color: rgba(100, 149, 237, 0.6);
+            box-shadow: 0 0 0 3px rgba(100, 149, 237, 0.2);
+            color: #fff;
+            outline: none;
+        }
+
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .form-select option {
+            background: #333;
+            color: #fff;
+        }
+
+        .btn {
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-weight: 600;
+            font-size: 1rem;
+            border: none;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #218838, #1dc79f);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.6);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #007bff, #6610f2);
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #0056b3, #520dc2);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 123, 255, 0.6);
+        }
+
+        .btn i {
+            margin-right: 8px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .payment-form {
+            position: relative;
+            z-index: 1;
+        }
+
+        .balance-display {
+            background: rgba(40, 40, 60, 0.8);
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 10px;
+            text-align: center;
+            font-weight: 600;
+            color: #ffd700;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            font-size: 1.2rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.7);
+            z-index: 2;
+        }
+
+        .input-group .form-control {
+            padding-left: 45px;
+        }
+
+        @media (max-width: 768px) {
+            .payment-card {
+                padding: 2rem;
+                margin: 10px;
+            }
+
+            .payment-card h4 {
+                font-size: 1.5rem;
+            }
+        }
+
+        .swal2-popup {
+            border-radius: 16px !important;
+            backdrop-filter: blur(20px) !important;
+        }
+    </style>
+</head>
+<body>
+
+<div class="payment-container">
+    <div class="payment-card">
+        <h4><i class="fas fa-credit-card"></i>Payment Process</h4>
+
+        <div class="mb-4">
+            <label for="paymentType" class="form-label">
+                <i class="fas fa-list"></i>Select Payment Type
+            </label>
+            <select id="paymentType" class="form-select">
+                <option value="">-- Choose Payment Method --</option>
+                <option value="cash">💵 Cash Payment</option>
+                <option value="card">💳 Card Payment</option>
+            </select>
+        </div>
+
+        <!-- Cash Payment Form -->
+        <form id="cashForm" class="payment-form hidden">
+            <div class="mb-3">
+                <label for="examFee" class="form-label">
+                    <i class="fas fa-tag"></i>Exam Fee (LKR)
+                </label>
+                <div class="input-group">
+                    <i class="fas fa-rupee-sign"></i>
+                    <input type="number" id="examFee" class="form-control" value="3200.00" readonly />
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="cashAmount" class="form-label">
+                    <i class="fas fa-money-bill-wave"></i>Enter Amount Paid
+                </label>
+                <div class="input-group">
+                    <i class="fas fa-rupee-sign"></i>
+                    <input type="number" id="cashAmount" class="form-control" min="0" step="0.01"
+                           placeholder="Enter amount..." required />
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label for="balance" class="form-label">
+                    <i class="fas fa-calculator"></i>Balance Due
+                </label>
+                <div class="balance-display">
+                    <span id="balanceText">LKR 0.00</span>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-success w-100">
+                <i class="fas fa-hand-holding-usd"></i>Complete Cash Payment
+            </button>
+        </form>
+
+        <!-- Card Payment Form -->
+        <form id="cardForm" class="payment-form hidden">
+            <div class="mb-3">
+                <label for="cardAmount" class="form-label">
+                    <i class="fas fa-tag"></i>Amount (LKR)
+                </label>
+                <div class="input-group">
+                    <i class="fas fa-rupee-sign"></i>
+                    <input type="number" name="amount" id="cardAmount" class="form-control"
+                           min="0" step="0.01" placeholder="Enter amount..." required />
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="orderId" class="form-label">
+                    <i class="fas fa-hashtag"></i>Order ID
+                </label>
+                <div class="input-group">
+                    <i class="fas fa-hashtag"></i>
+                    <input type="text" name="order_id" id="orderId" class="form-control"
+                           placeholder="Enter order ID..." required />
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="firstName" class="form-label">
+                        <i class="fas fa-user"></i>First Name
+                    </label>
+                    <input type="text" name="first_name" id="firstName" class="form-control"
+                           placeholder="First name..." required />
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="lastName" class="form-label">
+                        <i class="fas fa-user"></i>Last Name
+                    </label>
+                    <input type="text" name="last_name" id="lastName" class="form-control"
+                           placeholder="Last name..." required />
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label for="email" class="form-label">
+                    <i class="fas fa-envelope"></i>Email Address
+                </label>
+                <div class="input-group">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" name="email" id="email" class="form-control"
+                           placeholder="Enter email..." required />
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">
+                <i class="fas fa-credit-card"></i>Pay with Card
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const paymentTypeSelect = document.getElementById('paymentType');
+    const cashForm = document.getElementById('cashForm');
+    const cardForm = document.getElementById('cardForm');
+
+    const examFeeInput = document.getElementById('examFee');
+    const cashAmountInput = document.getElementById('cashAmount');
+    const balanceText = document.getElementById('balanceText');
+
+    // Payment type selection
+    paymentTypeSelect.addEventListener('change', () => {
+        const val = paymentTypeSelect.value;
+
+        if (val === 'cash') {
+            cashForm.classList.remove('hidden');
+            cashForm.classList.add('fade-in');
+            cardForm.classList.add('hidden');
+            cashForm.reset();
+            examFeeInput.value = '3200.00';
+            balanceText.textContent = 'Balance: LKR 3200.00';
+        } else if (val === 'card') {
+            cardForm.classList.remove('hidden');
+            cardForm.classList.add('fade-in');
+            cashForm.classList.add('hidden');
+            cardForm.reset();
+            // Auto-fill card amount with exam fee
+            document.getElementById('cardAmount').value = '3200.00';
+        } else {
+            cashForm.classList.add('hidden');
+            cardForm.classList.add('hidden');
+        }
+    });
+
+    // Cash amount calculation
+    cashAmountInput.addEventListener('input', () => {
+        const examFee = parseFloat(examFeeInput.value) || 0;
+        const paid = parseFloat(cashAmountInput.value) || 0;
+        const balanceDisplay = document.querySelector('.balance-display');
+
+        if (paid > examFee) {
+            // Show excess amount
+            const excess = paid - examFee;
+            balanceText.textContent = `Excess: LKR ${excess.toFixed(2)}`;
+            balanceDisplay.style.background = 'rgba(255, 99, 132, 0.3)';
+            balanceDisplay.style.borderColor = 'rgba(255, 99, 132, 0.6)';
+            balanceDisplay.style.color = '#ff6384';
+        } else {
+            // Show remaining balance
+            const balance = examFee - paid;
+            balanceText.textContent = `Balance: LKR ${balance.toFixed(2)}`;
+
+            if (balance === 0) {
+                balanceDisplay.style.background = 'rgba(75, 192, 192, 0.3)';
+                balanceDisplay.style.borderColor = 'rgba(75, 192, 192, 0.6)';
+                balanceDisplay.style.color = '#4bc0c0';
+            } else {
+                balanceDisplay.style.background = 'rgba(40, 40, 60, 0.8)';
+                balanceDisplay.style.borderColor = 'rgba(255, 215, 0, 0.4)';
+                balanceDisplay.style.color = '#ffd700';
+            }
+        }
+    });
+
+    // Cash payment submission
+    cashForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const amountPaid = parseFloat(cashAmountInput.value);
+        const examFee = parseFloat(examFeeInput.value);
+
+        if (amountPaid <= 0) {
+            await Swal.fire({
+                title: 'Invalid Amount!',
+                text: 'Please enter a valid amount greater than 0.',
+                icon: 'error',
+                confirmButtonText: 'OK',
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdrop: 'rgba(0, 0, 0, 0.4)'
+            });
+            return;
+        }
+
+        if (amountPaid > examFee) {
+            const excess = amountPaid - examFee;
+            const result = await Swal.fire({
+                title: 'Excess Payment!',
+                html: `
+                    <div style="text-align: center; margin: 20px 0;">
+                        <p>Amount Paid: <strong>LKR ${amountPaid.toFixed(2)}</strong></p>
+                        <p>Exam Fee: <strong>LKR ${examFee.toFixed(2)}</strong></p>
+                        <p style="color: #ff6384;">Excess Amount: <strong>LKR ${excess.toFixed(2)}</strong></p>
+                    </div>
+                `,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Accept Payment',
+                cancelButtonText: 'Cancel',
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdrop: 'rgba(0, 0, 0, 0.4)'
+            });
+
+            if (!result.isConfirmed) {
+                return;
+            }
+        }
+
+        const balance = examFee - amountPaid;
+        let message = `Cash payment of LKR ${amountPaid.toFixed(2)} received successfully!`;
+
+        if (amountPaid > examFee) {
+            const excess = amountPaid - examFee;
+            message += `\nExcess amount: LKR ${excess.toFixed(2)}`;
+        } else if (balance > 0) {
+            message += `\nRemaining balance: LKR ${balance.toFixed(2)}`;
+        } else {
+            message += `\nPayment completed in full!`;
+        }
+
+        await Swal.fire({
+            title: 'Payment Successful!',
+            text: message,
+            icon: 'success',
+            confirmButtonText: 'Continue',
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdrop: 'rgba(0, 0, 0, 0.4)',
+            timer: 3000,
+            timerProgressBar: true
+        });
+
+        // Reset form
+        cashForm.reset();
+        examFeeInput.value = '3200.00';
+        balanceText.textContent = 'Balance: LKR 0.00';
+        paymentTypeSelect.value = '';
+        cashForm.classList.add('hidden');
+
+        // Reset balance display style
+        const balanceDisplay = document.querySelector('.balance-display');
+        balanceDisplay.style.background = 'rgba(40, 40, 60, 0.8)';
+        balanceDisplay.style.borderColor = 'rgba(255, 215, 0, 0.4)';
+        balanceDisplay.style.color = '#ffd700';
+    });
+
+    // Card payment submission
+    cardForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const amount = parseFloat(document.getElementById('cardAmount').value);
+        const orderId = document.getElementById('orderId').value.trim();
+        const firstName = document.getElementById('firstName').value.trim();
+        const lastName = document.getElementById('lastName').value.trim();
+        const email = document.getElementById('email').value.trim();
+
+        if (!amount || amount <= 0) {
+            await Swal.fire({
+                title: 'Invalid Amount!',
+                text: 'Please enter a valid amount greater than 0.',
+                icon: 'error',
+                confirmButtonText: 'OK',
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdrop: 'rgba(0, 0, 0, 0.4)'
+            });
+            return;
+        }
+
+        if (!orderId || !firstName || !lastName || !email) {
+            await Swal.fire({
+                title: 'Missing Information!',
+                text: 'Please fill in all required fields.',
+                icon: 'warning',
+                confirmButtonText: 'OK',
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdrop: 'rgba(0, 0, 0, 0.4)'
+            });
+            return;
+        }
+
+        const result = await Swal.fire({
+            title: 'Confirm Payment',
+            html: `
+                <div style="text-align: left; margin: 20px 0;">
+                    <strong>Amount:</strong> LKR ${amount.toFixed(2)}<br>
+                    <strong>Order ID:</strong> ${orderId}<br>
+                    <strong>Name:</strong> ${firstName} ${lastName}<br>
+                    <strong>Email:</strong> ${email}
+                </div>
+            `,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Proceed to PayHere',
+            cancelButtonText: 'Cancel',
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdrop: 'rgba(0, 0, 0, 0.4)'
+        });
+
+        if (result.isConfirmed) {
+            await Swal.fire({
+                title: 'Redirecting...',
+                text: 'You will be redirected to PayHere payment gateway.',
+                icon: 'info',
+                timer: 2000,
+                timerProgressBar: true,
+                showConfirmButton: false,
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdrop: 'rgba(0, 0, 0, 0.4)'
+            });
+
+            // Here you would normally submit to PayHere
+            // For demo purposes, we'll just show a success message
+            setTimeout(async () => {
+                await Swal.fire({
+                    title: 'Payment Gateway Ready!',
+                    text: 'In a real implementation, you would be redirected to PayHere now.',
+                    icon: 'success',
+                    confirmButtonText: 'OK',
+                    background: 'rgba(255, 255, 255, 0.95)',
+                    backdrop: 'rgba(0, 0, 0, 0.4)'
+                });
+            }, 2000);
+        }
+    });
+
+    // Auto-generate order ID
+    document.getElementById('paymentType').addEventListener('change', () => {
+        if (paymentTypeSelect.value === 'card') {
+            setTimeout(() => {
+                const orderId = 'ORD-' + Date.now();
+                document.getElementById('orderId').value = orderId;
+            }, 100);
+        }
+    });
+</script>
+
+</body>
+</html>
