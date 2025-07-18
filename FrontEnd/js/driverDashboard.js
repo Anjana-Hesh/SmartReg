@@ -271,9 +271,9 @@ function closeLicenseModal() {
     document.getElementById('licenseModal').style.display = 'none';
 }
 
-function showProfileForm() {
-    alert('Profile management feature coming soon!');
-}
+// function showProfileForm() {
+//     alert('Profile management feature coming soon!');
+// }
 
 function showHistory() {
     alert('License history feature coming soon!');

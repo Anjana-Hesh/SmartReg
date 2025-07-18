@@ -14,7 +14,7 @@
         <div class="nav-content">
             <div class="logo">🚗 License Manager</div>
             <div class="nav-links">
-                <a href="#profile">Profile</a>
+                <a href="driverProfile.html">Profile</a>
                 <a href="#license">License</a>
                 <a href="#notifications">Notifications</a>
                 <button class="logout-btn" onclick="logout()">Logout</button>
@@ -69,7 +69,7 @@
                 </div>
                 <div class="card-content">
                     <p>Update your personal information and contact details.</p>
-                    <a href="#" class="btn-primary" onclick="showProfileForm()">Edit Profile</a>
+                    <a href="driverProfile.html" class="btn-primary" onclick="showProfileForm()">Edit Profile</a>
                 </div>
             </div>
 
@@ -87,8 +87,9 @@
     </div>
 </div>
 
-<!-- License Registration Modal -->
-<div id="licenseModal" class="modal" style="display: none;">
+<!-- Lisence Regitration Modal -->
+
+<div id="licenseModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeLicenseModal()">&times;</span>
         <h2>License Registration</h2>
@@ -102,6 +103,7 @@
                     <option value="heavy">Heavy Vehicle License</option>
                 </select>
             </div>
+
             <div class="form-group">
                 <label for="vehicleClass">Vehicle Class:</label>
                 <select id="vehicleClass" required>
@@ -112,33 +114,42 @@
                     <option value="D">Class D - Heavy Truck</option>
                 </select>
             </div>
+
             <div class="form-group">
                 <label for="nicNumber">NIC Number:</label>
                 <input type="text" id="nicNumber" required>
             </div>
+
             <div class="form-group">
                 <label for="dateOfBirth">Date of Birth:</label>
                 <input type="date" id="dateOfBirth" required>
             </div>
+
             <div class="form-group">
                 <label for="address">Address:</label>
-                <textarea id="address" required></textarea>
+                <textarea id="address" rows="3" required></textarea>
             </div>
+
             <div class="form-group">
                 <label for="phoneNumber">Phone Number:</label>
                 <input type="tel" id="phoneNumber" required>
-
-                <div class="form-group">
-                    <label for="photoUpload">Passport Size Photo:</label>
-                    <input type="file" id="photoUpload" accept="image/*" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="medicalUpload">Medical Certificate (PDF):</label>
-                    <input type="file" id="medicalUpload" accept="application/pdf" required>
-                </div>
-
             </div>
+
+            <div class="form-group">
+                <label for="photoUpload">Passport Size Photo:</label>
+                <input type="file" id="photoUpload" accept="image/*" required>
+                <img id="photoPreview" src="#" alt="Preview" style="display:none;">
+            </div>
+
+            <div class="form-group">
+                <label for="medicalUpload">Medical Certificate (PDF):</label>
+                <input type="file" id="medicalUpload" accept="application/pdf" required>
+                <div class="file-preview" id="medicalPreview" style="display:none;">
+                    <i class="fas fa-file-pdf fa-2x"></i>
+                    <span id="pdfName"></span>
+                </div>
+            </div>
+
             <button type="submit" class="btn-primary">Submit Application</button>
         </form>
     </div>
