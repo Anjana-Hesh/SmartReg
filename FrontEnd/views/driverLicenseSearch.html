@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Driver Licenses - SmartReg.lk</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>
+    <link href="../css/style.css" rel="stylesheet"/>
+    <style>
+        .glass-box {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .status-pill {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: white;
+        }
+
+        .status-active { background-color: #28a745; }
+        .status-expired { background-color: #dc3545; }
+        .status-pending { background-color: #ffc107; color: black; }
+    </style>
+</head>
+<body>
+<div class="container my-5">
+    <h2 class="fw-bold mb-4"><i class="fas fa-id-card me-2 text-primary"></i>Driver Licenses</h2>
+
+    <!-- Search Bar -->
+    <div class="glass-box mb-4">
+        <form id="searchForm" class="row g-2">
+            <div class="col-md-10">
+                <input type="text" id="nicInput" class="form-control" placeholder="Enter NIC Number..." required />
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search me-2"></i>Search
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Results -->
+    <div id="resultsSection" class="glass-box d-none">
+        <h5 class="mb-3">License Details</h5>
+        <table class="table table-bordered table-hover text-white">
+            <tbody>
+            <tr>
+                <th>NIC</th>
+                <td id="nicResult"></td>
+            </tr>
+            <tr>
+                <th>Name</th>
+                <td id="nameResult"></td>
+            </tr>
+            <tr>
+                <th>License Type</th>
+                <td id="typeResult"></td>
+            </tr>
+            <tr>
+                <th>Vehicle Class</th>
+                <td id="classResult"></td>
+            </tr>
+            <tr>
+                <th>Status</th>
+                <td><span id="statusResult" class="status-pill"></span></td>
+            </tr>
+            <tr>
+                <th>Expiry</th>
+                <td id="expiryResult"></td>
+            </tr>
+            </tbody>
+        </table>
+        <button class="btn btn-warning d-none" id="renewBtn">
+            <i class="fas fa-sync-alt me-2"></i>Renew License
+        </button>
+    </div>
+
+    <!-- No Result -->
+    <div id="noResult" class="alert alert-danger d-none mt-4">
+        <i class="fas fa-exclamation-circle me-2"></i>No license found for this NIC.
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<script>
+    // Mock data
+    const licenseData = [
+        {
+            nic: "199812345678",
+            name: "John Doe",
+            type: "Full License",
+            vehicleClass: "B",
+            status: "Active",
+            expiry: "2026-05-15"
+        },
+        {
+            nic: "200045678912",
+            name: "Jane Smith",
+            type: "Learner's License",
+            vehicleClass: "A",
+            status: "Pending",
+            expiry: "-"
+        },
+        {
+            nic: "198734567890",
+            name: "Kasun Perera",
+            type: "Full License",
+            vehicleClass: "C",
+            status: "Expired",
+            expiry: "2023-01-01"
+        }
+    ];
+
+    // Search Form Submit
+    $('#searchForm').on('submit', function (e) {
+        e.preventDefault();
+
+        const nic = $.trim($('#nicInput').val());
+        const result = licenseData.find(item => item.nic === nic);
+
+        const $resultsSection = $('#resultsSection');
+        const $noResult = $('#noResult');
+        const $renewBtn = $('#renewBtn');
+
+        if (result) {
+            $resultsSection.removeClass('d-none');
+            $noResult.addClass('d-none');
+
+            $('#nicResult').text(result.nic);
+            $('#nameResult').text(result.name);
+            $('#typeResult').text(result.type);
+            $('#classResult').text(result.vehicleClass);
+            $('#expiryResult').text(result.expiry);
+
+            const $statusSpan = $('#statusResult');
+            $statusSpan.text(result.status);
+
+            $statusSpan
+                .removeClass()
+                .addClass('status-pill');
+
+            if (result.status === "Active") {
+                $statusSpan.addClass("status-active");
+            } else if (result.status === "Expired") {
+                $statusSpan.addClass("status-expired");
+            } else if (result.status === "Pending") {
+                $statusSpan.addClass("status-pending");
+            }
+
+            if (result.status === "Expired") {
+                $renewBtn.removeClass('d-none');
+            } else {
+                $renewBtn.addClass('d-none');
+            }
+
+        } else {
+            $resultsSection.addClass('d-none');
+            $noResult.addClass('d-none'); // hide text version
+            showNoResultAlert(nic);
+        }
+    });
+
+    // SweetAlert2 No Result
+    function showNoResultAlert(nic) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'No Result Found!',
+            text: `No record found for NIC: ${nic}`,
+            showCancelButton: true,
+            cancelButtonText: 'Cancel',
+            confirmButtonText: 'Create New',
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                console.log("User wants to create new record for", nic);
+                // Open your registration modal or navigate
+                openLicenseModal(); // <-- You should implement this
+            } else {
+                console.log("User cancelled");
+            }
+        });
+    }
+
+    // Dummy Modal Function (you can change this)
+    function openLicenseModal() {
+        // You can open Bootstrap Modal here or redirect
+        alert("Open registration form or modal here.");
+    }
+</script>
+
+</body>
+</html>

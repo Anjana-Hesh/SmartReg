@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create License</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        body {
+            /*background: linear-gradient(135deg, #f0f4f7, #cfd9df);*/
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 30px;
+        }
+
+        #photoPreview {
+            max-width: 150px;
+            max-height: 150px;
+            margin-top: 10px;
+            border-radius: 10px;
+            display: block;
+        }
+
+        .file-preview {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-yellow-glass {
+            background: rgba(255, 193, 7, 0.2); /* light yellow glass effect */
+            color: #ffc107;
+            border: 1px solid #ffc107;
+            backdrop-filter: blur(5px);
+            transition: 0.3s;
+        }
+        .btn-yellow-glass:hover {
+            background: rgba(255, 193, 7, 0.4);
+            color: #fff;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container mt-5">
+    <div class="glass-card">
+        <h3 class="mb-4">🚘 License Registration</h3>
+
+        <!-- NIC Search -->
+        <form id="searchForm" class="row g-3 mb-4">
+            <div class="col-md-6">
+                <label for="nicInput" class="form-label">Enter NIC</label>
+                <input type="text" class="form-control" id="nicInput" placeholder="199812345678" required>
+            </div>
+            <div class="col-md-6 align-self-end">
+                <button type="submit" class="btn btn-primary w-100">Search</button>
+            </div>
+        </form>
+
+        <!-- License Form -->
+        <form id="licenseForm" class="row g-3">
+            <div class="col-md-6">
+                <label for="name" class="form-label">Full Name</label>
+                <input type="text" class="form-control" id="name" placeholder="Enter full name">
+            </div>
+            <div class="col-md-6">
+                <label for="type" class="form-label">License Type</label>
+                <select class="form-select" id="type">
+                    <option value="">Select Type</option>
+                    <option value="Full License">Full License</option>
+                    <option value="Learner's License">Learner's License</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label for="vehicleClass" class="form-label">Vehicle Class</label>
+                <input type="text" class="form-control" id="vehicleClass" placeholder="A / B / C / D">
+            </div>
+
+            <div class="col-md-6">
+                <label for="photoUpload">Passport Size Photo:</label>
+                <input type="file" class="form-control" id="photoUpload" accept="image/*">
+                <img id="photoPreview" src="#" alt="Preview" style="display:none;">
+            </div>
+
+            <div class="col-md-6">
+                <label for="medicalUpload">Medical Certificate (PDF):</label>
+                <input type="file" class="form-control" id="medicalUpload" accept="application/pdf">
+                <div class="file-preview" id="medicalPreview" style="display:none;">
+                    <i class="fas fa-file-pdf fa-2x"></i>
+                    <span id="pdfName"></span>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <label for="examMarks" class="form-label">Exam Marks</label>
+                <input type="text" class="form-control" id="examMarks" placeholder="A / A1 / B / C / D">
+            </div>
+
+            <div class="col-md-6" id="trialDateGroup" style="display: none;">
+                <label for="trialDate" class="form-label">Trial Date</label>
+                <input type="date" class="form-control" id="trialDate">
+            </div>
+
+            <div class="col-md-6" id="retakeDateGroup" style="display: none;">
+                <label for="retakeDate" class="form-label">New Exam Date</label>
+                <input type="date" class="form-control" id="retakeDate">
+            </div>
+
+            <div class="col-md-6">
+                <label for="examDate" class="form-label">Exam Date</label>
+                <input type="date" class="form-control" id="examDate">
+            </div>
+
+            <div class="col-md-6">
+                <label for="expiry" class="form-label">Expiry Date</label>
+                <input type="date" class="form-control" id="expiry">
+            </div>
+
+            <div class="col-md-6">
+                <label for="status" class="form-label">Status</label>
+                <select class="form-select" id="status">
+                    <option value="">Select Status</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Active">Active</option>
+                    <option value="Expired">Expired</option>
+                </select>
+            </div>
+
+            <div class="col-12 mt-3">
+                <button type="submit" class="btn btn-success">Submit License</button>
+                <button type="button" class="btn btn-yellow-glass ms-2">Edit Details</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="../js/license.js"></script>
+
+</body>
+</html>
