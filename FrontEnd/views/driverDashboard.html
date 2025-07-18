@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Dashboard - License Management</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/driver.css">
+
+</head>
+<body>
+<div class="driver-dashboard">
+    <nav class="nav-bar">
+        <div class="nav-content">
+            <div class="logo">🚗 License Manager</div>
+            <div class="nav-links">
+                <a href="#profile">Profile</a>
+                <a href="#license">License</a>
+                <a href="#notifications">Notifications</a>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <div class="header-content">
+                <div class="welcome-text">
+                    <h1>Welcome, <span id="driverName">Driver</span>!</h1>
+                    <p>Manage your driving license and stay updated with important notifications</p>
+                </div>
+                <div class="status-badge" id="licenseStatus">
+                    License Status: Pending
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-icon icon-license">📄</div>
+                    <div class="card-title">License Information</div>
+                </div>
+                <div class="card-content">
+                    <p id="licenseInfo">Complete your license registration to get started with your driving journey.</p>
+                    <a href="#" class="btn-primary" onclick="showLicenseForm()">Register License</a>
+                </div>
+            </div>
+
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-icon icon-notification">🔔</div>
+                    <div class="card-title">Recent Notifications</div>
+                </div>
+                <div class="card-content">
+                    <ul class="notification-list" id="notificationList">
+                        <li class="notification-item">
+                            <div class="notification-date">Today</div>
+                            <div class="notification-text">Welcome to the License Management System!</div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-icon icon-profile">👤</div>
+                    <div class="card-title">Profile Management</div>
+                </div>
+                <div class="card-content">
+                    <p>Update your personal information and contact details.</p>
+                    <a href="#" class="btn-primary" onclick="showProfileForm()">Edit Profile</a>
+                </div>
+            </div>
+
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-icon icon-history">📋</div>
+                    <div class="card-title">License History</div>
+                </div>
+                <div class="card-content">
+                    <p>View your license application history and status updates.</p>
+                    <a href="#" class="btn-primary" onclick="showHistory()">View History</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- License Registration Modal -->
+<div id="licenseModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeLicenseModal()">&times;</span>
+        <h2>License Registration</h2>
+        <form id="licenseForm">
+            <div class="form-group">
+                <label for="licenseType">License Type:</label>
+                <select id="licenseType" required>
+                    <option value="">Select License Type</option>
+                    <option value="learner">Learner's License</option>
+                    <option value="full">Full License</option>
+                    <option value="heavy">Heavy Vehicle License</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="vehicleClass">Vehicle Class:</label>
+                <select id="vehicleClass" required>
+                    <option value="">Select Vehicle Class</option>
+                    <option value="A">Class A - Motorcycle</option>
+                    <option value="B">Class B - Car</option>
+                    <option value="C">Class C - Light Truck</option>
+                    <option value="D">Class D - Heavy Truck</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="nicNumber">NIC Number:</label>
+                <input type="text" id="nicNumber" required>
+            </div>
+            <div class="form-group">
+                <label for="dateOfBirth">Date of Birth:</label>
+                <input type="date" id="dateOfBirth" required>
+            </div>
+            <div class="form-group">
+                <label for="address">Address:</label>
+                <textarea id="address" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="phoneNumber">Phone Number:</label>
+                <input type="tel" id="phoneNumber" required>
+
+                <div class="form-group">
+                    <label for="photoUpload">Passport Size Photo:</label>
+                    <input type="file" id="photoUpload" accept="image/*" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="medicalUpload">Medical Certificate (PDF):</label>
+                    <input type="file" id="medicalUpload" accept="application/pdf" required>
+                </div>
+
+            </div>
+            <button type="submit" class="btn-primary">Submit Application</button>
+        </form>
+    </div>
+</div>
+
+<script src="../js/driverDashboard.js"></script>
+</body>
+</html>
