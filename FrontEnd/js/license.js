@@ -128,7 +128,7 @@ $(document).ready(function () {
 
     // Exam marks input logic
     $('#examMarks').on('input', function () {
-        const marks = $(this).val().trim().toUpperCase();
+        const marks = $(this).val().toUpperCase();
 
         // Hide both date groups initially
         $('#trialDateGroup').hide();
