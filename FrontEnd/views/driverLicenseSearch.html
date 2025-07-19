@@ -569,6 +569,7 @@
       expiryDate: "2028-01-15",
       examMarks: 85,
       examDate: "2023-01-10",
+      trialDate: "2023-02-15",
       status: "active",
       image: "https://randomuser.me/api/portraits/men/1.jpg",
       medicalReport: "medical_report_1.pdf"
@@ -583,8 +584,9 @@
       vehicleClass: "C",
       issueDate: "2022-06-10",
       expiryDate: "2027-06-10",
-      examMarks: null,
-      examDate: null,
+      examMarks: 25,
+      examDate: "2022-06-05",
+      retakeDate: "2022-07-10",
       status: "pending",
       image: "https://randomuser.me/api/portraits/women/1.jpg",
       medicalReport: null
@@ -601,6 +603,7 @@
       expiryDate: "2026-03-20",
       examMarks: 92,
       examDate: "2021-03-15",
+      trialDate: "2021-04-20",
       status: "active",
       image: "https://randomuser.me/api/portraits/men/2.jpg",
       medicalReport: "medical_report_3.pdf"
@@ -617,6 +620,7 @@
       expiryDate: "2023-11-01",
       examMarks: 78,
       examDate: "2023-04-25",
+      trialDate: "2023-06-01",
       status: "active",
       image: "https://randomuser.me/api/portraits/women/2.jpg",
       medicalReport: "medical_report_4.pdf"
@@ -633,6 +637,7 @@
       expiryDate: "2025-01-10",
       examMarks: 65,
       examDate: "2019-12-15",
+      trialDate: "2020-02-10",
       status: "expired",
       image: "https://randomuser.me/api/portraits/men/3.jpg",
       medicalReport: "medical_report_5.pdf"
@@ -721,6 +726,8 @@
       examStatus = '<span class="badge bg-secondary">Not Taken</span>';
     } else if (driver.examMarks >= 75) {
       examStatus = `<span class="badge bg-success">Passed (${driver.examMarks}%)</span>`;
+    } else if (driver.examMarks >= 30) {
+      examStatus = `<span class="badge bg-warning">Trial (${driver.examMarks}%)</span>`;
     } else {
       examStatus = `<span class="badge bg-danger">Failed (${driver.examMarks}%)</span>`;
     }
@@ -927,6 +934,8 @@
       expiryDate: calculateExpiryDate($('#newDriverLicenseType').val()),
       examMarks: null,
       examDate: $('#newDriverExamDate').val(),
+      trialDate: null,
+      retakeDate: null,
       status: 'pending',
       image: null,
       medicalReport: $('#newDriverMedical').val().split('\\').pop()
@@ -996,7 +1005,7 @@
           <p>Date of Birth: ${driver.dob}</p>
         </div>
         <div class="col-md-8">
-          <div class="card mb-3" style="background: rgba(40, 40, 60, 0.8);">
+          <div class="card mb-3" style="background:whitesmoke;">
             <div class="card-header">
               <h5><i class="fas fa-id-card"></i> License Information</h5>
             </div>
@@ -1017,7 +1026,7 @@
             </div>
           </div>
 
-          <div class="card" style="background: rgba(40, 40, 60, 0.8);">
+          <div class="card" style="background: white;">
             <div class="card-header">
               <h5><i class="fas fa-clipboard-check"></i> Exam Information</h5>
             </div>
@@ -1027,13 +1036,21 @@
                   <div class="col-md-6">
                     <p><strong>Exam Date:</strong> ${driver.examDate}</p>
                     <p><strong>Marks:</strong> ${driver.examMarks}%</p>
-                  </div>
-                  <div class="col-md-6">
                     <p><strong>Result:</strong>
                       ${driver.examMarks >= 75 ?
             '<span class="badge bg-success">Passed</span>' :
-            '<span class="badge bg-danger">Failed</span>'}
+            driver.examMarks >= 30 ?
+                    '<span class="badge bg-warning">Trial</span>' :
+                    '<span class="badge bg-danger">Failed</span>'}
                     </p>
+                  </div>
+                  <div class="col-md-6">
+                    ${driver.examMarks >= 30 && driver.examMarks < 75 ? `
+                      <p><strong>Trial Date:</strong> ${driver.trialDate || 'Not set'}</p>
+                    ` : ''}
+                    ${driver.examMarks < 30 ? `
+                      <p><strong>Retake Date:</strong> ${driver.retakeDate || 'Not set'}</p>
+                    ` : ''}
                   </div>
                 </div>
               ` : '<p class="text-muted">No exam information available</p>'}
@@ -1057,35 +1074,75 @@
     modalTitle.html(`<i class="fas fa-edit"></i> Edit Driver: ${driver.name}`);
 
     modalBody.html(`
-  <form id="editDriverForm">
-    <input type="hidden" id="editDriverId" value="${driver.id}">
-    <div class="row g-3">
-      <div class="col-md-6">
-        <label for="editDriverIssueDate" class="form-label">Issue Date</label>
-        <input type="date" class="form-control" id="editDriverIssueDate" value="${driver.issueDate}" required>
-      </div>
-      <div class="col-md-6">
-        <label for="editDriverExpiryDate" class="form-label">Expiry Date</label>
-        <input type="date" class="form-control" id="editDriverExpiryDate" value="${driver.expiryDate}" required>
-      </div>
-      <div class="col-md-6">
-        <label for="editDriverExamMarks" class="form-label">Exam Marks</label>
-        <input type="number" class="form-control" id="editDriverExamMarks"
-               value="${driver.examMarks || ''}" min="0" max="100" onchange="toggleExamDateFields(this.value)">
-      </div>
+      <form id="editDriverForm">
+        <input type="hidden" id="editDriverId" value="${driver.id}">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label for="editDriverName" class="form-label">Full Name</label>
+            <input type="text" class="form-control" id="editDriverName" value="${driver.name}" required>
+          </div>
+          <div class="col-md-6">
+            <label for="editDriverNIC" class="form-label">NIC Number</label>
+            <input type="text" class="form-control" id="editDriverNIC" value="${driver.nic}" required>
+          </div>
+          <div class="col-md-6">
+            <label for="editDriverLicenseType" class="form-label">License Type</label>
+            <select class="form-select" id="editDriverLicenseType" required>
+              <option value="Learner" ${driver.licenseType === 'Learner' ? 'selected' : ''}>Learner's License</option>
+              <option value="Full" ${driver.licenseType === 'Full' ? 'selected' : ''}>Full License</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label for="editDriverVehicleClass" class="form-label">Vehicle Class</label>
+            <select class="form-select" id="editDriverVehicleClass" required>
+              <option value="A" ${driver.vehicleClass === 'A' ? 'selected' : ''}>Class A - Motorcycles</option>
+              <option value="B" ${driver.vehicleClass === 'B' ? 'selected' : ''}>Class B - Cars</option>
+              <option value="C" ${driver.vehicleClass === 'C' ? 'selected' : ''}>Class C - Trucks</option>
+              <option value="D" ${driver.vehicleClass === 'D' ? 'selected' : ''}>Class D - Buses</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label for="editDriverIssueDate" class="form-label">Issue Date</label>
+            <input type="date" class="form-control" id="editDriverIssueDate" value="${driver.issueDate}" required>
+          </div>
+          <div class="col-md-6">
+            <label for="editDriverExpiryDate" class="form-label">Expiry Date</label>
+            <input type="date" class="form-control" id="editDriverExpiryDate" value="${driver.expiryDate}" required>
+          </div>
+          <div class="col-md-6">
+            <label for="editDriverExamMarks" class="form-label">Exam Marks</label>
+            <input type="number" class="form-control" id="editDriverExamMarks"
+                   value="${driver.examMarks || ''}" min="0" max="100" onchange="toggleExamDateFields(this.value)">
+          </div>
+          <div class="col-md-6">
+            <label for="editDriverExamDate" class="form-label">Exam Date</label>
+            <input type="date" class="form-control" id="editDriverExamDate" value="${driver.examDate || ''}">
+          </div>
 
-      <div class="col-md-6" id="trialDateGroup" style="display: ${driver.examMarks >= 30 ? 'block' : 'none'};">
-        <label for="trialDate" class="form-label">Trial Date</label>
-        <input type="date" class="form-control" id="trialDate" value="${driver.trialDate || ''}">
-      </div>
+          <div class="col-md-6" id="trialDateGroup" style="display: ${driver.examMarks >= 30 && driver.examMarks < 75 ? 'block' : 'none'}">
+            <label for="editDriverTrialDate" class="form-label">Trial Date</label>
+            <input type="date" class="form-control" id="editDriverTrialDate" value="${driver.trialDate || ''}">
+          </div>
 
-      <div class="col-md-6" id="retakeDateGroup" style="display: ${driver.examMarks < 30 ? 'block' : 'none'};">
-        <label for="retakeDate" class="form-label">New Exam Date</label>
-        <input type="date" class="form-control" id="retakeDate" value="${driver.retakeDate || ''}">
-      </div>
-    </div>
-  </form>
-`);
+          <div class="col-md-6" id="retakeDateGroup" style="display: ${driver.examMarks < 30 ? 'block' : 'none'}">
+            <label for="editDriverRetakeDate" class="form-label">Retake Date</label>
+            <input type="date" class="form-control" id="editDriverRetakeDate" value="${driver.retakeDate || ''}">
+          </div>
+
+          <div class="col-md-6">
+            <label for="editDriverStatus" class="form-label">Status</label>
+            <select class="form-select" id="editDriverStatus" required>
+              <option value="active" ${driver.status === 'active' ? 'selected' : ''}>Active</option>
+              <option value="pending" ${driver.status === 'pending' ? 'selected' : ''}>Pending</option>
+              <option value="expired" ${driver.status === 'expired' ? 'selected' : ''}>Expired</option>
+            </select>
+          </div>
+        </div>
+      </form>
+    `);
+
+    // Initialize the fields based on current exam marks
+    toggleExamDateFields(driver.examMarks || 0);
 
     $('#saveDriverChanges').off('click').on('click', function() {
       saveDriverChanges(driverId);
@@ -1093,6 +1150,21 @@
 
     const modal = new bootstrap.Modal(document.getElementById('driverDetailsModal'));
     modal.show();
+  }
+
+  function toggleExamDateFields(examMarks) {
+    examMarks = parseInt(examMarks) || 0;
+
+    if (examMarks >= 30 && examMarks < 75) {
+      $('#trialDateGroup').show();
+      $('#retakeDateGroup').hide();
+    } else if (examMarks < 30) {
+      $('#trialDateGroup').hide();
+      $('#retakeDateGroup').show();
+    } else {
+      $('#trialDateGroup').hide();
+      $('#retakeDateGroup').hide();
+    }
   }
 
   function saveDriverChanges(driverId) {
@@ -1105,6 +1177,8 @@
       return;
     }
 
+    const examMarks = $('#editDriverExamMarks').val() ? parseInt($('#editDriverExamMarks').val()) : null;
+
     drivers[driverIndex] = {
       ...drivers[driverIndex],
       name: $('#editDriverName').val(),
@@ -1113,7 +1187,10 @@
       vehicleClass: $('#editDriverVehicleClass').val(),
       issueDate: $('#editDriverIssueDate').val(),
       expiryDate: $('#editDriverExpiryDate').val(),
-      examMarks: $('#editDriverExamMarks').val() ? parseInt($('#editDriverExamMarks').val()) : null,
+      examMarks: examMarks,
+      examDate: $('#editDriverExamDate').val(),
+      trialDate: examMarks >= 30 && examMarks < 75 ? $('#editDriverTrialDate').val() : null,
+      retakeDate: examMarks < 30 ? $('#editDriverRetakeDate').val() : null,
       status: $('#editDriverStatus').val()
     };
 
@@ -1159,7 +1236,6 @@
       renderDriversList();
     });
   }
-
 </script>
 </body>
 </html>
