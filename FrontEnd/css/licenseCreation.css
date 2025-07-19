@@ -1,0 +1,101 @@
+body {
+    /*background: linear-gradient(135deg, #f0f4f7, #cfd9df);*/
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    font-family: 'Segoe UI', sans-serif;
+    color: #e2e8f0; /* Light text for dark background */
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.15); /* Slightly less opaque for better transparency */
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 30px;
+}
+
+/* Glassmorphism for form controls */
+.form-control, .form-select {
+    background: rgba(255, 255, 255, 0.1); /* Transparent white background */
+    border: 1px solid rgba(255, 255, 255, 0.3); /* Light border */
+    color: #e2e8f0; /* Light text color */
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.form-control::placeholder {
+    color: rgba(226, 232, 240, 0.7); /* Lighter placeholder text */
+}
+
+.form-control:focus, .form-select:focus {
+    background: rgba(255, 255, 255, 0.15); /* Slightly brighter on focus */
+    border-color: rgba(255, 255, 255, 0.5); /* More defined border on focus */
+    box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.1); /* Subtle glow */
+    color: #e2e8f0;
+}
+
+.form-select option {
+    background-color: #1e293b; /* Dark background for dropdown options */
+    color: #e2e8f0; /* Light text for dropdown options */
+}
+
+#photoPreview {
+    max-width: 150px;
+    max-height: 150px;
+    margin-top: 10px;
+    border-radius: 10px;
+    display: block;
+    border: 1px solid rgba(255, 255, 255, 0.3); /* Add border to preview */
+}
+
+.file-preview {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #e2e8f0; /* Ensure file preview text is light */
+}
+
+.btn-yellow-glass {
+    background: rgba(255, 193, 7, 0.2); /* light yellow glass effect */
+    color: #ffc107;
+    border: 1px solid #ffc107;
+    backdrop-filter: blur(5px);
+    transition: 0.3s;
+}
+.btn-yellow-glass:hover {
+    background: rgba(255, 193, 7, 0.4);
+    color: #fff;
+}
+
+/* Adjust button styles for better integration with dark UI */
+.btn-primary {
+    background-color: #3b82f6; /* A good blue for dark UIs */
+    border-color: #3b82f6;
+    color: #fff;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: #2563eb;
+    border-color: #2563eb;
+}
+
+.btn-success {
+    background-color: #10b981; /* A good green for dark UIs */
+    border-color: #10b981;
+    color: #fff;
+    transition: all 0.3s ease;
+}
+
+.btn-success:hover {
+    background-color: #059669;
+    border-color: #059669;
+}
+
+/* Label styling */
+.form-label {
+    color: #cbd5e1; /* Slightly darker white for labels */
+}

@@ -7,60 +7,15 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="../css/licenseCreation.css">
 
-    <style>
-        body {
-            /*background: linear-gradient(135deg, #f0f4f7, #cfd9df);*/
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            font-family: 'Segoe UI', sans-serif;
-        }
-
-        .glass-card {
-            background: rgba(255, 255, 255, 0.25);
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            padding: 30px;
-        }
-
-        #photoPreview {
-            max-width: 150px;
-            max-height: 150px;
-            margin-top: 10px;
-            border-radius: 10px;
-            display: block;
-        }
-
-        .file-preview {
-            margin-top: 10px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .btn-yellow-glass {
-            background: rgba(255, 193, 7, 0.2); /* light yellow glass effect */
-            color: #ffc107;
-            border: 1px solid #ffc107;
-            backdrop-filter: blur(5px);
-            transition: 0.3s;
-        }
-        .btn-yellow-glass:hover {
-            background: rgba(255, 193, 7, 0.4);
-            color: #fff;
-        }
-
-    </style>
 </head>
 <body>
 
 <div class="container mt-5">
     <div class="glass-card">
-        <h3 class="mb-4">🚘 License Registration</h3>
+        <h3 class="mb-4" style="color: #fff;">🚘 License Registration</h3>
 
-        <!-- NIC Search -->
         <form id="searchForm" class="row g-3 mb-4">
             <div class="col-md-6">
                 <label for="nicInput" class="form-label">Enter NIC</label>
@@ -71,7 +26,6 @@
             </div>
         </form>
 
-        <!-- License Form -->
         <form id="licenseForm" class="row g-3">
             <div class="col-md-6">
                 <label for="name" class="form-label">Full Name</label>
@@ -91,13 +45,13 @@
             </div>
 
             <div class="col-md-6">
-                <label for="photoUpload">Passport Size Photo:</label>
+                <label for="photoUpload" class="form-label">Passport Size Photo:</label>
                 <input type="file" class="form-control" id="photoUpload" accept="image/*">
                 <img id="photoPreview" src="#" alt="Preview" style="display:none;">
             </div>
 
             <div class="col-md-6">
-                <label for="medicalUpload">Medical Certificate (PDF):</label>
+                <label for="medicalUpload" class="form-label">Medical Certificate (PDF):</label>
                 <input type="file" class="form-control" id="medicalUpload" accept="application/pdf">
                 <div class="file-preview" id="medicalPreview" style="display:none;">
                     <i class="fas fa-file-pdf fa-2x"></i>
