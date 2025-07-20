@@ -457,9 +457,237 @@
           <button class="btn btn-sm btn-danger" onclick="confirmDeleteDriver(${driver.id})">
             <i class="fas fa-trash"></i> Delete
           </button>
+          ${(driver.status === 'expired' || daysUntilExpiry <= 90) ? `
+            <button class="btn btn-sm btn-secondary" onclick="renewLicense(${driver.id})">
+                <i class="fas fa-sync-alt"></i> Renew License
+            </button>
+          ` : ''}
         </div>
       </div>
     `;
+  }
+
+  function renewLicense(driverId) {
+    const driver = drivers.find(d => d.id === driverId);
+    if (!driver) return;
+
+    const modalTitle = $('#driverModalTitle');
+    const modalBody = $('#driverModalBody');
+
+    modalTitle.html(`<i class="fas fa-sync-alt"></i> Renew License: ${driver.name}`);
+
+    // Calculate new expiry date (5 years from today)
+    const today = new Date();
+    const newExpiryDate = new Date(today);
+    newExpiryDate.setFullYear(today.getFullYear() + 5);
+    const formattedExpiryDate = newExpiryDate.toISOString().split('T')[0];
+    const formattedTodayDate = today.toISOString().split('T')[0];
+
+    modalBody.html(`
+    <div class="alert alert-info">
+      <i class="fas fa-info-circle"></i>
+      <strong>License Renewal Process</strong><br>
+      Current License: ${driver.licenseNumber} (Expires: ${driver.expiryDate})<br>
+      New Expiry Date: ${formattedExpiryDate}
+    </div>
+
+    <form id="renewLicenseForm">
+      <input type="hidden" id="renewDriverId" value="${driver.id}">
+      <input type="hidden" id="renewNewExpiryDate" value="${formattedExpiryDate}">
+      <input type="hidden" id="renewNewIssueDate" value="${formattedTodayDate}">
+
+      <div class="row g-3">
+        <!-- Driver Basic Info (Read-only for renewal) -->
+        <div class="col-md-6">
+          <label for="renewDriverName" class="form-label">Full Name</label>
+          <input type="text" class="form-control" id="renewDriverName" value="${driver.name}" readonly>
+        </div>
+        <div class="col-md-6">
+          <label for="renewDriverNIC" class="form-label">NIC Number</label>
+          <input type="text" class="form-control" id="renewDriverNIC" value="${driver.nic}" readonly>
+        </div>
+
+        <!-- License Information -->
+        <div class="col-md-6">
+          <label for="renewLicenseNumber" class="form-label">License Number</label>
+          <input type="text" class="form-control" id="renewLicenseNumber" value="${driver.licenseNumber}" readonly>
+        </div>
+        <div class="col-md-6">
+          <label for="renewVehicleClass" class="form-label">Vehicle Class</label>
+          <input type="text" class="form-control" id="renewVehicleClass" value="${driver.vehicleClass}" readonly>
+        </div>
+
+        <!-- Renewal Dates -->
+        <div class="col-md-6">
+          <label for="renewIssueDate" class="form-label">New Issue Date</label>
+          <input type="date" class="form-control" id="renewIssueDate" value="${formattedTodayDate}" readonly>
+        </div>
+        <div class="col-md-6">
+          <label for="renewExpiryDate" class="form-label">New Expiry Date</label>
+          <input type="date" class="form-control" id="renewExpiryDate" value="${formattedExpiryDate}" readonly>
+        </div>
+
+        <!-- Medical Report - Main Focus -->
+        <div class="col-12">
+          <div class="card border-primary">
+            <div class="card-header bg-primary text-white">
+              <h6 class="mb-0"><i class="fas fa-file-medical"></i> Medical Report Required</h6>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-8">
+                  <label for="renewMedicalReport" class="form-label">
+                    <strong>Upload New Medical Report *</strong>
+                  </label>
+                  <input type="file" class="form-control form-control-lg" id="renewMedicalReport"
+                         accept="application/pdf,.pdf" required>
+                  <div class="form-text">
+                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                    A valid medical report is required for license renewal
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Current Medical Report</label>
+                  <div class="p-2 bg-light rounded">
+                    ${driver.medicalReport ?
+            `<small><i class="fas fa-file-pdf text-danger"></i> ${driver.medicalReport}</small>` :
+            '<small class="text-muted">No previous report</small>'
+    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Additional Notes -->
+        <div class="col-12">
+          <label for="renewNotes" class="form-label">Renewal Notes (Optional)</label>
+          <textarea class="form-control" id="renewNotes" rows="3"
+                    placeholder="Any additional notes for this renewal..."></textarea>
+        </div>
+      </div>
+    </form>
+  `);
+
+    // Update the save button functionality
+    $('#saveDriverChanges').off('click').on('click', function() {
+      processLicenseRenewal(driverId);
+    });
+
+    // Focus on medical report field after modal is shown
+    $('#driverDetailsModal').on('shown.bs.modal', function() {
+      $('#renewMedicalReport').focus();
+    });
+
+    // Show the modal
+    const modal = new bootstrap.Modal(document.getElementById('driverDetailsModal'));
+    modal.show();
+  }
+
+  function processLicenseRenewal(driverId) {
+    const form = $('#renewLicenseForm')[0];
+    const medicalFile = $('#renewMedicalReport')[0].files[0];
+
+    // Validate form
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+
+    // Check if medical report is uploaded
+    if (!medicalFile) {
+      Swal.fire({
+        title: 'Medical Report Required!',
+        text: 'Please upload a valid medical report to proceed with the renewal.',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
+      $('#renewMedicalReport').focus();
+      return;
+    }
+
+    // Validate file type
+    if (!medicalFile.type.includes('pdf')) {
+      Swal.fire({
+        title: 'Invalid File Type!',
+        text: 'Please upload a PDF file for the medical report.',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
+      return;
+    }
+
+    // Find and update the driver
+    const driverIndex = drivers.findIndex(d => d.id === driverId);
+    if (driverIndex === -1) return;
+
+    const renewalDate = $('#renewNewIssueDate').val();
+    const newExpiryDate = $('#renewNewExpiryDate').val();
+    const notes = $('#renewNotes').val();
+
+    // Update driver information
+    drivers[driverIndex] = {
+      ...drivers[driverIndex],
+      issueDate: renewalDate,
+      expiryDate: newExpiryDate,
+      status: 'active',
+      medicalReport: medicalFile.name,
+      renewalNotes: notes,
+      lastRenewalDate: renewalDate
+    };
+
+    // Show success message with renewal details
+    Swal.fire({
+      title: 'License Renewed Successfully!',
+      html: `
+      <div class="text-start">
+        <p><strong>Driver:</strong> ${drivers[driverIndex].name}</p>
+        <p><strong>License:</strong> ${drivers[driverIndex].licenseNumber}</p>
+        <p><strong>New Issue Date:</strong> ${renewalDate}</p>
+        <p><strong>New Expiry Date:</strong> ${newExpiryDate}</p>
+        <p><strong>Medical Report:</strong> ${medicalFile.name}</p>
+        <p class="text-success"><i class="fas fa-check-circle"></i> Valid for 5 years</p>
+      </div>
+    `,
+      icon: 'success',
+      confirmButtonText: 'OK',
+      confirmButtonColor: '#28a745'
+    }).then(() => {
+      $('#driverDetailsModal').modal('hide');
+      renderDriversList();
+      updateStats();
+
+      // Optional: Show a brief notification
+      showNotification('License renewed successfully!', 'success');
+    });
+  }
+
+  // Helper function for notifications (optional)
+  function showNotification(message, type = 'info') {
+    const toast = `
+    <div class="toast align-items-center text-white bg-${type === 'success' ? 'success' : 'info'} border-0"
+         role="alert" aria-live="assertive" aria-atomic="true"
+         style="position: fixed; top: 20px; right: 20px; z-index: 9999;">
+      <div class="d-flex">
+        <div class="toast-body">
+          <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i> ${message}
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+  `;
+
+    $('body').append(toast);
+    const toastElement = $('.toast').last();
+    const bsToast = new bootstrap.Toast(toastElement[0]);
+    bsToast.show();
+
+    // Auto remove after toast hides
+    toastElement.on('hidden.bs.toast', function() {
+      $(this).remove();
+    });
   }
 
   function renderPagination(totalPages) {
