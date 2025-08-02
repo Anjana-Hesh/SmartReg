@@ -1,41 +1,101 @@
+
+:root {
+    --glass-bg: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
 body {
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-    backdrop-filter: blur(15px);
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    color: white;
     min-height: 100vh;
-    padding: 2rem;
-    color: #fff;
-    font-family: 'Segoe UI', sans-serif;
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
+
 .glass-card {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 15px;
-    padding: 2rem;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
-    backdrop-filter: blur(10px);
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    padding: 25px;
+    margin-bottom: 20px;
 }
-.btn-yellow {
-    background-color: #ffc107;
-    border: none;
-    color: #000;
+
+.btn-glass {
+    background: rgba(13, 110, 253, 0.7);
+    border: 1px solid var(--glass-border);
+    color: white;
+    transition: all 0.3s ease;
 }
-table {
-    color: #fff;
+
+.btn-glass:hover {
+    background: rgba(13, 110, 253, 0.9);
+    transform: translateY(-2px);
 }
+
+.btn-danger-glass {
+    background: rgba(220, 53, 69, 0.7);
+    border: 1px solid var(--glass-border);
+    color: white;
+}
+
+.btn-warning-glass {
+    background: rgba(255, 193, 7, 0.7);
+    border: 1px solid var(--glass-border);
+    color: white;
+}
+
+.table {
+    color: white;
+}
+
+.table-dark {
+    background-color: rgba(33, 37, 41, 0.7) !important;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
 .modal-content {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    color: white;
+}
+
+.form-control, .form-select {
     background: rgba(255, 255, 255, 0.1);
-    color: #fff;
-    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    color: white;
 }
-.form-control {
+
+.form-control:focus, .form-select:focus {
     background: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: #fff;
+    border-color: rgba(255, 255, 255, 0.4);
+    color: white;
+    box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.25);
 }
-.form-select {
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: #fff;
-}
+
 .form-control::placeholder {
-    color: #ddd;
+    color: rgba(255, 255, 255, 0.6);
 }
+
+.btn-close-white {
+    filter: invert(1);
+}
+
+.password-strength {
+    height: 5px;
+    margin-top: 5px;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+.strength-0 { width: 20%; background: #dc3545; }
+.strength-1 { width: 40%; background: #ffc107; }
+.strength-2 { width: 60%; background: #ffc107; }
+.strength-3 { width: 80%; background: #28a745; }
+.strength-4 { width: 100%; background: #28a745; }
