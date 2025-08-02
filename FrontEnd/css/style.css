@@ -16,7 +16,7 @@
 * {
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
+    box-sizing: border-box; /* padding , borders including in width and height */
 }
 
 body {
@@ -27,6 +27,7 @@ body {
     overflow-x: hidden;
 }
 
+/*Background annimation dashborads*/
 .animated-bg {
     position: fixed;
     top: 0;
@@ -51,7 +52,7 @@ body {
 .glass {
     background: var(--glass-bg);
     backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);  /* For some browsers like Mozilla Firefox */
     border: 1px solid var(--border-glass);
     border-radius: 16px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);

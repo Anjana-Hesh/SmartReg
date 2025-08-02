@@ -1,35 +1,16 @@
-// Authentication Functions
-function togglePassword() {
-    const passwordInput = document.getElementById('password');
-    const toggleIcon = document.getElementById('toggleIcon');
-
-    if (passwordInput.type === 'password') {
-        passwordInput.type = 'text';
-        toggleIcon.classList.remove('fa-eye');
-        toggleIcon.classList.add('fa-eye-slash');
-    } else {
-        passwordInput.type = 'password';
-        toggleIcon.classList.remove('fa-eye-slash');
-        toggleIcon.classList.add('fa-eye');
-    }
-}
-
 // Sign In Form Handler
-document.getElementById('signinForm')?.addEventListener('submit', function(e) {
+$('#signinForm').on('submit', function (e) {
     e.preventDefault();
 
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const role = document.getElementById('role').value;
+    const email = $('#email').val();
+    const password = $('#password').val();
+    const role = $('#role').val();
 
-    // Show loading state
     showLoading();
 
-    // Simulate API call
     setTimeout(() => {
         hideLoading();
 
-        // Redirect based on role
         if (role === 'admin') {
             window.location.href = '../views/adminDashboard.html';
         } else {
@@ -39,11 +20,11 @@ document.getElementById('signinForm')?.addEventListener('submit', function(e) {
 });
 
 // Sign Up Form Handler
-document.getElementById('signupForm')?.addEventListener('submit', function(e) {
+$('#signupForm').on('submit', function (e) {
     e.preventDefault();
 
-    const password = document.getElementById('password').value;
-    const confirmPassword = document.getElementById('confirmPassword').value;
+    const password = $('#password').val();
+    const confirmPassword = $('#confirmPassword').val();
 
     if (password !== confirmPassword) {
         showAlert('Passwords do not match!', 'error');
@@ -62,7 +43,7 @@ document.getElementById('signupForm')?.addEventListener('submit', function(e) {
 });
 
 // Forgot Password Form Handler
-document.getElementById('forgotPasswordForm')?.addEventListener('submit', function(e) {
+$('#forgotPasswordForm').on('submit', function (e) {
     e.preventDefault();
 
     showLoading();
@@ -75,52 +56,46 @@ document.getElementById('forgotPasswordForm')?.addEventListener('submit', functi
 
 // Utility Functions
 function showLoading() {
-    // Create loading overlay
-    const overlay = document.createElement('div');
-    overlay.id = 'loadingOverlay';
-    overlay.innerHTML = `
-        <div class="loading-content">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
+    const overlay = $(`
+        <div id="loadingOverlay" style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: white;
+            text-align: center;
+        ">
+            <div class="loading-content text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3">Please wait...</p>
             </div>
-            <p class="mt-3">Please wait...</p>
         </div>
-    `;
-    overlay.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.8);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-        color: white;
-        text-align: center;
-    `;
-    document.body.appendChild(overlay);
+    `);
+    $('body').append(overlay);
 }
 
 function hideLoading() {
-    const overlay = document.getElementById('loadingOverlay');
-    if (overlay) {
-        overlay.remove();
-    }
+    $('#loadingOverlay').remove();
 }
 
 function showAlert(message, type) {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
-    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    document.body.appendChild(alertDiv);
+    const alertDiv = $(`
+        <div class="alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed" 
+             style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    $('body').append(alertDiv);
 
-    // Auto remove after 5 seconds
     setTimeout(() => {
         alertDiv.remove();
     }, 5000);

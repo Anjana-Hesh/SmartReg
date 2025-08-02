@@ -96,6 +96,19 @@
     color: white;
 }
 
+.licenseInfo{
+    background-color: #eda0a0;!important;
+}
+
+.textcolor{
+    color: white;
+    font-weight: 400;
+}
+/*.licenseInfo > p{*/
+/*    color: white;*/
+/*    font-weight: 600;*/
+/*}*/
+
 .icon-license { background: #3498db; }
 .icon-notification { background: #e74c3c; }
 .icon-profile { background: #2ecc71; }
