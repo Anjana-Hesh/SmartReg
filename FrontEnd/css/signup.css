@@ -1,6 +1,6 @@
 body {
     position: relative;
-    background: url("../assets/images/SigninBack.png") no-repeat center center fixed;
+    background: url("../assets/images/SigninBack.gif") no-repeat center center fixed;
     background-size: cover;
 }
 
@@ -15,4 +15,9 @@ body::before {
 .container-fluid {
     position: relative;
     z-index: 1;
+}
+
+.content-container {
+    margin-left: -50%; /* Adjust this value to move content more or less to the left */
+    max-width: 750px; /* Optional: limit the maximum width */
 }

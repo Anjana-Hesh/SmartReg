@@ -11,7 +11,7 @@
     <style>
         body {
             position: relative;
-            background: url("assets/images/SigninBack.png") no-repeat center center fixed;
+            background: url("assets/images/SigninBack.gif") no-repeat center center fixed;
             background-size: cover;
         }
 
@@ -20,22 +20,34 @@
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
             background-color: rgba(0, 0, 0, 0.4);
-            /*z-index: 0;*/
         }
 
-        .container-fluid { /*  responsive layout system is 100% maintaining */
+        .container-fluid {
             position: relative;
             z-index: 1;
+        }
+
+        /* Adjust the left positioning */
+        .content-container {
+            margin-left: 10%; /* Adjust this value to move content more or less to the left */
+            max-width: 450px; /* Optional: limit the maximum width */
+        }
+
+        @media (max-width: 768px) {
+            .content-container {
+                margin-left: auto;
+                margin-right: auto;
+                padding: 0 15px;
+            }
         }
     </style>
 
 </head>
 <body>
-<!--<div class="animated-bg"></div>-->
 
-<div class="container-fluid vh-100 d-flex align-items-center justify-content-center">
+<div class="container-fluid vh-100 d-flex align-items-center">
     <div class="row w-100">
-        <div class="col-md-6 col-lg-4 mx-auto">  <!-- Removed col-lg-4 for now -->
+        <div class="content-container">  <!-- Added custom container class -->
             <div class="card-glass p-4">
                 <div class="text-center mb-4">
                     <div class="floating-element">
@@ -66,16 +78,6 @@
                                 <i class="fas fa-eye-slash" id="toggleIcon"></i>
                             </button>
                         </div>
-                    </div>
-
-                    <!--for now-->
-                    <div class="mb-3">
-                        <select class="form-select form-control-glass text-dark" id="role" required>
-                            <option value="" disabled selected>Select Role</option>
-                            <option value="admin">Admin</option>
-                            <option value="staff">Staff Member</option>
-                            <option value="staff">Driver</option>
-                        </select>
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center mb-4">
