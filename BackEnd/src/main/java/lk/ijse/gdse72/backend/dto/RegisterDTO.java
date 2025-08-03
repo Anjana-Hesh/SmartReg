@@ -13,12 +13,12 @@ public class RegisterDTO {
     private Long id;
 
     @NotBlank(message = "Full name is required")
-    @Size(min = 3, max = 100, message = "Full name must be 3-100 characters")
+//    @Size(min = 3, max = 100, message = "Full name must be 3-100 characters")
     private String fullName;
 
     @NotBlank(message = "Username is required")
     @Size(min = 4, max = 20, message = "Username must be 4-20 characters")
-    @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "Username can only contain letters, numbers, and underscores")
+//    @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "Username can only contain letters, numbers, and underscores")
     private String userName;
 
     @NotBlank(message = "Password is required")
@@ -34,13 +34,11 @@ public class RegisterDTO {
     private String email;
 
     @NotNull(message = "Phone number is required")
-    @Pattern(regexp = "\\d{10}", message = "Phone number must be 10 digits")
+//    @Pattern(regexp = "\\d{10}", message = "Phone number must be 10 digits")
     private Integer phoneNumber;
 
-    private String role ;
-
-    private String status ;
-
-    private boolean isAdmin ;
+    private String role = "DRIVER";  // Default value
+    private String status = "INACTIVE";  // Default value
+    private boolean isAdmin = false;  // Default value
 
 }
