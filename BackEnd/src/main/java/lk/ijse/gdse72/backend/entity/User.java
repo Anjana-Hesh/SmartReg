@@ -38,7 +38,7 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     @Builder.Default
-    private UserStatus status = UserStatus.INACTIVE;        // default status
+    private UserStatus status = UserStatus.ACTIVE;        // default status
 
     @Column(nullable = false)
     @Builder.Default

@@ -38,7 +38,7 @@ public class RegisterDTO {
     private Integer phoneNumber;
 
     private String role = "DRIVER";  // Default value
-    private String status = "INACTIVE";  // Default value
+    private String status = "ACTIVE";  // Default value
     private boolean isAdmin = false;  // Default value
 
 }
