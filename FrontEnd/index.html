@@ -6,8 +6,8 @@
     <title>SmartReg.lk - Sign In</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- SweetAlert2 CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.10.5/sweetalert2.min.css" rel="stylesheet">
+
     <style>
         body {
             position: relative;
@@ -29,7 +29,6 @@
             z-index: 1;
         }
 
-        /* Glass card styling */
         .card-glass {
             background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(12px);
@@ -80,7 +79,6 @@
             transform: translateY(-2px);
         }
 
-        /* Content positioning */
         .content-container {
             margin-left: 15%;
             max-width: 450px;
@@ -123,7 +121,6 @@
             margin-left: 10px;
         }
 
-        /* Text colors */
         h2, .form-label, .text-secondary, .form-check-label {
             color: white !important;
         }
@@ -132,7 +129,6 @@
             color: rgba(13, 110, 253, 0.9) !important;
         }
 
-        /* Custom SweetAlert styling */
         .swal2-popup.glass-theme {
             background: rgba(255, 255, 255, 0.95) !important;
             backdrop-filter: blur(12px);
@@ -141,7 +137,6 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
 
-        /* Password toggle button styling */
         .password-toggle {
             background: none !important;
             border: none !important;
@@ -153,7 +148,6 @@
             color: rgba(255, 255, 255, 0.9) !important;
         }
 
-        /* Responsive adjustments */
         @media (max-width: 768px) {
             .content-container {
                 margin-left: auto;
@@ -177,7 +171,6 @@
                     <p class="text-secondary">Vehicle & License Management System</p>
                 </div>
 
-                <!-- Google Sign-In Button -->
                 <button class="btn btn-google-glass w-100 mb-3">
                     <img src="assets/images/googleLogo.png"
                          alt="Google logo" width="20" class="me-2">
@@ -209,7 +202,7 @@
                             <input type="password" class="form-control form-control-glass" id="password"
                                    placeholder="Enter your password" required>
                             <button type="button" class="btn btn-link position-absolute top-50 end-0 translate-middle-y password-toggle"
-                                    onclick="togglePassword()">
+                                    id="togglePasswordBtn">
                                 <i class="fas fa-eye-slash" id="toggleIcon"></i>
                             </button>
                         </div>
@@ -241,166 +234,294 @@
     </div>
 </div>
 
-<!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<!-- SweetAlert2 JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.10.5/sweetalert2.all.min.js"></script>
 
 <script>
-    // Configuration
-    const API_BASE_URL = 'http://localhost:8080/api/auth';
-
-    // Dashboard URLs based on user roles
-    const DASHBOARD_URLS = {
-        ADMIN: 'views/adminDashboard.html',
-        DRIVER: 'views/driverDashboard.html'
-    };
-
-    // Toggle password visibility
-    function togglePassword() {
-        const passwordInput = document.getElementById("password");
-        const icon = document.getElementById("toggleIcon");
-        if (passwordInput.type === "password") {
-            passwordInput.type = "text";
-            icon.classList.replace("fa-eye-slash", "fa-eye");
-        } else {
-            passwordInput.type = "password";
-            icon.classList.replace("fa-eye", "fa-eye-slash");
-        }
-    }
-
-    // Initialize when document is ready
     $(document).ready(function() {
-        // Check if user is already authenticated
-        checkAuthStatus();
+        // Configuration
+        const config = {
+            apiBaseUrl: 'http://localhost:8080/api/v1/auth',
+            dashboardUrls: {
+                ADMIN: 'views/adminDashboard.html',
+                DRIVER: 'views/driverDashboard.html'
+            },
+            tokenKey: 'smartreg_token',
+            userKey: 'smartreg_user',
+            logoutFlag: 'smartreg_logout'
+        };
 
-        // Handle form submission
-        $('#signinForm').on('submit', function(e) {
+        // Check for logout flag on page load
+        if (localStorage.getItem(config.logoutFlag)) {
+            localStorage.removeItem(config.logoutFlag);
+            showLogoutMessage();
+        }
+
+        // DOM Elements
+        const $loginForm = $('#signinForm');
+        const $usernameInput = $('#userName');
+        const $passwordInput = $('#password');
+        const $rememberCheckbox = $('#remember');
+        const $loginBtn = $('#loginBtn');
+
+        // Form Submission
+        $loginForm.on('submit', async function(e) {
             e.preventDefault();
-            handleLogin(e);
+            await handleLogin();
         });
 
-        // Handle Enter key press
-        $('#userName, #password').on('keypress', function(e) {
-            if (e.which === 13) {
-                $('#signinForm').submit();
-            }
-        });
-    });
+        // Handle Login
+        async function handleLogin() {
+            const username = $usernameInput.val().trim();
+            const password = $passwordInput.val();
 
-    // Handle login functionality
-    async function handleLogin(event) {
-        const submitButton = $('#loginBtn');
-        const originalHtml = submitButton.html();
+            if (!validateInputs(username, password)) return;
 
-        try {
-            // Show loading state
-            submitButton.html('<i class="fas fa-spinner fa-spin"></i> Signing In...');
-            submitButton.prop('disabled', true);
+            setLoadingState(true);
 
-            const response = await fetch(`${API_BASE_URL}/login`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    userName: $('#userName').val().trim(),
-                    password: $('#password').val()
-                }),
-                credentials: 'include' // This is crucial for cookies
-            });
+            try {
+                const response = await $.ajax({
+                    url: `${config.apiBaseUrl}/login`,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        userName: username,
+                        password: password
+                    })
+                });
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                // Handle specific admin login error
-                if (data.message && data.message.includes("admin")) {
-                    throw new Error("Admin login failed. Please check your credentials.");
+                if (response.data && response.data.accessToken) {
+                    storeAuthData(response.data);
+                    showSuccessAlert(response.data.name || username);
+                    redirectToDashboard(response.data.role);
+                } else {
+                    throw new Error('Invalid server response');
                 }
-                throw new Error(data.message || 'Login failed');
+            } catch (error) {
+                handleLoginError(error);
+            } finally {
+                setLoadingState(false);
+            }
+        }
+
+        // Helper Functions
+        function validateInputs(username, password) {
+            let isValid = true;
+
+            // Clear previous validation errors
+            $usernameInput.removeClass('is-invalid');
+            $passwordInput.removeClass('is-invalid');
+
+            if (!username) {
+                $usernameInput.addClass('is-invalid');
+                isValid = false;
             }
 
-            // Show success message
+            if (!password) {
+                $passwordInput.addClass('is-invalid');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        function storeAuthData(authData) {
+            // Store token either in localStorage or sessionStorage
+            const storage = $rememberCheckbox.is(':checked') ? localStorage : sessionStorage;
+            storage.setItem(config.tokenKey, authData.accessToken);
+
+            // Store user data
+            const userData = {
+                id: authData.userId,
+                username: authData.userName,
+                role: authData.role,
+                name: authData.name
+            };
+            localStorage.setItem(config.userKey, JSON.stringify(userData));
+        }
+
+        function showSuccessAlert(username) {
             Swal.fire({
                 title: 'Login Successful!',
-                text: `Welcome back, ${data.userName}`,
+                text: `Welcome back, ${username}`,
                 icon: 'success',
                 timer: 2000,
                 showConfirmButton: false,
-                customClass: {
-                    popup: 'glass-theme'
-                },
-                willClose: () => {
-                    // Redirect to appropriate dashboard
-                    window.location.href = DASHBOARD_URLS[data.role] || DASHBOARD_URLS.DRIVER;
-                }
+                background: '#1a1a1a',
+                color: '#ffffff'
             });
+        }
 
-        } catch (error) {
+        function showLogoutMessage() {
+            Swal.fire({
+                title: 'Logged Out',
+                text: 'You have been successfully logged out.',
+                icon: 'success',
+                timer: 2000,
+                showConfirmButton: false,
+                background: '#1a1a1a',
+                color: '#ffffff'
+            });
+        }
+
+        function redirectToDashboard(role) {
+            console.log("User role:", role);
+
+            if (!role) {
+                console.error("No role provided");
+                showRoleError();
+                return;
+            }
+
+            // Convert role to uppercase for consistent matching
+            const normalizedRole = role.toString().toUpperCase();
+            console.log("Normalized role:", normalizedRole);
+
+            // Get the dashboard URL based on role
+            const dashboardUrl = config.dashboardUrls[normalizedRole];
+
+            if (dashboardUrl) {
+                console.log("Redirecting to:", dashboardUrl);
+                // Add a small delay to ensure the success message is visible
+                setTimeout(() => {
+                    window.location.href = dashboardUrl;
+                }, 1500);
+            } else {
+                console.error("No dashboard URL found for role:", normalizedRole);
+                showRoleError();
+            }
+        }
+
+        function showRoleError() {
+            Swal.fire({
+                title: 'Access Error',
+                text: 'Your account role is not properly configured. Please contact support.',
+                icon: 'warning',
+                background: '#1a1a1a',
+                color: '#ffffff',
+                confirmButtonText: 'OK'
+            });
+        }
+
+        function handleLoginError(error) {
+            let errorMessage = 'Login failed. Please try again.';
+
+            console.error("Login error:", error);
+
+            if (error.responseJSON && error.responseJSON.message) {
+                errorMessage = error.responseJSON.message;
+            } else if (error.status === 401) {
+                errorMessage = 'Invalid username or password.';
+            } else if (error.status === 0) {
+                errorMessage = 'Connection failed. Please check your internet connection.';
+            }
+
             Swal.fire({
                 title: 'Login Failed',
-                text: error.message,
+                text: errorMessage,
                 icon: 'error',
-                confirmButtonText: 'Try Again',
-                customClass: {
-                    popup: 'glass-theme'
-                }
+                background: '#1a1a1a',
+                color: '#ffffff'
             });
-            console.error('Login error:', error);
-        } finally {
-            // Restore button state
-            submitButton.html(originalHtml);
-            submitButton.prop('disabled', false);
         }
-    }
 
-    // Check authentication status
-    async function checkAuthStatus() {
-        try {
-            const response = await fetch(`${API_BASE_URL}/verify`, {
-                method: 'GET',
-                credentials: 'include' // Include cookies
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                if (data.authenticated) {
-                    // Redirect to dashboard if already logged in
-                    window.location.href = DASHBOARD_URLS[data.role] || DASHBOARD_URLS.DRIVER;
-                }
+        function setLoadingState(isLoading) {
+            if (isLoading) {
+                $loginBtn.html('<i class="fas fa-spinner fa-spin me-2"></i>Signing In...');
+                $loginBtn.prop('disabled', true);
+            } else {
+                $loginBtn.html('<i class="fas fa-sign-in-alt me-2"></i>Sign In');
+                $loginBtn.prop('disabled', false);
             }
-        } catch (error) {
-            console.error('Auth check error:', error);
         }
-    }
 
-    // Logout functionality
-    async function logout() {
-        try {
-            await fetch(`${API_BASE_URL}/logout`, {
-                method: 'POST',
-                credentials: 'include' // Include cookies
-            });
+        // Password Toggle
+        $('#togglePasswordBtn').on('click', function() {
+            const $password = $('#password');
+            const $icon = $('#toggleIcon');
+            const type = $password.attr('type') === 'password' ? 'text' : 'password';
+            $password.attr('type', type);
+            $icon.toggleClass('fa-eye fa-eye-slash');
+        });
 
-            // Redirect to login page after logout
-            window.location.href = 'signin.html';
-        } catch (error) {
-            console.error('Logout error:', error);
-            Swal.fire({
-                title: 'Logout Error',
-                text: 'Failed to logout properly',
-                icon: 'error',
-                customClass: {
-                    popup: 'glass-theme'
+        // Clear validation errors on input
+        $usernameInput.on('input', function() {
+            $(this).removeClass('is-invalid');
+        });
+
+        $passwordInput.on('input', function() {
+            $(this).removeClass('is-invalid');
+        });
+
+        // Check if already logged in
+        checkAuthStatus();
+
+        function checkAuthStatus() {
+            const token = localStorage.getItem(config.tokenKey) || sessionStorage.getItem(config.tokenKey);
+            if (!token) return;
+
+            // Additional check to prevent automatic redirect after logout
+            if (localStorage.getItem(config.logoutFlag)) {
+                localStorage.removeItem(config.logoutFlag);
+                return;
+            }
+
+            // Verify token with backend (optional but recommended)
+            verifyToken(token).then(isValid => {
+                if (isValid) {
+                    const userData = JSON.parse(localStorage.getItem(config.userKey) || '{}');
+                    if (userData && userData.role) {
+                        console.log("User already logged in with role:", userData.role);
+                        redirectToDashboard(userData.role);
+                    }
+                } else {
+                    // Token is invalid, clear storage
+                    clearAuthData();
                 }
+            }).catch(() => {
+                clearAuthData();
             });
         }
-    }
 
-    // Make logout available globally
-    window.logout = logout;
+        async function verifyToken(token) {
+            try {
+                const response = await fetch(`${config.apiBaseUrl}/validate`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                return response.ok;
+            } catch (error) {
+                console.error("Token verification failed:", error);
+                return false;
+            }
+        }
 
+        function clearAuthData() {
+            localStorage.removeItem(config.tokenKey);
+            localStorage.removeItem(config.userKey);
+            sessionStorage.removeItem(config.tokenKey);
+        }
+    });
+
+    // Global logout function
+    window.logout = function() {
+        const config = {
+            tokenKey: 'smartreg_token',
+            userKey: 'smartreg_user',
+            logoutFlag: 'smartreg_logout'
+        };
+
+        // Set logout flag before clearing storage
+        localStorage.setItem(config.logoutFlag, 'true');
+
+        // Clear all auth data
+        localStorage.removeItem(config.tokenKey);
+        localStorage.removeItem(config.userKey);
+        sessionStorage.removeItem(config.tokenKey);
+
+        // Redirect immediately to prevent automatic login
+        window.location.href = 'index.html';
+    };
 </script>
 
 </body>
