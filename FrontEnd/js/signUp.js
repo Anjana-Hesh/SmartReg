@@ -105,7 +105,7 @@ function validateUsername(username) {
 
 // Name validation
 function validateName(name) {
-    return name.trim().length >= 2;
+    return name.length >= 2;
 }
 
 // Show SweetAlert notification
@@ -213,7 +213,7 @@ document.getElementById('signupForm').addEventListener('submit', async function(
     }
 
     if (!validatePhone(formData.phoneNumber)) {
-        showFeedback('phoneFeedback', 'Please enter a valid phone number (8-15 digits)', false);
+        showFeedback('phoneFeedback', 'Please enter a valid phone number (8-10 digits)', false);
         await showAlert('error', 'Invalid Phone', 'Please enter a valid phone number with 8-15 digits');
         document.getElementById('phone').focus();
         return;
@@ -268,7 +268,7 @@ document.getElementById('signupForm').addEventListener('submit', async function(
                         showFeedback(feedbackId, message, false);
                         errorMessages.push(`${message}`);
                     } else {
-                        errorMessages.push(`${field}: ${message}`);
+                        errorMessages.push(`${message}`);
                     }
                 }
 
@@ -304,7 +304,7 @@ document.getElementById('signupForm').addEventListener('submit', async function(
 // Clear feedback on input focus
 document.querySelectorAll('.form-control-glass').forEach(input => {
     input.addEventListener('focus', function() {
-        const feedbackId = this.id + 'Feedback';
+        const feedbackId =  'Feedback';
         if (document.getElementById(feedbackId)) {
             hideFeedback(feedbackId);
         }
