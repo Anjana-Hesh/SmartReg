@@ -61,7 +61,6 @@ public class AuthServiseImpl implements AuthServise {  // Fixed typo in interfac
     public String forgotPassword(String email) {
         System.out.println("Received email: " + email);
 
-        // ✅ Fix: Trim surrounding quotes if present
         if (email != null && email.startsWith("\"") && email.endsWith("\"")) {
             email = email.substring(1, email.length() - 1);
         }

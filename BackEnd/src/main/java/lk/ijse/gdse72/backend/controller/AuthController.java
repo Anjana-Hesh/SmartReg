@@ -58,25 +58,6 @@ public class AuthController {
         }
     }
 
-//    @PostMapping("/login")
-//    public ResponseEntity<ApiResponse> loginUser(@Valid @RequestBody AuthDTO authDTO) {
-//        try {
-//            AuthResponseDTO authResponse = authService.authenticate(authDTO);
-//            return ResponseEntity.ok(new ApiResponse(
-//                    200,
-//                    "Login successful",
-//                    authResponse
-//            ));
-//        } catch (AuthenticationException e) {
-//            return ResponseEntity.status(401)
-//                    .body(new ApiResponse(401, "Authentication Failed", e.getMessage()));
-//        } catch (Exception e) {
-//            return ResponseEntity.internalServerError()
-//                    .body(new ApiResponse(500, "Login Error", e.getMessage()));
-//        }
-//    }
-
-
     @PostMapping("/login")
     public ResponseEntity<ApiResponse> loginUser(@Valid @RequestBody AuthDTO authDTO) {
         try {
@@ -92,18 +73,6 @@ public class AuthController {
                     .body(new ApiResponse(401, "Authentication Failed", e.getMessage()));
         }
     }
-
-//    // AuthController.java
-//    @GetMapping("/validate")
-//    public ResponseEntity<ApiResponse> validateToken(@RequestHeader("Authorization") String authHeader) {
-//        try {
-//            String token = authHeader.substring(7); // Remove "Bearer "
-//            boolean isValid = jwtUtil.validateToken(token);
-//            return ResponseEntity.ok(new ApiResponse(200, "Token validation", isValid));
-//        } catch (Exception e) {
-//            return ResponseEntity.status(401).body(new ApiResponse(401, "Invalid token", false));
-//        }
-//    }
 
     @PostMapping("/forgot-password")
     public ResponseEntity<String> authenticate(@RequestBody String email) {
