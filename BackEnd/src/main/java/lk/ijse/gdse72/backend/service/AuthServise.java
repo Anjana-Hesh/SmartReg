@@ -7,4 +7,6 @@ import lk.ijse.gdse72.backend.dto.RegisterDTO;
 public interface AuthServise {
     String register(RegisterDTO registerDTO);
     AuthResponseDTO authenticate(AuthDTO authDTO);
+
+    String forgotPassword(String email);
 }

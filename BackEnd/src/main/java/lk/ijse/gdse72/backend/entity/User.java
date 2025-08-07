@@ -43,4 +43,5 @@ public class User {
     @Column(nullable = false)
     @Builder.Default
     private boolean isAdmin = false;                        // default false
+
 }

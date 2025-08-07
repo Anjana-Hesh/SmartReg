@@ -104,4 +104,12 @@ public class AuthController {
 //            return ResponseEntity.status(401).body(new ApiResponse(401, "Invalid token", false));
 //        }
 //    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> authenticate(@RequestBody String email) {
+        String result = authService.forgotPassword(email);
+        return ResponseEntity.ok(result);
+    }
+
+
 }
