@@ -1,707 +1,869 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="../assets/images/titleIcon.png" type="image/x-icon">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="icon"
+      href="../assets/images/titleIcon.png"
+      type="image/x-icon"
+    />
     <title>Driver Dashboard - License Management</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../css/driver.css">
-
-</head>
-<body>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../css/driver.css" />
+  </head>
+  <body>
     <nav class="navbar navbar-expand-lg">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#">
-                <i class="fas fa-id-card-alt me-2"></i>LicensePro
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="driverProfile.html">
-                            <i class="fas fa-user me-1"></i> Profile
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#license">
-                            <i class="fas fa-id-card me-1"></i> License
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#notifications">
-                            <i class="fas fa-bell me-1"></i> Notifications
-                        </a>
-                    </li>
-                </ul>
-                <button class="logout-btn" onclick="logout()">
-                    <i class="fas fa-sign-out-alt me-1"></i> Logout
-                </button>
-            </div>
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">
+          <i class="fas fa-id-card-alt me-2"></i>LicensePro
+        </a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="driverProfile.html">
+                <i class="fas fa-user me-1"></i> Profile
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#license">
+                <i class="fas fa-id-card me-1"></i> License
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#notifications">
+                <i class="fas fa-bell me-1"></i> Notifications
+              </a>
+            </li>
+          </ul>
+          <button class="logout-btn" onclick="logout()">
+            <i class="fas fa-sign-out-alt me-1"></i> Logout
+          </button>
         </div>
+      </div>
     </nav>
 
     <div class="dashboard-container">
-        <div class="dashboard-header">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <div class="welcome-text">
-                        <h1>Welcome back, <span id="driverName">John Doe</span>!</h1>
-                        <p>Manage your driving license and stay updated with important notifications</p>
-                    </div>
-                </div>
-                <div class="col-md-4 text-md-end">
-                    <span class="status-badge status-pending" id="licenseStatus">
-                        <i class="fas fa-clock me-1"></i> License Pending
-                    </span>
-                </div>
+      <div class="dashboard-header">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <div class="welcome-text">
+              <h1>Welcome back, <span id="driverName">John Doe</span>!</h1>
+              <p>
+                Manage your driving license and stay updated with important
+                notifications
+              </p>
             </div>
+          </div>
+          <div class="col-md-4 text-md-end">
+            <span class="status-badge status-pending" id="licenseStatus">
+              <i class="fas fa-clock me-1"></i> License Pending
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="dashboard-grid">
+        <!-- License Info Card -->
+        <div class="dashboard-card license-info-card">
+          <div class="card-header">
+            <div class="card-icon">
+              <i class="fas fa-id-card"></i>
+            </div>
+            <div class="card-title">License Information</div>
+          </div>
+          <div class="card-content">
+            <p id="licenseInfo">
+              Complete your license registration to get started with your
+              driving journey.
+            </p>
+            <button class="btn-card" onclick="showLicenseForm()">
+              <i class="fas fa-edit me-1"></i> Register License
+            </button>
+          </div>
         </div>
 
-        <div class="dashboard-grid">
-            <!-- License Info Card -->
-            <div class="dashboard-card license-info-card">
-                <div class="card-header">
-                    <div class="card-icon">
-                        <i class="fas fa-id-card"></i>
-                    </div>
-                    <div class="card-title">License Information</div>
-                </div>
-                <div class="card-content">
-                    <p id="licenseInfo">Complete your license registration to get started with your driving journey.</p>
-                    <button class="btn-card" onclick="showLicenseForm()">
-                        <i class="fas fa-edit me-1"></i> Register License
-                    </button>
-                </div>
+        <!-- Notifications Card -->
+        <div class="dashboard-card">
+          <div class="card-header">
+            <div class="card-icon" style="background: var(--warning)">
+              <i class="fas fa-bell"></i>
             </div>
-
-            <!-- Notifications Card -->
-            <div class="dashboard-card">
-                <div class="card-header">
-                    <div class="card-icon" style="background: var(--warning);">
-                        <i class="fas fa-bell"></i>
-                    </div>
-                    <div class="card-title">Recent Notifications</div>
+            <div class="card-title">Recent Notifications</div>
+          </div>
+          <div class="card-content">
+            <ul class="notification-list" id="notificationList">
+              <li class="notification-item">
+                <div class="notification-date">
+                  <i class="far fa-calendar-alt me-1"></i> Today
                 </div>
-                <div class="card-content">
-                    <ul class="notification-list" id="notificationList">
-                        <li class="notification-item">
-                            <div class="notification-date">
-                                <i class="far fa-calendar-alt me-1"></i> Today
-                            </div>
-                            <div class="notification-text">
-                                Welcome to the License Management System!
-                            </div>
-                        </li>
-                        <li class="notification-item">
-                            <div class="notification-date">
-                                <i class="far fa-calendar-alt me-1"></i> Yesterday
-                            </div>
-                            <div class="notification-text">
-                                Your license application is under review
-                            </div>
-                        </li>
-                    </ul>
+                <div class="notification-text">
+                  Welcome to the License Management System!
                 </div>
-            </div>
-
-            <!-- Profile Card -->
-            <div class="dashboard-card">
-                <div class="card-header">
-                    <div class="card-icon" style="background: var(--success);">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <div class="card-title">Profile Management</div>
+              </li>
+              <li class="notification-item">
+                <div class="notification-date">
+                  <i class="far fa-calendar-alt me-1"></i> Yesterday
                 </div>
-                <div class="card-content">
-                    <p>Update your personal information and contact details.</p>
-                    <a href="driverProfile.html" class="btn-card">
-                        <i class="fas fa-edit me-1"></i> Edit Profile
-                    </a>
+                <div class="notification-text">
+                  Your license application is under review
                 </div>
-            </div>
-
-            <!-- Payment Card -->
-            <div class="dashboard-card">
-                <div class="card-header">
-                    <div class="card-icon" style="background: var(--info);">
-                        <i class="fas fa-credit-card"></i>
-                    </div>
-                    <div class="card-title">Exam Payment</div>
-                </div>
-                <div class="card-content">
-                    <p>Pay for your driving license exam using your credit/debit card.</p>
-                    <button class="btn-card" onclick="showPaymentForm()">
-                        <i class="fas fa-money-bill-wave me-1"></i> Make Payment
-                    </button>
-                </div>
-            </div>
+              </li>
+            </ul>
+          </div>
         </div>
+
+        <!-- Profile Card -->
+        <div class="dashboard-card">
+          <div class="card-header">
+            <div class="card-icon" style="background: var(--success)">
+              <i class="fas fa-user"></i>
+            </div>
+            <div class="card-title">Profile Management</div>
+          </div>
+          <div class="card-content">
+            <p>Update your personal information and contact details.</p>
+            <a href="driverProfile.html" class="btn-card">
+              <i class="fas fa-edit me-1"></i> Edit Profile
+            </a>
+          </div>
+        </div>
+
+        <!-- Payment Card -->
+        <div class="dashboard-card">
+          <div class="card-header">
+            <div class="card-icon" style="background: var(--info)">
+              <i class="fas fa-credit-card"></i>
+            </div>
+            <div class="card-title">Exam Payment</div>
+          </div>
+          <div class="card-content">
+            <p>
+              Pay for your driving license exam using your credit/debit card.
+            </p>
+            <button class="btn-card" onclick="showPaymentForm()">
+              <i class="fas fa-money-bill-wave me-1"></i> Make Payment
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- License Registration Modal -->
     <div id="licenseModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title">
-                    <i class="fas fa-id-card me-2"></i> License Registration
-                </h2>
-                <span class="close" onclick="closeLicenseModal()">&times;</span>
-            </div>
-            
-            <!-- Help Box -->
-            <div class="help-box">
-                <h6><i class="fas fa-info-circle me-2"></i>License Registration Guide</h6>
-                <p>Select your license type first, then choose the vehicle classes you want to be certified for. You can select multiple vehicle classes for comprehensive licensing.</p>
-            </div>
-            
-            <form id="licenseForm">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label class="form-label" for="licenseType">
-                                <i class="fas fa-certificate me-2"></i>License Type *
-                            </label>
-                            <select class="form-control" id="licenseType" required>
-                                <option value="">Select License Type</option>
-                                <option value="learner">Learner's License</option>
-                                <option value="restricted">Restricted License</option>
-                                <option value="full">Full License</option>
-                                <option value="heavy">Heavy Vehicle License</option>
-                                <option value="commercial">Commercial License</option>
-                                <option value="international">International Driving Permit</option>
-                                <option value="motorcycle">Motorcycle License</option>
-                                <option value="special">Special Vehicle License</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label class="form-label" for="examLanguage">
-                                <i class="fas fa-language me-2"></i>Exam Language *
-                            </label>
-                            <select class="form-control" id="examLanguage" required>
-                                <option value="">Select Language</option>
-                                <option value="sinhala">Sinhala (සිංහල)</option>
-                                <option value="english">English</option>
-                                <option value="tamil">Tamil (தமிழ்)</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="vehicleClass">
-                        <i class="fas fa-car me-2"></i>Vehicle Classes *
-                    </label>
-                    <div class="multi-select-container">
-                        <select class="form-control scrollable" id="vehicleClass" multiple size="8">
-                            <!-- Options will be populated by JavaScript -->
-                        </select>
-                        <div class="selected-items" id="selectedVehicleClasses">
-                            <span style="color: #6c757d; font-size: 0.9rem;">No vehicle classes selected</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="nicNumber">
-                        <i class="fas fa-id-card me-2"></i>NIC Number *
-                    </label>
-                    <input type="text" class="form-control" id="nicNumber" placeholder="Enter your NIC number" required>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label class="form-label" for="dateOfBirth">
-                                <i class="fas fa-birthday-cake me-2"></i>Date of Birth *
-                            </label>
-                            <input type="date" class="form-control" id="dateOfBirth" required>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label class="form-label" for="phoneNumber">
-                                <i class="fas fa-phone me-2"></i>Phone Number *
-                            </label>
-                            <input type="tel" class="form-control" id="phoneNumber" placeholder="+94 XX XXX XXXX" required>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="address">
-                        <i class="fas fa-map-marker-alt me-2"></i>Address *
-                    </label>
-                    <textarea class="form-control" id="address" rows="3" placeholder="Enter your complete address" required></textarea>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label class="form-label" for="photoUpload">
-                                <i class="fas fa-camera me-2"></i>Passport Size Photo *
-                            </label>
-                            <input type="file" class="form-control" id="photoUpload" accept="image/*" required>
-                            <div class="file-preview-container">
-                                <img id="photoPreview" class="photo-preview" src="#" alt="Photo Preview">
-                            </div>
-                            <div id="photoValidation"></div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label class="form-label" for="medicalUpload">
-                                <i class="fas fa-file-medical me-2"></i>Medical Certificate *
-                            </label>
-                            <input type="file" class="form-control" id="medicalUpload" accept="application/pdf" required>
-                            <div class="file-preview" id="medicalPreview" style="display:none;">
-                                <i class="fas fa-file-pdf me-2"></i>
-                                <span id="pdfName"></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group mt-4">
-                    <button type="submit" class="btn-submit">
-                        <i class="fas fa-paper-plane me-2"></i> Submit License Application
-                    </button>
-                </div>
-            </form>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title">
+            <i class="fas fa-id-card me-2"></i> License Registration
+          </h2>
+          <span class="close" onclick="closeLicenseModal()">&times;</span>
         </div>
+
+        <!-- Help Box -->
+        <div class="help-box">
+          <h6>
+            <i class="fas fa-info-circle me-2"></i>License Registration Guide
+          </h6>
+          <p>
+            Select your license type first, then choose the vehicle classes you
+            want to be certified for. You can select multiple vehicle classes
+            for comprehensive licensing.
+          </p>
+        </div>
+
+        <form id="licenseForm">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-label" for="licenseType">
+                  <i class="fas fa-certificate me-2"></i>License Type *
+                </label>
+                <select class="form-control" id="licenseType" required>
+                  <option value="">Select License Type</option>
+                  <option value="learner">Learner's License</option>
+                  <option value="restricted">Restricted License</option>
+                  <option value="full">Full License</option>
+                  <option value="heavy">Heavy Vehicle License</option>
+                  <option value="commercial">Commercial License</option>
+                  <option value="international">
+                    International Driving Permit
+                  </option>
+                  <option value="motorcycle">Motorcycle License</option>
+                  <option value="special">Special Vehicle License</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-label" for="examLanguage">
+                  <i class="fas fa-language me-2"></i>Exam Language *
+                </label>
+                <select class="form-control" id="examLanguage" required>
+                  <option value="">Select Language</option>
+                  <option value="sinhala">Sinhala (සිංහල)</option>
+                  <option value="english">English</option>
+                  <option value="tamil">Tamil (தமிழ்)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="vehicleClass">
+              <i class="fas fa-car me-2"></i>Vehicle Classes *
+            </label>
+            <div class="multi-select-container">
+              <select
+                class="form-control scrollable"
+                id="vehicleClass"
+                multiple
+                size="8"
+              >
+                <!-- Options will be populated by JavaScript -->
+              </select>
+              <div class="selected-items" id="selectedVehicleClasses">
+                <span style="color: #6c757d; font-size: 0.9rem"
+                  >No vehicle classes selected</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="nicNumber">
+              <i class="fas fa-id-card me-2"></i>NIC Number *
+            </label>
+            <input
+              type="text"
+              class="form-control"
+              id="nicNumber"
+              placeholder="Enter your NIC number"
+              required
+            />
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-label" for="dateOfBirth">
+                  <i class="fas fa-birthday-cake me-2"></i>Date of Birth *
+                </label>
+                <input
+                  type="date"
+                  class="form-control"
+                  id="dateOfBirth"
+                  required
+                />
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-label" for="phoneNumber">
+                  <i class="fas fa-phone me-2"></i>Phone Number *
+                </label>
+                <input
+                  type="tel"
+                  class="form-control"
+                  id="phoneNumber"
+                  placeholder="+94 XX XXX XXXX"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="address">
+              <i class="fas fa-map-marker-alt me-2"></i>Address *
+            </label>
+            <textarea
+              class="form-control"
+              id="address"
+              rows="3"
+              placeholder="Enter your complete address"
+              required
+            ></textarea>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-label" for="photoUpload">
+                  <i class="fas fa-camera me-2"></i>Passport Size Photo *
+                </label>
+                <input
+                  type="file"
+                  class="form-control"
+                  id="photoUpload"
+                  accept="image/*"
+                  required
+                />
+                <div class="file-preview-container">
+                  <img
+                    id="photoPreview"
+                    class="photo-preview"
+                    src="#"
+                    alt="Photo Preview"
+                  />
+                </div>
+                <div id="photoValidation"></div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-label" for="medicalUpload">
+                  <i class="fas fa-file-medical me-2"></i>Medical Certificate *
+                </label>
+                <input
+                  type="file"
+                  class="form-control"
+                  id="medicalUpload"
+                  accept="application/pdf"
+                  required
+                />
+                <div
+                  class="file-preview"
+                  id="medicalPreview"
+                  style="display: none"
+                >
+                  <i class="fas fa-file-pdf me-2"></i>
+                  <span id="pdfName"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group mt-4">
+            <button type="submit" class="btn-submit">
+              <i class="fas fa-paper-plane me-2"></i> Submit License Application
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
+    <!-- jQuery (Latest 3.x) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+      $(document).ready(function () {
         // Vehicle classes data organized by license type
         const vehicleClassesByLicense = {
-            'learner': [
-                { value: 'A1', text: 'Class A1 - Light Motorcycles (up to 125cc)' },
-                { value: 'B1', text: 'Class B1 - Light Motor Cars (up to 1000cc)' },
-                { value: 'G1', text: 'Class G1 - Agricultural Tractors' }
-            ],
-            'restricted': [
-                { value: 'A1', text: 'Class A1 - Light Motorcycles (up to 125cc)' },
-                { value: 'A', text: 'Class A - Heavy Motorcycles (above 125cc)' },
-                { value: 'B1', text: 'Class B1 - Light Motor Cars (up to 1000cc)' },
-                { value: 'B', text: 'Class B - Motor Cars (above 1000cc)' },
-                { value: 'G1', text: 'Class G1 - Agricultural Tractors' }
-            ],
-            'full': [
-                { value: 'A1', text: 'Class A1 - Light Motorcycles (up to 125cc)' },
-                { value: 'A', text: 'Class A - Heavy Motorcycles (above 125cc)' },
-                { value: 'B1', text: 'Class B1 - Light Motor Cars (up to 1000cc)' },
-                { value: 'B', text: 'Class B - Motor Cars (above 1000cc)' },
-                { value: 'C1', text: 'Class C1 - Light Goods Vehicles (3.5t - 7.5t)' },
-                { value: 'C', text: 'Class C - Heavy Goods Vehicles (above 7.5t)' },
-                { value: 'D1', text: 'Class D1 - Minibuses (9-16 seats)' },
-                { value: 'D', text: 'Class D - Large Buses (above 16 seats)' },
-                { value: 'G1', text: 'Class G1 - Agricultural Tractors' },
-                { value: 'G', text: 'Class G - Heavy Agricultural Vehicles' }
-            ],
-            'heavy': [
-                { value: 'C1', text: 'Class C1 - Light Goods Vehicles (3.5t - 7.5t)' },
-                { value: 'C', text: 'Class C - Heavy Goods Vehicles (above 7.5t)' },
-                { value: 'CE', text: 'Class CE - Articulated Heavy Goods Vehicles' },
-                { value: 'D1', text: 'Class D1 - Minibuses (9-16 seats)' },
-                { value: 'D', text: 'Class D - Large Buses (above 16 seats)' },
-                { value: 'DE', text: 'Class DE - Articulated Buses' },
-                { value: 'G', text: 'Class G - Heavy Agricultural Vehicles' },
-                { value: 'H', text: 'Class H - Construction Vehicles' }
-            ],
-            'commercial': [
-                { value: 'J1', text: 'Class J1 - Three Wheeler (Commercial)' },
-                { value: 'J2', text: 'Class J2 - Taxi/Hire Cars' },
-                { value: 'J3', text: 'Class J3 - Tourist Transport Vehicles' },
-                { value: 'C', text: 'Class C - Heavy Goods Vehicles (above 7.5t)' },
-                { value: 'CE', text: 'Class CE - Articulated Heavy Goods Vehicles' },
-                { value: 'D', text: 'Class D - Large Buses (above 16 seats)' },
-                { value: 'DE', text: 'Class DE - Articulated Buses' }
-            ],
-            'international': [
-                { value: 'A1', text: 'Class A1 - Light Motorcycles (up to 125cc)' },
-                { value: 'A', text: 'Class A - Heavy Motorcycles (above 125cc)' },
-                { value: 'B1', text: 'Class B1 - Light Motor Cars (up to 1000cc)' },
-                { value: 'B', text: 'Class B - Motor Cars (above 1000cc)' },
-                { value: 'C1', text: 'Class C1 - Light Goods Vehicles (3.5t - 7.5t)' },
-                { value: 'C', text: 'Class C - Heavy Goods Vehicles (above 7.5t)' },
-                { value: 'D1', text: 'Class D1 - Minibuses (9-16 seats)' },
-                { value: 'D', text: 'Class D - Large Buses (above 16 seats)' }
-            ],
-            'motorcycle': [
-                { value: 'A1', text: 'Class A1 - Light Motorcycles (up to 125cc)' },
-                { value: 'A2', text: 'Class A2 - Medium Motorcycles (125cc - 400cc)' },
-                { value: 'A', text: 'Class A - Heavy Motorcycles (above 400cc)' },
-                { value: 'AM', text: 'Class AM - Mopeds (up to 50cc)' },
-                { value: 'Q', text: 'Class Q - Three Wheelers (Private)' }
-            ],
-            'special': [
-                { value: 'F', text: 'Class F - Emergency Vehicles (Ambulance, Fire)' },
-                { value: 'K', text: 'Class K - Military Vehicles' },
-                { value: 'L', text: 'Class L - Special Construction Vehicles' },
-                { value: 'M', text: 'Class M - Cranes and Mobile Equipment' },
-                { value: 'N', text: 'Class N - Road Maintenance Vehicles' },
-                { value: 'P', text: 'Class P - Police Vehicles' },
-                { value: 'R', text: 'Class R - Racing Vehicles' },
-                { value: 'S', text: 'Class S - School Transport' }
-            ]
+          learner: [
+            { value: "A1", text: "Class A1 - Light Motorcycles (up to 125cc)" },
+            { value: "B1", text: "Class B1 - Light Motor Cars (up to 1000cc)" },
+            { value: "G1", text: "Class G1 - Agricultural Tractors" },
+          ],
+          restricted: [
+            { value: "A1", text: "Class A1 - Light Motorcycles (up to 125cc)" },
+            { value: "A", text: "Class A - Heavy Motorcycles (above 125cc)" },
+            { value: "B1", text: "Class B1 - Light Motor Cars (up to 1000cc)" },
+            { value: "B", text: "Class B - Motor Cars (above 1000cc)" },
+            { value: "G1", text: "Class G1 - Agricultural Tractors" },
+          ],
+          full: [
+            { value: "A1", text: "Class A1 - Light Motorcycles (up to 125cc)" },
+            { value: "A", text: "Class A - Heavy Motorcycles (above 125cc)" },
+            { value: "B1", text: "Class B1 - Light Motor Cars (up to 1000cc)" },
+            { value: "B", text: "Class B - Motor Cars (above 1000cc)" },
+            {
+              value: "C1",
+              text: "Class C1 - Light Goods Vehicles (3.5t - 7.5t)",
+            },
+            { value: "C", text: "Class C - Heavy Goods Vehicles (above 7.5t)" },
+            { value: "D1", text: "Class D1 - Minibuses (9-16 seats)" },
+            { value: "D", text: "Class D - Large Buses (above 16 seats)" },
+            { value: "G1", text: "Class G1 - Agricultural Tractors" },
+            { value: "G", text: "Class G - Heavy Agricultural Vehicles" },
+          ],
+          heavy: [
+            {
+              value: "C1",
+              text: "Class C1 - Light Goods Vehicles (3.5t - 7.5t)",
+            },
+            { value: "C", text: "Class C - Heavy Goods Vehicles (above 7.5t)" },
+            {
+              value: "CE",
+              text: "Class CE - Articulated Heavy Goods Vehicles",
+            },
+            { value: "D1", text: "Class D1 - Minibuses (9-16 seats)" },
+            { value: "D", text: "Class D - Large Buses (above 16 seats)" },
+            { value: "DE", text: "Class DE - Articulated Buses" },
+            { value: "G", text: "Class G - Heavy Agricultural Vehicles" },
+            { value: "H", text: "Class H - Construction Vehicles" },
+          ],
+          commercial: [
+            { value: "J1", text: "Class J1 - Three Wheeler (Commercial)" },
+            { value: "J2", text: "Class J2 - Taxi/Hire Cars" },
+            { value: "J3", text: "Class J3 - Tourist Transport Vehicles" },
+            { value: "C", text: "Class C - Heavy Goods Vehicles (above 7.5t)" },
+            {
+              value: "CE",
+              text: "Class CE - Articulated Heavy Goods Vehicles",
+            },
+            { value: "D", text: "Class D - Large Buses (above 16 seats)" },
+            { value: "DE", text: "Class DE - Articulated Buses" },
+          ],
+          international: [
+            { value: "A1", text: "Class A1 - Light Motorcycles (up to 125cc)" },
+            { value: "A", text: "Class A - Heavy Motorcycles (above 125cc)" },
+            { value: "B1", text: "Class B1 - Light Motor Cars (up to 1000cc)" },
+            { value: "B", text: "Class B - Motor Cars (above 1000cc)" },
+            {
+              value: "C1",
+              text: "Class C1 - Light Goods Vehicles (3.5t - 7.5t)",
+            },
+            { value: "C", text: "Class C - Heavy Goods Vehicles (above 7.5t)" },
+            { value: "D1", text: "Class D1 - Minibuses (9-16 seats)" },
+            { value: "D", text: "Class D - Large Buses (above 16 seats)" },
+          ],
+          motorcycle: [
+            { value: "A1", text: "Class A1 - Light Motorcycles (up to 125cc)" },
+            {
+              value: "A2",
+              text: "Class A2 - Medium Motorcycles (125cc - 400cc)",
+            },
+            { value: "A", text: "Class A - Heavy Motorcycles (above 400cc)" },
+            { value: "AM", text: "Class AM - Mopeds (up to 50cc)" },
+            { value: "Q", text: "Class Q - Three Wheelers (Private)" },
+          ],
+          special: [
+            {
+              value: "F",
+              text: "Class F - Emergency Vehicles (Ambulance, Fire)",
+            },
+            { value: "K", text: "Class K - Military Vehicles" },
+            { value: "L", text: "Class L - Special Construction Vehicles" },
+            { value: "M", text: "Class M - Cranes and Mobile Equipment" },
+            { value: "N", text: "Class N - Road Maintenance Vehicles" },
+            { value: "P", text: "Class P - Police Vehicles" },
+            { value: "R", text: "Class R - Racing Vehicles" },
+            { value: "S", text: "Class S - School Transport" },
+          ],
         };
 
         let selectedVehicleClasses = [];
 
         // Toggle mobile menu
-        const navbarToggler = document.querySelector('.navbar-toggler');
-        const navbarNav = document.querySelector('.navbar-nav');
-        
-        if (navbarToggler) {
-            navbarToggler.addEventListener('click', () => {
-                navbarNav.classList.toggle('show');
-            });
-        }
-        
+        $(".navbar-toggler").on("click", function () {
+          $(".navbar-nav").toggleClass("show");
+        });
+
         // License Modal Functions
-        function showLicenseForm() {
-            document.getElementById('licenseModal').style.display = 'block';
-        }
-        
-        function closeLicenseModal() {
-            document.getElementById('licenseModal').style.display = 'none';
-            resetForm();
-        }
-        
+        window.showLicenseForm = function () {
+          $("#licenseModal").show();
+        };
+
+        window.closeLicenseModal = function () {
+          $("#licenseModal").hide();
+          resetForm();
+        };
+
         // Reset form function
         function resetForm() {
-            document.getElementById('licenseForm').reset();
-            selectedVehicleClasses = [];
-            updateSelectedVehicleClassesDisplay();
-            clearValidationMessages();
-            hidePhotoPreview();
-            hideMedicalPreview();
+          $("#licenseForm")[0].reset();
+          selectedVehicleClasses = [];
+          updateSelectedVehicleClassesDisplay();
+          clearValidationMessages();
+          hidePhotoPreview();
+          hideMedicalPreview();
         }
-        
+
         // Close modal when clicking outside
-        window.onclick = function(event) {
-            const modal = document.getElementById('licenseModal');
-            if (event.target == modal) {
-                modal.style.display = 'none';
-                resetForm();
-            }
-        }
-        
+        $(window).on("click", function (event) {
+          const modal = $("#licenseModal")[0];
+          if (event.target == modal) {
+            $(modal).hide();
+            resetForm();
+          }
+        });
+
         // License type change handler
-        document.getElementById('licenseType').addEventListener('change', function() {
-            const licenseType = this.value;
-            const vehicleClassSelect = document.getElementById('vehicleClass');
-            
-            // Clear previous options
-            vehicleClassSelect.innerHTML = '';
-            selectedVehicleClasses = [];
-            updateSelectedVehicleClassesDisplay();
-            
-            if (licenseType && vehicleClassesByLicense[licenseType]) {
-                // Populate vehicle classes based on license type
-                vehicleClassesByLicense[licenseType].forEach(vehicleClass => {
-                    const option = document.createElement('option');
-                    option.value = vehicleClass.value;
-                    option.textContent = vehicleClass.text;
-                    vehicleClassSelect.appendChild(option);
-                });
-                
-                // Enable the select
-                vehicleClassSelect.disabled = false;
-            } else {
-                vehicleClassSelect.disabled = true;
-            }
+        $("#licenseType").on("change", function () {
+          const licenseType = $(this).val();
+          const vehicleClassSelect = $("#vehicleClass");
+
+          // Clear previous options
+          vehicleClassSelect.empty();
+          selectedVehicleClasses = [];
+          updateSelectedVehicleClassesDisplay();
+
+          if (licenseType && vehicleClassesByLicense[licenseType]) {
+            // Populate vehicle classes based on license type
+            $.each(
+              vehicleClassesByLicense[licenseType],
+              function (index, vehicleClass) {
+                vehicleClassSelect.append(
+                  $("<option></option>")
+                    .val(vehicleClass.value)
+                    .text(vehicleClass.text)
+                );
+              }
+            );
+
+            // Enable the select
+            vehicleClassSelect.prop("disabled", false);
+          } else {
+            vehicleClassSelect.prop("disabled", true);
+          }
         });
-        
+
         // Vehicle class selection handler
-        document.getElementById('vehicleClass').addEventListener('change', function() {
-            const selectedOptions = Array.from(this.selectedOptions);
-            
-            selectedOptions.forEach(option => {
-                const value = option.value;
-                const text = option.text;
-                
-                // Check if not already selected
-                if (!selectedVehicleClasses.some(item => item.value === value)) {
-                    selectedVehicleClasses.push({ value, text });
-                }
-            });
-            
-            // Clear selection in the select element
-            this.selectedIndex = -1;
-            
-            updateSelectedVehicleClassesDisplay();
+        $("#vehicleClass").on("change", function () {
+          const selectedOptions = $(this).find("option:selected");
+
+          selectedOptions.each(function () {
+            const value = $(this).val();
+            const text = $(this).text();
+
+            // Check if not already selected
+            if (!selectedVehicleClasses.some((item) => item.value === value)) {
+              selectedVehicleClasses.push({ value, text });
+            }
+          });
+
+          // Clear selection in the select element
+          $(this).val([]);
+
+          updateSelectedVehicleClassesDisplay();
         });
-        
+
         // Update selected vehicle classes display
         function updateSelectedVehicleClassesDisplay() {
-            const container = document.getElementById('selectedVehicleClasses');
-            
-            if (selectedVehicleClasses.length === 0) {
-                container.innerHTML = '<span style="color: #6c757d; font-size: 0.9rem;">No vehicle classes selected</span>';
-            } else {
-                container.innerHTML = selectedVehicleClasses.map(item => `
-                    <div class="selected-item">
-                        ${item.text}
-                        <span class="remove-item" onclick="removeVehicleClass('${item.value}')">×</span>
-                    </div>
-                `).join('');
-            }
+          const container = $("#selectedVehicleClasses");
+
+          if (selectedVehicleClasses.length === 0) {
+            container.html(
+              '<span style="color: #6c757d; font-size: 0.9rem;">No vehicle classes selected</span>'
+            );
+          } else {
+            container.html(
+              selectedVehicleClasses
+                .map(
+                  (item) => `
+    <div class="selected-item">
+        ${item.text}
+        <span class="remove-item" onclick="removeVehicleClass('${item.value}')">×</span>
+    </div>
+    `
+                )
+                .join("")
+            );
+          }
         }
-        
+
         // Remove vehicle class
-        function removeVehicleClass(value) {
-            selectedVehicleClasses = selectedVehicleClasses.filter(item => item.value !== value);
-            updateSelectedVehicleClassesDisplay();
-        }
-        
+        window.removeVehicleClass = function (value) {
+          selectedVehicleClasses = selectedVehicleClasses.filter(
+            (item) => item.value !== value
+          );
+          updateSelectedVehicleClassesDisplay();
+        };
+
         // Photo validation function
         function validatePhoto(file) {
-            const validationDiv = document.getElementById('photoValidation');
-            const maxSize = 2 * 1024 * 1024; // 2MB
-            const minDimension = 300;
-            const maxDimension = 2000;
-            const aspectRatioTolerance = 0.1;
-            
-            // Clear previous validation
-            validationDiv.innerHTML = '';
-            
-            if (!file) return false;
-            
-            // Check file type
-            if (!file.type.match(/image\/(jpeg|jpg|png)$/i)) {
-                showValidationMessage('photoValidation', 'Please upload a JPEG or PNG image file.', 'error');
-                return false;
-            }
-            
-            // Check file size
-            if (file.size > maxSize) {
-                showValidationMessage('photoValidation', 'Photo size must be less than 2MB.', 'error');
-                return false;
-            }
-            
-            // Check image dimensions and quality
-            return new Promise((resolve) => {
-                const img = new Image();
-                img.onload = function() {
-                    const width = this.naturalWidth;
-                    const height = this.naturalHeight;
-                    const aspectRatio = width / height;
-                    
-                    let errors = [];
-                    
-                    // Check dimensions
-                    if (width < minDimension || height < minDimension) {
-                        errors.push(`Minimum dimensions: ${minDimension}x${minDimension}px`);
-                    }
-                    
-                    if (width > maxDimension || height > maxDimension) {
-                        errors.push(`Maximum dimensions: ${maxDimension}x${maxDimension}px`);
-                    }
-                    
-                    // Check aspect ratio (should be close to square for passport photo)
-                    if (Math.abs(aspectRatio - 1) > aspectRatioTolerance) {
-                        errors.push('Photo should be square or nearly square (passport photo format)');
-                    }
-                    
-                    // Check if image is too blurry (basic check)
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    canvas.width = width;
-                    canvas.height = height;
-                    ctx.drawImage(this, 0, 0);
-                    
-                    if (errors.length > 0) {
-                        showValidationMessage('photoValidation', errors.join('. '), 'error');
-                        resolve(false);
-                    } else {
-                        showValidationMessage('photoValidation', 'Photo validation successful! Image quality is good.', 'success');
-                        resolve(true);
-                    }
-                };
-                
-                img.onerror = function() {
-                    showValidationMessage('photoValidation', 'Unable to load image. Please try another file.', 'error');
-                    resolve(false);
-                };
-                
-                img.src = URL.createObjectURL(file);
-            });
+          const validationDiv = $("#photoValidation");
+          const maxSize = 2 * 1024 * 1024; // 2MB
+          const minDimension = 300;
+          const maxDimension = 2000;
+          const aspectRatioTolerance = 0.1;
+
+          // Clear previous validation
+          validationDiv.empty();
+
+          if (!file) return false;
+
+          // Check file type
+          if (!file.type.match(/image\/(jpeg|jpg|png)$/i)) {
+            showValidationMessage(
+              "photoValidation",
+              "Please upload a JPEG or PNG image file.",
+              "error"
+            );
+            return false;
+          }
+
+          // Check file size
+          if (file.size > maxSize) {
+            showValidationMessage(
+              "photoValidation",
+              "Photo size must be less than 2MB.",
+              "error"
+            );
+            return false;
+          }
+
+          // Check image dimensions and quality
+          return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = function () {
+              const width = this.naturalWidth;
+              const height = this.naturalHeight;
+              const aspectRatio = width / height;
+
+              let errors = [];
+
+              // Check dimensions
+              if (width < minDimension || height < minDimension) {
+                errors.push(
+                  `Minimum dimensions: ${minDimension}x${minDimension}px`
+                );
+              }
+
+              if (width > maxDimension || height > maxDimension) {
+                errors.push(
+                  `Maximum dimensions: ${maxDimension}x${maxDimension}px`
+                );
+              }
+
+              // Check aspect ratio (should be close to square for passport photo)
+              if (Math.abs(aspectRatio - 1) > aspectRatioTolerance) {
+                errors.push(
+                  "Photo should be square or nearly square (passport photo format)"
+                );
+              }
+
+              // Check if image is too blurry (basic check)
+              const canvas = document.createElement("canvas");
+              const ctx = canvas.getContext("2d");
+              canvas.width = width;
+              canvas.height = height;
+              ctx.drawImage(this, 0, 0);
+
+              if (errors.length > 0) {
+                showValidationMessage(
+                  "photoValidation",
+                  errors.join(". "),
+                  "error"
+                );
+                resolve(false);
+              } else {
+                showValidationMessage(
+                  "photoValidation",
+                  "Photo validation successful! Image quality is good.",
+                  "success"
+                );
+                resolve(true);
+              }
+            };
+
+            img.onerror = function () {
+              showValidationMessage(
+                "photoValidation",
+                "Unable to load image. Please try another file.",
+                "error"
+              );
+              resolve(false);
+            };
+
+            img.src = URL.createObjectURL(file);
+          });
         }
-        
+
         // Show validation message
         function showValidationMessage(containerId, message, type) {
-            const container = document.getElementById(containerId);
-            const className = type === 'error' ? 'validation-error' : 'validation-success';
-            const icon = type === 'error' ? 'fas fa-exclamation-triangle' : 'fas fa-check-circle';
-            
-            container.innerHTML = `
-                <div class="validation-message ${className}">
-                    <i class="${icon} me-2"></i>${message}
-                </div>
-            `;
+          const container = $("#" + containerId);
+          const className =
+            type === "error" ? "validation-error" : "validation-success";
+          const icon =
+            type === "error"
+              ? "fas fa-exclamation-triangle"
+              : "fas fa-check-circle";
+
+          container.html(`
+    <div class="validation-message ${className}">
+        <i class="${icon} me-2"></i>${message}
+    </div>
+    `);
         }
-        
+
         // Clear validation messages
         function clearValidationMessages() {
-            const validationContainers = ['photoValidation'];
-            validationContainers.forEach(id => {
-                const container = document.getElementById(id);
-                if (container) container.innerHTML = '';
-            });
+          ["photoValidation"].forEach((id) => {
+            $("#" + id).empty();
+          });
         }
-        
+
         // File Preview Functions
-        document.getElementById('photoUpload').addEventListener('change', async function(e) {
-            const [file] = e.target.files;
-            if (file) {
-                const preview = document.getElementById('photoPreview');
-                preview.style.display = 'block';
-                preview.src = URL.createObjectURL(file);
-                
-                // Validate photo
-                await validatePhoto(file);
-            } else {
-                hidePhotoPreview();
-            }
+        $("#photoUpload").on("change", async function (e) {
+          const file = e.target.files[0];
+          if (file) {
+            const preview = $("#photoPreview");
+            preview.show();
+            preview.attr("src", URL.createObjectURL(file));
+
+            // Validate photo
+            await validatePhoto(file);
+          } else {
+            hidePhotoPreview();
+          }
         });
-        
-        document.getElementById('medicalUpload').addEventListener('change', function(e) {
-            const [file] = e.target.files;
-            if (file) {
-                const preview = document.getElementById('medicalPreview');
-                const pdfName = document.getElementById('pdfName');
-                preview.style.display = 'flex';
-                pdfName.textContent = file.name;
-            } else {
-                hideMedicalPreview();
-            }
+
+        $("#medicalUpload").on("change", function (e) {
+          const file = e.target.files[0];
+          if (file) {
+            const preview = $("#medicalPreview");
+            const pdfName = $("#pdfName");
+            preview.show();
+            pdfName.text(file.name);
+          } else {
+            hideMedicalPreview();
+          }
         });
-        
+
         function hidePhotoPreview() {
-            const preview = document.getElementById('photoPreview');
-            preview.style.display = 'none';
-            preview.src = '#';
+          const preview = $("#photoPreview");
+          preview.hide();
+          preview.attr("src", "#");
         }
-        
+
         function hideMedicalPreview() {
-            const preview = document.getElementById('medicalPreview');
-            preview.style.display = 'none';
+          $("#medicalPreview").hide();
         }
-        
+
         // Form Submission
-        document.getElementById('licenseForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Validate that at least one vehicle class is selected
-            if (selectedVehicleClasses.length === 0) {
-                alert('Please select at least one vehicle class.');
-                return;
-            }
-            
-            // Get form data
-            const formData = {
-                licenseType: document.getElementById('licenseType').value,
-                examLanguage: document.getElementById('examLanguage').value,
-                vehicleClasses: selectedVehicleClasses,
-                nicNumber: document.getElementById('nicNumber').value,
-                dateOfBirth: document.getElementById('dateOfBirth').value,
-                phoneNumber: document.getElementById('phoneNumber').value,
-                address: document.getElementById('address').value,
-                photo: document.getElementById('photoUpload').files[0],
-                medical: document.getElementById('medicalUpload').files[0]
-            };
-            
-            // Simple validation
-            if (!formData.licenseType || !formData.examLanguage || !formData.nicNumber || 
-                !formData.dateOfBirth || !formData.phoneNumber || !formData.address || 
-                !formData.photo || !formData.medical) {
-                alert('Please fill in all required fields.');
-                return;
-            }
-            
-            // Show success message
-            alert(`License application submitted successfully!
+        $("#licenseForm").on("submit", function (e) {
+          e.preventDefault();
 
-License Type: ${formData.licenseType}
-Exam Language: ${formData.examLanguage}
-Vehicle Classes: ${selectedVehicleClasses.map(vc => vc.value).join(', ')}
-NIC: ${formData.nicNumber}
+          // Validate that at least one vehicle class is selected
+          if (selectedVehicleClasses.length === 0) {
+            alert("Please select at least one vehicle class.");
+            return;
+          }
 
-Your application will be reviewed within 5-7 business days.`);
-            
-            closeLicenseModal();
+          // Get form data
+          const formData = {
+            licenseType: $("#licenseType").val(),
+            examLanguage: $("#examLanguage").val(),
+            vehicleClasses: selectedVehicleClasses,
+            nicNumber: $("#nicNumber").val(),
+            dateOfBirth: $("#dateOfBirth").val(),
+            phoneNumber: $("#phoneNumber").val(),
+            address: $("#address").val(),
+            photo: $("#photoUpload")[0].files[0],
+            medical: $("#medicalUpload")[0].files[0],
+          };
+
+          // Simple validation
+          if (
+            !formData.licenseType ||
+            !formData.examLanguage ||
+            !formData.nicNumber ||
+            !formData.dateOfBirth ||
+            !formData.phoneNumber ||
+            !formData.address ||
+            !formData.photo ||
+            !formData.medical
+          ) {
+            alert("Please fill in all required fields.");
+            return;
+          }
+
+          // Show success message
+          alert(`License application submitted successfully!
+
+    License Type: ${formData.licenseType}
+    Exam Language: ${formData.examLanguage}
+    Vehicle Classes: ${selectedVehicleClasses.map((vc) => vc.value).join(", ")}
+    NIC: ${formData.nicNumber}
+
+    Your application will be reviewed within 5-7 business days.`);
+
+          closeLicenseModal();
         });
-        
+
         // Phone number formatting
-        document.getElementById('phoneNumber').addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value.startsWith('94')) {
-                value = value.substring(2);
-            }
-            if (value.startsWith('0')) {
-                value = value.substring(1);
-            }
-            if (value.length > 0) {
-                value = '+94 ' + value.replace(/(\d{2})(\d{3})(\d{4})/, '$1 $2 $3');
-            }
-            e.target.value = value;
+        $("#phoneNumber").on("input", function (e) {
+          let value = $(this).val().replace(/\D/g, "");
+          if (value.startsWith("94")) {
+            value = value.substring(2);
+          }
+          if (value.startsWith("0")) {
+            value = value.substring(1);
+          }
+          if (value.length > 0) {
+            value = "+94 " + value.replace(/(\d{2})(\d{3})(\d{4})/, "$1 $2 $3");
+          }
+          $(this).val(value);
         });
-        
+
         // NIC validation
-        document.getElementById('nicNumber').addEventListener('input', function(e) {
-            let value = e.target.value.toUpperCase();
-            // Remove any non-alphanumeric characters
-            value = value.replace(/[^A-Z0-9]/g, '');
-            e.target.value = value;
+        $("#nicNumber").on("input", function (e) {
+          let value = $(this).val().toUpperCase();
+          // Remove any non-alphanumeric characters
+          value = value.replace(/[^A-Z0-9]/g, "");
+          $(this).val(value);
         });
-        
+
         // Date validation (must be 18+ years old)
-        document.getElementById('dateOfBirth').addEventListener('change', function(e) {
-            const birthDate = new Date(e.target.value);
-            const today = new Date();
-            let age = today.getFullYear() - birthDate.getFullYear();
-            const monthDiff = today.getMonth() - birthDate.getMonth();
-            
-            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-                age--;
-            }
-            
-            if (age < 18) {
-                alert('You must be at least 18 years old to apply for a license.');
-                e.target.value = '';
-            }
+        $("#dateOfBirth").on("change", function (e) {
+          const birthDate = new Date($(this).val());
+          const today = new Date();
+          let age = today.getFullYear() - birthDate.getFullYear();
+          const monthDiff = today.getMonth() - birthDate.getMonth();
+
+          if (
+            monthDiff < 0 ||
+            (monthDiff === 0 && today.getDate() < birthDate.getDate())
+          ) {
+            age--;
+          }
+
+          if (age < 18) {
+            alert("You must be at least 18 years old to apply for a license.");
+            $(this).val("");
+          }
         });
-        
+
         // Logout Function
-        function logout() {
-            if (confirm('Are you sure you want to logout?')) {
-                window.location.href = '../index.html';
-            }
-        }
-        
+        window.logout = function () {
+          if (confirm("Are you sure you want to logout?")) {
+            window.location.href = "../index.html";
+          }
+        };
+
         // Payment Function
-        function showPaymentForm() {
-            alert('Payment functionality will redirect to secure payment gateway.');
-        }
-        
+        window.showPaymentForm = function () {
+          alert(
+            "Payment functionality will redirect to secure payment gateway."
+          );
+        };
+
         // Initialize form
-        document.addEventListener('DOMContentLoaded', function() {
-            // Disable vehicle class select initially
-            document.getElementById('vehicleClass').disabled = true;
-            
-            // Set today's date as max for date of birth (18 years ago)
-            const today = new Date();
-            const eighteenYearsAgo = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
-            document.getElementById('dateOfBirth').max = eighteenYearsAgo.toISOString().split('T')[0];
-        });
+        // Disable vehicle class select initially
+        $("#vehicleClass").prop("disabled", true);
+
+        // Set today's date as max for date of birth (18 years ago)
+        const today = new Date();
+        const eighteenYearsAgo = new Date(
+          today.getFullYear() - 18,
+          today.getMonth(),
+          today.getDate()
+        );
+        $("#dateOfBirth").attr(
+          "max",
+          eighteenYearsAgo.toISOString().split("T")[0]
+        );
+      });
     </script>
-</body>
+  </body>
 </html>

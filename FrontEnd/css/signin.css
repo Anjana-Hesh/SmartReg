@@ -1,48 +1,165 @@
 body {
-    margin: 0;
-    padding: 0;
-    background: linear-gradient(to right, #232526, #414345);
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  position: relative;
+  background: url("assets/images/SigninBack.gif") no-repeat center center fixed;
+  background-size: cover;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
-.glass-card {
-    width: 100%;
-    max-width: 400px;
-    padding: 2rem;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    color: white;
+
+body::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 0;
 }
-.form-control {
-    background-color: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: white;
+
+.container-fluid {
+  position: relative;
+  z-index: 1;
 }
-.form-control:focus {
-    background-color: rgba(255, 255, 255, 0.3);
-    box-shadow: none;
+
+.card-glass {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
-.btn-glass {
-    background: #00C9FF;
-    background: linear-gradient(to right, #92FE9D, #00C9FF);
-    border: none;
-    color: black;
-    font-weight: bold;
+
+.form-control-glass {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  transition: all 0.3s ease;
 }
-.btn-glass:hover {
-    opacity: 0.9;
+
+.form-control-glass:focus {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: white;
+  box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.25);
 }
-a {
-    color: #00C9FF;
-    text-decoration: none;
+
+.form-control-glass::placeholder {
+  color: rgba(255, 255, 255, 0.6);
 }
-a:hover {
-    text-decoration: underline;
+
+.btn-primary-glass {
+  background: rgba(13, 110, 253, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.btn-primary-glass:hover {
+  background: rgba(13, 110, 253, 0.9);
+  transform: translateY(-2px);
+}
+
+.btn-google-glass {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.btn-google-glass:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.content-container {
+  margin-left: 15%;
+  max-width: 450px;
+  animation: fadeIn 0.8s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.floating-element {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 20px 0;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.divider::before {
+  margin-right: 10px;
+}
+
+.divider::after {
+  margin-left: 10px;
+}
+
+h2,
+.form-label,
+.text-secondary,
+.form-check-label {
+  color: white !important;
+}
+
+.text-primary {
+  color: rgba(13, 110, 253, 0.9) !important;
+}
+
+.swal2-popup.glass-theme {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(12px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.password-toggle {
+  background: none !important;
+  border: none !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  padding: 0 !important;
+}
+
+.password-toggle:hover {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+@media (max-width: 768px) {
+  .content-container {
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0 15px;
+  }
 }
