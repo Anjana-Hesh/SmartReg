@@ -1,5 +1,7 @@
 package lk.ijse.gdse72.backend.util;
 
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -42,9 +44,15 @@ public class JwtUtil {
                     .build()
                     .parseClaimsJws(token);
             return true;
+        } catch (ExpiredJwtException e) {
+            System.out.println("JWT Token expired: " + e.getMessage());
+        } catch (JwtException e) {
+            System.out.println("JWT Token invalid: " + e.getMessage());
         } catch (Exception e) {
-            return false;
+            System.out.println("JWT Token validation error: " + e.getMessage());
         }
+        return false;
     }
+
 
 }

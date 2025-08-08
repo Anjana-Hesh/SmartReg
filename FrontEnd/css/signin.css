@@ -1,6 +1,6 @@
 body {
   position: relative;
-  background: url("assets/images/SigninBack.gif") no-repeat center center fixed;
+  background: url("../assets/images/SigninBack.gif") no-repeat center center fixed;
   background-size: cover;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }

@@ -1,5 +1,8 @@
-// Dashboard Functions
+// Dashboard Functions - CORRECTED VERSION
 document.addEventListener('DOMContentLoaded', function() {
+    // Check authentication first
+    checkAuthentication();
+    
     // Initialize dashboard
     initializeDashboard();
 
@@ -9,6 +12,32 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load initial data
     loadDashboardData();
 });
+
+function checkAuthentication() {
+    // Check if user is authenticated using the correct keys
+    const token = localStorage.getItem('smartreg_token') || sessionStorage.getItem('smartreg_token');
+    const userData = localStorage.getItem('smartreg_user');
+    
+    if (!token || !userData) {
+        // Not authenticated, redirect to login
+        window.location.href = '../index.html';
+        return;
+    }
+    
+    // Parse user data and display user info
+    try {
+        const user = JSON.parse(userData);
+        // Update user display elements if they exist
+        const userNameElement = document.getElementById('userName') || document.getElementById('driverName');
+        if (userNameElement && user.fullName) {
+            userNameElement.textContent = user.fullName;
+        }
+    } catch (e) {
+        console.error('Error parsing user data:', e);
+        // Clear corrupted data and redirect
+        performLogout();
+    }
+}
 
 function initializeDashboard() {
     // Add smooth scrolling
@@ -56,6 +85,59 @@ function addEventListeners() {
             const action = this.textContent.trim();
             handleQuickAction(action);
         });
+    });
+
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
+    }
+    
+    // Also handle global logout function if it exists
+    window.logout = handleLogout;
+}
+
+function handleLogout() {
+    // Show confirmation dialog
+    Swal.fire({
+        title: 'Logout Confirmation',
+        text: 'Are you sure you want to logout?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, logout',
+        background: '#1a1a1a',
+        color: '#ffffff'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            performLogout();
+        }
+    });
+}
+
+function performLogout() {
+    // CORRECTED: Use the exact same keys as in your login system
+    
+    // 1. Clear all auth tokens and user data - USING CORRECT KEYS
+    localStorage.removeItem('smartreg_token');      // Correct key
+    sessionStorage.removeItem('smartreg_token');    // Correct key
+    localStorage.removeItem('smartreg_user');       // Correct key
+    
+    // 2. Set logout flag - USING CORRECT KEY
+    localStorage.setItem('smartreg_logout', 'true'); // Correct key
+    
+    // 3. Show logout success message
+    Swal.fire({
+        title: 'Logged Out',
+        text: 'You have been successfully logged out.',
+        icon: 'success',
+        timer: 1500,
+        showConfirmButton: false,
+        background: '#1a1a1a',
+        color: '#ffffff'
+    }).then(() => {
+        // 4. Redirect to login page
+        window.location.href = '../index.html';
     });
 }
 
@@ -150,4 +232,25 @@ function loadPageContent(page) {
         // Load actual page content here
         console.log(`Loading ${page} content...`);
     }, 800);
+}
+
+function showLoading() {
+    // Add loading spinner or overlay
+    console.log('Loading...');
+}
+
+function hideLoading() {
+    // Remove loading spinner or overlay
+    console.log('Loading complete');
+}
+
+function showAlert(message, type) {
+    // Show alert message
+    Swal.fire({
+        title: type === 'info' ? 'Information' : 'Alert',
+        text: message,
+        icon: type,
+        background: '#1a1a1a',
+        color: '#ffffff'
+    });
 }

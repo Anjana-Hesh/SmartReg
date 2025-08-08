@@ -1,4 +1,14 @@
 $(document).ready(function () {
+    // Get driver data from local storage - CORRECTED
+    let userData = JSON.parse(localStorage.getItem('smartreg_user') || '{}');
+    let currentDriverId = userData.id;
+    
+    if (!currentDriverId) {
+        // Redirect to login if no driver ID found
+        window.location.href = "../index.html";
+        return;
+    }
+
     // Vehicle classes data organized by license type
     const vehicleClassesByLicense = {
         learner: [
@@ -95,6 +105,88 @@ $(document).ready(function () {
     };
 
     let selectedVehicleClasses = [];
+
+    // Initialize form
+    function initialize() {
+        // Disable vehicle class select initially
+        $("#vehicleClass").prop("disabled", true);
+
+        // Set today's date as max for date of birth (18 years ago)
+        const today = new Date();
+        const eighteenYearsAgo = new Date(
+            today.getFullYear() - 18,
+            today.getMonth(),
+            today.getDate()
+        );
+        $("#dateOfBirth").attr(
+            "max",
+            eighteenYearsAgo.toISOString().split("T")[0]
+        );
+
+        // Load driver data - CORRECTED: Use userData from localStorage
+        loadDriverData(userData);
+
+        // Load notifications
+        loadNotifications();
+
+        // Load pending applications count
+        updateNotificationBadge();
+    }
+
+    // Load driver data - CORRECTED: Accept userData object
+    function loadDriverData(userData) {
+        // Use data from localStorage first
+        if (userData.fullName) {
+            $("#driverName").text(userData.fullName);
+        }
+        
+        // Optionally fetch additional data from API if needed
+        $.get("/api/v1/drivers/" + currentDriverId)
+            .done(function(data) {
+                // Update with fresh data from server
+                $("#driverName").text(data.name || userData.fullName);
+                // Update other profile fields if needed
+            })
+            .fail(function() {
+                // If API fails, keep using localStorage data
+                console.warn("Failed to load driver data from API, using cached data");
+            });
+    }
+
+    // Load notifications
+    function loadNotifications() {
+        $.get("/api/v1/notifications", { driverId: currentDriverId })
+            .done(function(data) {
+                renderNotifications(data);
+            })
+            .fail(function() {
+                showAlert("Error", "Failed to load notifications", "error");
+            });
+    }
+
+    // Render notifications
+    function renderNotifications(notifications) {
+        const container = $("#notificationList");
+        container.empty();
+
+        if (notifications.length === 0) {
+            container.append('<li class="notification-item">No notifications</li>');
+            return;
+        }
+
+        notifications.forEach(notification => {
+            const item = $(`
+                <li class="notification-item">
+                    <div class="notification-date">
+                        <i class="far fa-calendar-alt me-1"></i> 
+                        ${new Date(notification.date).toLocaleDateString()}
+                    </div>
+                    <div class="notification-text">${notification.message}</div>
+                </li>
+            `);
+            container.append(item);
+        });
+    }
 
     // Toggle mobile menu
     $(".navbar-toggler").on("click", function () {
@@ -193,11 +285,11 @@ $(document).ready(function () {
                 selectedVehicleClasses
                     .map(
                         (item) => `
-    <div class="selected-item">
-        ${item.text}
-        <span class="remove-item" onclick="removeVehicleClass('${item.value}')">×</span>
-    </div>
-    `
+                <div class="selected-item">
+                    ${item.text}
+                    <span class="remove-item" onclick="removeVehicleClass('${item.value}')">×</span>
+                </div>
+                `
                     )
                     .join("")
             );
@@ -323,10 +415,10 @@ $(document).ready(function () {
                 : "fas fa-check-circle";
 
         container.html(`
-    <div class="validation-message ${className}">
-        <i class="${icon} me-2"></i>${message}
-    </div>
-    `);
+            <div class="validation-message ${className}">
+                <i class="${icon} me-2"></i>${message}
+            </div>
+        `);
     }
 
     // Clear validation messages
@@ -373,56 +465,146 @@ $(document).ready(function () {
         $("#medicalPreview").hide();
     }
 
-    // Form Submission
-    $("#licenseForm").on("submit", function (e) {
+    // Form Submission with AJAX - Updated with proper backend URL
+    $("#licenseForm").on("submit", async function (e) {
         e.preventDefault();
+        showLoading(true);
 
         // Validate that at least one vehicle class is selected
         if (selectedVehicleClasses.length === 0) {
-            alert("Please select at least one vehicle class.");
+            showAlert("Error", "Please select at least one vehicle class.", "error");
+            showLoading(false);
             return;
         }
 
-        // Get form data
-        const formData = {
+        // Validate photo
+        const photoFile = $("#photoUpload")[0].files[0];
+        if (!photoFile) {
+            showAlert("Error", "Please upload a passport photo.", "error");
+            showLoading(false);
+            return;
+        }
+
+        const isPhotoValid = await validatePhoto(photoFile);
+        if (!isPhotoValid) {
+            showAlert("Error", "Please upload a valid passport photo.", "error");
+            showLoading(false);
+            return;
+        }
+
+        // Validate medical certificate
+        const medicalFile = $("#medicalUpload")[0].files[0];
+        if (!medicalFile) {
+            showAlert("Error", "Please upload a medical certificate.", "error");
+            showLoading(false);
+            return;
+        }
+
+        // Create FormData object
+        const formData = new FormData();
+        formData.append("photo", photoFile);
+        formData.append("medical", medicalFile);
+        
+        // Create application JSON with current driver ID
+        const applicationData = {
+            driverId: currentDriverId,
             licenseType: $("#licenseType").val(),
             examLanguage: $("#examLanguage").val(),
             vehicleClasses: selectedVehicleClasses,
             nicNumber: $("#nicNumber").val(),
+            bloodGroup: $("#bloodGroup").val(),
             dateOfBirth: $("#dateOfBirth").val(),
             phoneNumber: $("#phoneNumber").val(),
-            address: $("#address").val(),
-            photo: $("#photoUpload")[0].files[0],
-            medical: $("#medicalUpload")[0].files[0],
+            address: $("#address").val()
         };
+        
+        // Add JSON data as a Blob
+        const applicationBlob = new Blob(
+            [JSON.stringify(applicationData)], 
+            { type: "application/json" }
+        );
+        formData.append("application", applicationBlob);
 
-        // Simple validation
-        if (
-            !formData.licenseType ||
-            !formData.examLanguage ||
-            !formData.nicNumber ||
-            !formData.dateOfBirth ||
-            !formData.phoneNumber ||
-            !formData.address ||
-            !formData.photo ||
-            !formData.medical
-        ) {
-            alert("Please fill in all required fields.");
-            return;
+        try {
+            // Submit to backend - using absolute URL
+            const response = await $.ajax({
+                url: "http://localhost:8080/api/v1/applications", // Update with your backend URL
+                type: "POST",
+                data: formData,
+                processData: false,
+                contentType: false
+            });
+
+            showLoading(false);
+            showApplicationModal(response);
+            closeLicenseModal();
+            updateNotificationBadge();
+        } catch (error) {
+            showLoading(false);
+            console.error("Submission error:", error);
+            showAlert("Error", `Failed to submit application: ${error.responseJSON?.message || "Server error"}`, "error");
         }
-
-        // Show success message
-        alert(`License application submitted successfully!
-
-    License Type: ${formData.licenseType}
-    Exam Language: ${formData.examLanguage}
-    Vehicle Classes: ${selectedVehicleClasses.map((vc) => vc.value).join(", ")}
-    NIC: ${formData.nicNumber}
-
-    Your application will be reviewed within 5-7 business days.`);
-
-        closeLicenseModal();
     });
+
+    // Show application modal
+    function showApplicationModal(applicationData) {
+        const modalHtml = `
+            <div class="modal fade" id="applicationModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Application #${applicationData.id}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Application Details</h6>
+                                    <p><strong>License Type:</strong> ${applicationData.licenseType}</p>
+                                    <p><strong>Vehicle Classes:</strong> ${applicationData.vehicleClasses.map(v => v.code).join(', ')}</p>
+                                    <p><strong>Status:</strong> <span class="badge bg-${getStatusBadgeClass(applicationData.status)}">${applicationData.status}</span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Documents</h6>
+                                    <div class="document-preview mb-3">
+                                        <img src="${applicationData.photoPath}" class="img-thumbnail" id="modalPhotoPreview">
+                                    </div>
+                                    <div class="document-actions">
+                                        <a href="${applicationData.medicalCertificatePath}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-file-pdf"></i> View Medical
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Inject modal into DOM
+        $('body').append(modalHtml);
+        const modal = new bootstrap.Modal(document.getElementById('applicationModal'));
+        modal.show();
+
+        // Remove modal when closed
+        $('#applicationModal').on('hidden.bs.modal', function () {
+            $(this).remove();
+        });
+    }
+
+    // Helper function to get badge class based on status
+    function getStatusBadgeClass(status) {
+        switch(status) {
+            case 'APPROVED': return 'success';
+            case 'REJECTED': return 'danger';
+            case 'PENDING': return 'warning';
+            default: return 'secondary';
+        }
+    }
 
     // Phone number formatting
     $("#phoneNumber").on("input", function (e) {
@@ -467,233 +649,28 @@ $(document).ready(function () {
         }
     });
 
-    // Logout Function
-    window.logout = function () {
-        if (confirm("Are you sure you want to logout?")) {
-            window.location.href = "../index.html";
-        }
-    };
-
-    // Payment Function
-    window.showPaymentForm = function () {
-        alert(
-            "Payment functionality will redirect to secure payment gateway."
-        );
-    };
-
-    // Initialize form
-    // Disable vehicle class select initially
-    $("#vehicleClass").prop("disabled", true);
-
-    // Set today's date as max for date of birth (18 years ago)
-    const today = new Date();
-    const eighteenYearsAgo = new Date(
-        today.getFullYear() - 18,
-        today.getMonth(),
-        today.getDate()
-    );
-    $("#dateOfBirth").attr(
-        "max",
-        eighteenYearsAgo.toISOString().split("T")[0]
-    );
-});
-
-$(document).ready(function () {
-    // ... (keep all your existing vehicle classes data and initialization code)
-
-    // Form Submission - Updated with AJAX
-    $("#licenseForm").on("submit", function (e) {
-        e.preventDefault();
-
-        // Validate that at least one vehicle class is selected
-        if (selectedVehicleClasses.length === 0) {
-            showAlert("Error", "Please select at least one vehicle class.", "error");
-            return;
-        }
-
-        // Create FormData object to handle file uploads
-        const formData = new FormData();
-        formData.append("licenseType", $("#licenseType").val());
-        formData.append("examLanguage", $("#examLanguage").val());
-        formData.append("vehicleClasses", JSON.stringify(selectedVehicleClasses));
-        formData.append("nicNumber", $("#nicNumber").val());
-        formData.append("dateOfBirth", $("#dateOfBirth").val());
-        formData.append("phoneNumber", $("#phoneNumber").val());
-        formData.append("address", $("#address").val());
-        formData.append("photo", $("#photoUpload")[0].files[0]);
-        formData.append("medical", $("#medicalUpload")[0].files[0]);
-
-        // Show loading indicator
-        showLoading(true);
-
-        // AJAX request to backend
-        $.ajax({
-            url: "api/v1/notification",
-            type: "POST",
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function(response) {
-                showLoading(false);
-                if (response.success) {
-                    showApplicationModal(response.data);
-                } else {
-                    showAlert("Error", response.message || "Submission failed", "error");
-                }
-            },
-            error: function(xhr) {
-                showLoading(false);
-                showAlert("Error", xhr.responseJSON?.message || "Server error occurred", "error");
-            }
-        });
-    });
-
-    // Show application status modal
-    function showApplicationModal(data) {
-        const modalHtml = `
-            <div class="modal fade" id="applicationModal" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Application #${data.applicationId}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <h6>Application Details</h6>
-                                    <p><strong>License Type:</strong> ${data.licenseType}</p>
-                                    <p><strong>Vehicle Classes:</strong> ${data.vehicleClasses.map(v => v.value).join(', ')}</p>
-                                    <p><strong>Status:</strong> <span class="badge bg-${getStatusBadgeClass(data.status)}">${data.status}</span></p>
-                                </div>
-                                <div class="col-md-6">
-                                    <h6>Documents</h6>
-                                    <div class="document-preview mb-3">
-                                        <img src="${data.photoUrl}" class="img-thumbnail" id="modalPhotoPreview">
-                                    </div>
-                                    <div class="document-actions">
-                                        <a href="${data.medicalUrl}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-file-pdf"></i> View Medical
-                                        </a>
-                                        ${data.status === 'PENDING' ? `
-                                        <button class="btn btn-sm btn-success ms-2" onclick="approveMedical('${data.applicationId}')">
-                                            <i class="fas fa-check"></i> Approve
-                                        </button>
-                                        <button class="btn btn-sm btn-danger ms-2" onclick="rejectMedical('${data.applicationId}')">
-                                            <i class="fas fa-times"></i> Reject
-                                        </button>
-                                        ` : ''}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            ${data.status === 'APPROVED' ? `
-                            <button class="btn btn-primary" onclick="proceedToPayment('${data.applicationId}')">
-                                <i class="fas fa-credit-card"></i> Proceed to Payment
-                            </button>
-                            ` : ''}
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        // Inject modal into DOM
-        $('body').append(modalHtml);
-        const modal = new bootstrap.Modal(document.getElementById('applicationModal'));
-        modal.show();
-
-        // Remove modal when closed
-        $('#applicationModal').on('hidden.bs.modal', function () {
-            $(this).remove();
-        });
-    }
-
-    // Helper function to get badge class based on status
-    function getStatusBadgeClass(status) {
-        switch(status) {
-            case 'APPROVED': return 'success';
-            case 'REJECTED': return 'danger';
-            case 'PENDING': return 'warning';
-            default: return 'secondary';
-        }
-    }
-
-    // Approve medical document
-    window.approveMedical = function(applicationId) {
-        updateMedicalStatus(applicationId, 'APPROVED');
-    };
-
-    // Reject medical document
-    window.rejectMedical = function(applicationId) {
-        updateMedicalStatus(applicationId, 'REJECTED');
-    };
-
-    // Update medical status
-    function updateMedicalStatus(applicationId, status) {
-        showLoading(true);
-        $.ajax({
-            url: `api/v1/notification/${applicationId}/status`,
-            type: "PUT",
-            contentType: "application/json",
-            data: JSON.stringify({ status }),
-            success: function(response) {
-                showLoading(false);
-                if (response.success) {
-                    // Refresh the modal with updated status
-                    $('#applicationModal').modal('hide');
-                    showApplicationModal(response.data);
-                    // Update notification badge
-                    updateNotificationBadge();
-                } else {
-                    showAlert("Error", response.message || "Update failed", "error");
-                }
-            },
-            error: function(xhr) {
-                showLoading(false);
-                showAlert("Error", xhr.responseJSON?.message || "Server error occurred", "error");
-            }
-        });
-    }
-
-    // Proceed to payment
-    window.proceedToPayment = function(applicationId) {
-        // Implement payment integration here
-        $('#applicationModal').modal('hide');
-        showPaymentForm(applicationId);
-    };
-
-    // Show payment form
-    function showPaymentForm(applicationId) {
-        // This would integrate with your payment gateway
-        // For demo purposes, we'll show a confirmation
-        showAlert("Payment", `Redirecting to payment for application ${applicationId}`, "info");
-
-        // In a real implementation, you would:
-        // 1. Get payment details from backend
-        // 2. Initialize payment gateway
-        // 3. Handle payment callback
-    }
-
     // Update notification badge
     function updateNotificationBadge() {
-        $.get("api/v1/notification/count", function(response) {
-            if (response.success) {
-                const count = response.data.count;
-                $('.notification-badge').text(count);
-                count > 0 ? $('.notification-badge').show() : $('.notification-badge').hide();
-            }
-        });
+        $.get("/api/v1/applications/driver/" + currentDriverId + "/pending-count")
+            .done(function(count) {
+                const badge = $("#notificationBadge");
+                if (count > 0) {
+                    badge.text(count).show();
+                } else {
+                    badge.hide();
+                }
+            })
+            .fail(function() {
+                console.error("Failed to load pending count");
+            });
     }
 
     // Show loading indicator
     function showLoading(show) {
         if (show) {
-            $('#loadingOverlay').show();
+            $("#loadingOverlay").show();
         } else {
-            $('#loadingOverlay').hide();
+            $("#loadingOverlay").hide();
         }
     }
 
@@ -705,7 +682,7 @@ $(document).ready(function () {
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         `;
-        $('#alertsContainer').append(alertHtml);
+        $("#alertsContainer").append(alertHtml);
 
         // Auto dismiss after 5 seconds
         setTimeout(() => {
@@ -713,6 +690,53 @@ $(document).ready(function () {
         }, 5000);
     }
 
-    // Initialize notification badge on page load
-    updateNotificationBadge();
+    // CORRECTED: Updated logout function to use correct localStorage keys
+    window.logout = function () {
+        
+        Swal.fire({
+        title: 'Logout Confirmation',
+        text: 'Are you sure you want to logout?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, logout',
+        background: '#1a1a1a',
+        color: '#ffffff'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Clear all authentication data
+            localStorage.removeItem('smartreg_token');
+            localStorage.removeItem('smartreg_user');
+            sessionStorage.removeItem('smartreg_token');
+            
+            // Set logout flag
+            localStorage.setItem('smartreg_logout', 'true');
+            
+            // Show logout success message
+            Swal.fire({
+                title: 'Logged Out',
+                text: 'You have been successfully logged out.',
+                icon: 'success',
+                timer: 1500,
+                showConfirmButton: false,
+                background: '#1a1a1a',
+                color: '#ffffff'
+            }).then(() => {
+                // Redirect to login page
+                window.location.href = "../index.html";
+            });
+        }
+    });
+    };
+
+    // Payment Function
+    window.showPaymentForm = function () {
+        alert(
+            "Payment functionality will redirect to secure payment gateway."
+        );
+    };
+
+    // Initialize the application
+    initialize();
 });

@@ -52,7 +52,7 @@ $(document).ready(function () {
 
       if (response.data && response.data.accessToken) {
         storeAuthData(response.data);
-        showSuccessAlert(response.data.name || username);
+        showSuccessAlert(response.data);
         redirectToDashboard(response.data.role);
       } else {
         throw new Error("Invalid server response");
@@ -86,26 +86,29 @@ $(document).ready(function () {
   }
 
   function storeAuthData(authData) {
-    // Store token either in localStorage or sessionStorage
-    const storage = $rememberCheckbox.is(":checked")
-      ? localStorage
-      : sessionStorage;
+    // Clear existing tokens first
+    localStorage.removeItem(config.tokenKey);
+    sessionStorage.removeItem(config.tokenKey);
+    
+    // Store token based on remember me selection
+    const storage = $rememberCheckbox.is(":checked") ? localStorage : sessionStorage;
     storage.setItem(config.tokenKey, authData.accessToken);
 
-    // Store user data
+    // Store user data in localStorage (persists across sessions)
     const userData = {
-      id: authData.userId,
-      username: authData.userName,
+      id: authData.id,           // Now correctly using authData.id
       role: authData.role,
-      name: authData.name,
+      fullName: authData.fullName, // Now correctly using authData.fullName
+      username: $usernameInput.val().trim() // Getting username from form input
     };
     localStorage.setItem(config.userKey, JSON.stringify(userData));
   }
 
-  function showSuccessAlert(username) {
+  function showSuccessAlert(authData) {
+    const displayName = authData.fullName || $usernameInput.val().trim() || "User";
     Swal.fire({
       title: "Login Successful!",
-      text: `Welcome back, ${username}`,
+      text: `Welcome back, ${displayName}`,
       icon: "success",
       timer: 2000,
       showConfirmButton: false,
@@ -127,24 +130,16 @@ $(document).ready(function () {
   }
 
   function redirectToDashboard(role) {
-    console.log("User role:", role);
-
     if (!role) {
       console.error("No role provided");
       showRoleError();
       return;
     }
 
-    // Convert role to uppercase for consistent matching
     const normalizedRole = role.toString().toUpperCase();
-    console.log("Normalized role:", normalizedRole);
-
-    // Get the dashboard URL based on role
     const dashboardUrl = config.dashboardUrls[normalizedRole];
 
     if (dashboardUrl) {
-      console.log("Redirecting to:", dashboardUrl);
-      // Add a small delay to ensure the success message is visible
       setTimeout(() => {
         window.location.href = dashboardUrl;
       }, 1500);
@@ -168,15 +163,15 @@ $(document).ready(function () {
   function handleLoginError(error) {
     let errorMessage = "Login failed. Please try again.";
 
-    console.error("Login error:", error);
-
     if (error.responseJSON && error.responseJSON.message) {
       errorMessage = error.responseJSON.message;
     } else if (error.status === 401) {
       errorMessage = "Invalid username or password.";
+    } else if (error.status === 403) {
+      errorMessage = "Access denied. Please login again.";
+      clearAuthData();
     } else if (error.status === 0) {
-      errorMessage =
-        "Connection failed. Please check your internet connection.";
+      errorMessage = "Connection failed. Please check your internet connection.";
     }
 
     Swal.fire({
@@ -190,9 +185,7 @@ $(document).ready(function () {
 
   function setLoadingState(isLoading) {
     if (isLoading) {
-      $loginBtn.html(
-        '<i class="fas fa-spinner fa-spin me-2"></i>Signing In...'
-      );
+      $loginBtn.html('<i class="fas fa-spinner fa-spin me-2"></i>Signing In...');
       $loginBtn.prop("disabled", true);
     } else {
       $loginBtn.html('<i class="fas fa-sign-in-alt me-2"></i>Sign In');
@@ -221,47 +214,55 @@ $(document).ready(function () {
   // Check if already logged in
   checkAuthStatus();
 
-  function checkAuthStatus() {
-    const token =
-      localStorage.getItem(config.tokenKey) ||
-      sessionStorage.getItem(config.tokenKey);
-    if (!token) return;
-
-    // Additional check to prevent automatic redirect after logout
+  async function checkAuthStatus() {
+    // First check for logout flag
     if (localStorage.getItem(config.logoutFlag)) {
       localStorage.removeItem(config.logoutFlag);
       return;
     }
 
-    // Verify token with backend (optional but recommended)
-    verifyToken(token)
-      .then((isValid) => {
-        if (isValid) {
-          const userData = JSON.parse(
-            localStorage.getItem(config.userKey) || "{}"
-          );
-          if (userData && userData.role) {
-            console.log("User already logged in with role:", userData.role);
-            redirectToDashboard(userData.role);
-          }
-        } else {
-          // Token is invalid, clear storage
-          clearAuthData();
-        }
-      })
-      .catch(() => {
+    // Check for token in both storage locations
+    const token = localStorage.getItem(config.tokenKey) || sessionStorage.getItem(config.tokenKey);
+    if (!token) return;
+
+    // Get user data
+    const userData = JSON.parse(localStorage.getItem(config.userKey) || "{}");
+    
+    try {
+      const isValid = await verifyToken(token);
+      if (isValid && userData.role) {
+        redirectToDashboard(userData.role);
+      } else {
         clearAuthData();
-      });
+      }
+    } catch (error) {
+      console.error("Auth check failed:", error);
+      clearAuthData();
+    }
   }
 
   async function verifyToken(token) {
     try {
-      const response = await fetch(`${config.apiBaseUrl}/validate`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await $.ajax({
+        url: `${config.apiBaseUrl}/validate`,
+        type: "GET",
+        headers: { 
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        // Add this to properly handle 403 responses
+        statusCode: {
+          403: function() {
+            console.log("Token validation failed - 403 Forbidden");
+          }
+        }
       });
-      return response.ok;
+      return true;
     } catch (error) {
       console.error("Token verification failed:", error);
+      if (error.status === 403) {
+        clearAuthData();
+      }
       return false;
     }
   }
