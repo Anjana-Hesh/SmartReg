@@ -78,6 +78,25 @@ public class AuthServiseImpl implements AuthServise {  // Fixed typo in interfac
         return "Password reset email sent to " + user.getEmail();
     }
 
+    @Override
+    public void resetPassword(String email, String newPassword) {
+        log.info("Resetting password for user with email: {}", email);
+        System.out.println("Resetting password for user with email: " + email);
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+
+        if (newPassword == null || newPassword.trim().isEmpty()) {
+            throw new IllegalArgumentException("New password cannot be empty");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        log.info("Password reset successfully for user: {}", user.getUserName());
+        System.out.println("Password reset successfully for user: " + user.getUserName());
+    }
+
 
     @Override
     public String register(RegisterDTO registerDTO) {

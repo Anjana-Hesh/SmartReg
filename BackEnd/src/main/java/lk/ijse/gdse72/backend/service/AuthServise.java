@@ -9,4 +9,6 @@ public interface AuthServise {
     AuthResponseDTO authenticate(AuthDTO authDTO);
 
     String forgotPassword(String email);
+
+    void resetPassword(String email, String newPassword);
 }
