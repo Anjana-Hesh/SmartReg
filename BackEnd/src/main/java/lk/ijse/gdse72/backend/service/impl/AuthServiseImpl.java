@@ -59,8 +59,9 @@ public class AuthServiseImpl implements AuthServise {  // Fixed typo in interfac
 
     @Override
     public String forgotPassword(String email) {
-        System.out.println("Received email: " + email);
+        System.out.println("Received email for forgot password: " + email);
 
+        // Clean up email string if it comes with quotes from JSON
         if (email != null && email.startsWith("\"") && email.endsWith("\"")) {
             email = email.substring(1, email.length() - 1);
         }
@@ -69,32 +70,94 @@ public class AuthServiseImpl implements AuthServise {  // Fixed typo in interfac
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + finalEmail));
 
+        String resetLink = "http://127.0.0.1:5500/views/resetPassword.html?email=" +
+                java.net.URLEncoder.encode(user.getEmail(), java.nio.charset.StandardCharsets.UTF_8);
+
+        // HTML email template for password reset request
+        String htmlContent = String.format("""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%); 
+                         color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
+                .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+                .button { display: inline-block; background: #28a745; color: white; 
+                         padding: 12px 30px; text-decoration: none; border-radius: 5px; 
+                         font-weight: bold; margin: 20px 0; }
+                .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h2>🔒 Password Reset Request</h2>
+                </div>
+                <div class="content">
+                    <p>Hello,</p>
+                    <p>You requested to reset your password for your SmartReg.lk account.</p>
+                    <p>Click the button below to create a new password:</p>
+                    <p style="text-align: center;">
+                        <a href="%s" class="button">Reset My Password</a>
+                    </p>
+                    <p><strong>Security Notice:</strong></p>
+                    <ul>
+                        <li>This link will expire in 24 hours</li>
+                        <li>If you didn't request this reset, please ignore this email</li>
+                        <li>Never share this link with anyone</li>
+                    </ul>
+                    <p>If the button doesn't work, copy and paste this link in your browser:</p>
+                    <p style="word-break: break-all; background: #eee; padding: 10px; border-radius: 5px;">
+                        %s
+                    </p>
+                </div>
+                <div class="footer">
+                    <p>© 2024 SmartReg.lk - All rights reserved</p>
+                    <p>This is an automated email, please do not reply.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """, resetLink, resetLink);
 
         emailService.sendEmail(
                 user.getEmail(),
-                "Password Reset Request",
-                "Click the link to reset your password:http://127.0.0.1:5500/views/resetPassword.html" );
+                "🔒 Password Reset Request - SmartReg.lk",
+                htmlContent
+        );
 
         return "Password reset email sent to " + user.getEmail();
     }
 
+
     @Override
     public void resetPassword(String email, String newPassword) {
-        log.info("Resetting password for user with email: {}", email);
-        System.out.println("Resetting password for user with email: " + email);
+        System.out.println("Resetting password for email: " + email);
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
-
-        if (newPassword == null || newPassword.trim().isEmpty()) {
-            throw new IllegalArgumentException("New password cannot be empty");
+        // Clean up email string if it comes with quotes from JSON
+        if (email != null && email.startsWith("\"") && email.endsWith("\"")) {
+            email = email.substring(1, email.length() - 1);
         }
 
-        user.setPassword(passwordEncoder.encode(newPassword));
+        String finalEmail = email;
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + finalEmail));
+
+        // Hash the new password before saving
+        String hashedPassword = passwordEncoder.encode(newPassword);
+
+        // Update user's password
+        user.setPassword(hashedPassword);
+
+        // Save the updated user
         userRepository.save(user);
 
-        log.info("Password reset successfully for user: {}", user.getUserName());
-        System.out.println("Password reset successfully for user: " + user.getUserName());
+        System.out.println("Password successfully reset for user: " + user.getEmail());
+
+        // Optional: Send confirmation email
+        sendPasswordResetConfirmationEmail(user.getEmail());
     }
 
 
@@ -141,6 +204,59 @@ public class AuthServiseImpl implements AuthServise {  // Fixed typo in interfac
         } catch (DataIntegrityViolationException e) {
             log.error("Database error during registration: {}", e.getMessage());
             throw new RuntimeException("Registration failed due to database constraints");
+        }
+    }
+
+    private void sendPasswordResetConfirmationEmail(String email) {
+        String confirmationContent = String.format("""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background: linear-gradient(135deg, #28a745 0%%, #20c997 100%%); 
+                         color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
+                .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+                .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+                .success { color: #28a745; font-weight: bold; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h2>✅ Password Reset Successful</h2>
+                </div>
+                <div class="content">
+                    <p>Hello,</p>
+                    <p class="success">Your password has been successfully reset!</p>
+                    <p>Your SmartReg.lk account password has been updated. You can now log in with your new password.</p>
+                    <p><strong>Security Tips:</strong></p>
+                    <ul>
+                        <li>Keep your password secure and don't share it with anyone</li>
+                        <li>Use a strong, unique password for your account</li>
+                        <li>If you didn't make this change, contact support immediately</li>
+                    </ul>
+                    <p>If you have any questions or concerns, please contact our support team.</p>
+                </div>
+                <div class="footer">
+                    <p>© 2024 SmartReg.lk - All rights reserved</p>
+                    <p>This is an automated email, please do not reply.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """);
+
+        try {
+            emailService.sendEmail(
+                    email,
+                    "✅ Password Reset Successful - SmartReg.lk",
+                    confirmationContent
+            );
+        } catch (Exception e) {
+            // Log error but don't fail the password reset if email fails
+            System.err.println("Failed to send confirmation email: " + e.getMessage());
         }
     }
 }
