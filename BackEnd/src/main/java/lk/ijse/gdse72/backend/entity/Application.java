@@ -1,10 +1,7 @@
 package lk.ijse.gdse72.backend.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.List;
 
@@ -14,6 +11,7 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 
 public class Application {
 
@@ -21,8 +19,8 @@ public class Application {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "driver_id", nullable = false)
-    private String driverId;
+//    @Column(name = "driver_id", nullable = false)
+//    private String driverId;
 
     @Column(name = "license_type", nullable = false)
     private String licenseType;
@@ -58,4 +56,8 @@ public class Application {
 
     @Column(name = "status", nullable = false)
     private String status = "PENDING";
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "driver_id")
+    private User driver;
 }

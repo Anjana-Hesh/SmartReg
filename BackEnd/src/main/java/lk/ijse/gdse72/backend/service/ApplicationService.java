@@ -9,7 +9,7 @@ import java.util.List;
 public interface ApplicationService {
     ApplicationDTO submitApplication(ApplicationDTO applicationDTO, MultipartFile photo, MultipartFile medicalCertificate) throws IOException;
     ApplicationDTO updateApplicationStatus(Long applicationId, String status);
-    List<ApplicationDTO> getApplicationsByDriver(String driverId);
+    List<ApplicationDTO> getApplicationsByDriver(Long driverId);
     ApplicationDTO getApplicationById(Long applicationId);
-    int getPendingApplicationCount(String driverId);
+    int getPendingApplicationCount(Long driverId);
 }

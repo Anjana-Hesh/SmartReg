@@ -10,9 +10,9 @@ import java.util.List;
 @Repository
 public interface ApplicationRepository extends JpaRepository<Application, Long> {
 
-    @Query("SELECT a FROM Application a WHERE a.driverId = :driverId")
-    List<Application> findByDriverId(String driverId);
-    List<Application> findByDriverIdAndStatus(String driverId, String status);
-    int countByDriverIdAndStatus(String driverId, String status);
+    @Query("SELECT a FROM Application a WHERE a.driver.id = :driverId")
+    List<Application> findByDriverId(Long driverId);
+    List<Application> findByDriverIdAndStatus(Long driverId, String status);
+    int countByDriverIdAndStatus(Long driverId, String status);
 
 }

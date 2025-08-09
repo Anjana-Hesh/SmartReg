@@ -3,13 +3,13 @@ $(document).ready(function () {
     const API_BASE_URL = "http://localhost:8080/api/v1"; // Update with your backend URL
     
     // Get authentication data from localStorage
-    const authToken = sessionStorage.getItem('smartreg_token');
+    const authToken = localStorage.getItem('smartreg_token') || sessionStorage.getItem('smartreg_token');
     const userData = JSON.parse(localStorage.getItem('smartreg_user') || '{}');
     const currentDriverId = userData.id;
     const currentDriverName = userData.fullName || userData.name;
 
     // Check authentication
-    if ( !authToken ||!currentDriverId) {
+    if (!authToken || !currentDriverId) {
         Swal.fire({
             title: "Authentication Required",
             text: "Please login to continue",

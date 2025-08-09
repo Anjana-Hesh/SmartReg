@@ -27,7 +27,6 @@ public class ApplicationController {
             @RequestPart("medical") MultipartFile medicalCertificate) {
 
         try {
-            // Convert JSON string to DTO
             ObjectMapper objectMapper = new ObjectMapper();
             ApplicationDTO applicationDTO = objectMapper.readValue(applicationJson, ApplicationDTO.class);
 
@@ -57,7 +56,7 @@ public class ApplicationController {
 
     @GetMapping("/driver/{driverId}")
     public ResponseEntity<List<ApplicationDTO>> getApplicationsByDriver(
-            @PathVariable String driverId) {
+            @PathVariable Long driverId) {
 
         List<ApplicationDTO> applications = applicationService.getApplicationsByDriver(driverId);
         return ResponseEntity.ok(applications);
@@ -71,7 +70,7 @@ public class ApplicationController {
 
     @GetMapping("/driver/{driverId}/pending-count")
     public ResponseEntity<Integer> getPendingApplicationCount(
-            @PathVariable String driverId) {
+            @PathVariable Long driverId) {
 
         int count = applicationService.getPendingApplicationCount(driverId);
         return ResponseEntity.ok(count);

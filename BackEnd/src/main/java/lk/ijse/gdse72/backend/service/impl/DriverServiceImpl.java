@@ -30,11 +30,10 @@ public class DriverServiceImpl implements DriverService {
         if (driver == null) throw new RuntimeException("Driver not found");
 
         // 2. Fetch Applications with Vehicle Classes
-        List<Application> applications = applicationRepository.findByDriverId(driverId.toString());
+        List<Application> applications = applicationRepository.findByDriverId(driverId);
         List<ApplicationDTO> applicationDTOs = applications.stream()
                 .map(app -> new ApplicationDTO(
                         app.getId(),
-                        app.getDriverId(),
                         app.getLicenseType(),
                         app.getExamLanguage(),
                         app.getVehicleClasses(),
@@ -45,7 +44,8 @@ public class DriverServiceImpl implements DriverService {
                         app.getAddress(),
                         app.getPhotoPath(),
                         app.getMedicalCertificatePath(),
-                        app.getStatus()
+                        app.getStatus(),
+                        app.getDriver().getId()
                 ))
                 .collect(Collectors.toList());
 

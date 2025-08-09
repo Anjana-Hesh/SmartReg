@@ -3,7 +3,9 @@ package lk.ijse.gdse72.backend.service.impl;
 import lk.ijse.gdse72.backend.dto.ApplicationDTO;
 import lk.ijse.gdse72.backend.dto.VehicleClassDTO;
 import lk.ijse.gdse72.backend.entity.Application;
+import lk.ijse.gdse72.backend.entity.User;
 import lk.ijse.gdse72.backend.repository.ApplicationRepository;
+import lk.ijse.gdse72.backend.repository.UserRepository;
 import lk.ijse.gdse72.backend.service.ApplicationService;
 import lk.ijse.gdse72.backend.service.FileStorageService;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final ApplicationRepository applicationRepository;
     private final FileStorageService fileStorageService;
     private final ModelMapper modelMapper;
+    private final UserRepository userRepository;
 
     @Value("${file.upload-dir}")
     private String uploadDir;
@@ -42,17 +45,21 @@ public class ApplicationServiceImpl implements ApplicationService {
                                             MultipartFile photo,
                                             MultipartFile medicalCertificate) throws IOException {
 
-        // Store files with appropriate prefixes
+        // Validate driver exists
+        User driver = userRepository.findById(applicationDTO.getDriverId())
+                .orElseThrow(() -> new IllegalArgumentException("No driver found with ID: " + applicationDTO.getDriverId()));
+
+        // Store files
         String photoPath = fileStorageService.storeFile(photo, "photo");
         String medicalPath = fileStorageService.storeFile(medicalCertificate, "medical");
 
-        // Convert DTO to Entity
+        // Create and save application
         Application application = modelMapper.map(applicationDTO, Application.class);
         application.setPhotoPath(photoPath);
         application.setMedicalCertificatePath(medicalPath);
         application.setStatus("PENDING");
+        application.setDriver(driver);
 
-        // Save to database
         Application savedApplication = applicationRepository.save(application);
 
         return modelMapper.map(savedApplication, ApplicationDTO.class);
@@ -68,7 +75,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     }
 
     @Override
-    public List<ApplicationDTO> getApplicationsByDriver(String driverId) {
+    public List<ApplicationDTO> getApplicationsByDriver(Long driverId) {
         return applicationRepository.findByDriverId(driverId).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
@@ -82,14 +89,14 @@ public class ApplicationServiceImpl implements ApplicationService {
     }
 
     @Override
-    public int getPendingApplicationCount(String driverId) {
+    public int getPendingApplicationCount(Long driverId) {
         return applicationRepository.countByDriverIdAndStatus(driverId, "PENDING");
     }
 
     private ApplicationDTO convertToDTO(Application application) {
         ApplicationDTO dto = new ApplicationDTO();
         dto.setId(application.getId());
-        dto.setDriverId(application.getDriverId());
+        dto.setDriverId(application.getDriver().getId());
         dto.setLicenseType(application.getLicenseType());
         dto.setExamLanguage(application.getExamLanguage());
         dto.setVehicleClasses(

@@ -14,7 +14,6 @@ import java.util.List;
 
 public class ApplicationDTO {
     private Long id;
-    private String driverId;
     private String licenseType;
     private String examLanguage;
     private List<String> vehicleClasses;
@@ -25,6 +24,7 @@ public class ApplicationDTO {
     private String address;
     private String photoPath;
     private String medicalCertificatePath;
-    private String status; // PENDING, APPROVED, REJECTED, PAYMENT_PENDING, COMPLETED
+    private String status;
+    private Long driverId;
 
 }

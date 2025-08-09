@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function checkAuthentication() {
     // Check if user is authenticated using the correct keys
-    const token = localStorage.getItem('smartreg_token') || sessionStorage.getItem('smartreg_token');
+    const token = sessionStorage.getItem('smartreg_token');
     const userData = localStorage.getItem('smartreg_user');
     
     if (!token || !userData) {
