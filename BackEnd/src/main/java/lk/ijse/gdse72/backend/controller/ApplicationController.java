@@ -1,8 +1,10 @@
 package lk.ijse.gdse72.backend.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lk.ijse.gdse72.backend.dto.ApplicationDTO;
 import lk.ijse.gdse72.backend.service.ApplicationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -18,16 +20,29 @@ public class ApplicationController {
 
     private final ApplicationService applicationService;
 
-    @PostMapping
-    public ResponseEntity<ApplicationDTO> submitApplication(
-            @RequestPart("application") ApplicationDTO applicationDTO,
+    @PostMapping(path = "/create-application", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> submitApplication(
+            @RequestPart("application") String applicationJson,
             @RequestPart("photo") MultipartFile photo,
             @RequestPart("medical") MultipartFile medicalCertificate) {
 
-        ApplicationDTO savedApplication = applicationService.submitApplication(
-                applicationDTO, photo, medicalCertificate);
+        try {
+            // Convert JSON string to DTO
+            ObjectMapper objectMapper = new ObjectMapper();
+            ApplicationDTO applicationDTO = objectMapper.readValue(applicationJson, ApplicationDTO.class);
 
-        return ResponseEntity.ok(savedApplication);
+            if (photo.isEmpty() || medicalCertificate.isEmpty()) {
+                return ResponseEntity.badRequest().body("Photo and medical certificate are required.");
+            }
+
+            ApplicationDTO savedApplication = applicationService.submitApplication(
+                    applicationDTO, photo, medicalCertificate);
+
+            return ResponseEntity.ok(savedApplication);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body("Failed to submit application: " + e.getMessage());
+        }
     }
 
     @PreAuthorize("hasRole('ADMIN')")

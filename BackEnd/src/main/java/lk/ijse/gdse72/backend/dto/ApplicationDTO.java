@@ -17,7 +17,7 @@ public class ApplicationDTO {
     private String driverId;
     private String licenseType;
     private String examLanguage;
-    private List<VehicleClassDTO> vehicleClasses;
+    private List<String> vehicleClasses;
     private String nicNumber;
     private String bloodGroup;
     private String dateOfBirth;
