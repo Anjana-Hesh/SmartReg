@@ -8,6 +8,9 @@ $(document).ready(function () {
     const currentDriverId = userData.id;
     const currentDriverName = userData.fullName || userData.name;
 
+    // Get CSRF token from meta tag (if your backend uses CSRF protection)
+    const csrfToken = $('meta[name="csrf-token"]').attr('content') || '';
+
     // Check authentication
     if (!authToken || !currentDriverId) {
         Swal.fire({
@@ -29,7 +32,9 @@ $(document).ready(function () {
             if (authToken) {
                 xhr.setRequestHeader('Authorization', 'Bearer ' + authToken);
             }
-            xhr.setRequestHeader('Content-Type', 'application/json');
+            if (csrfToken) {
+                xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken);
+            }
         },
         error: function(xhr, status, error) {
             if (xhr.status === 401) {
@@ -135,6 +140,9 @@ $(document).ready(function () {
     function initialize() {
         showLoading(true);
         
+        // Set driver name from userData
+        $("#driverName").text(currentDriverName || "Driver");
+        
         // Disable vehicle class select initially
         $("#vehicleClass").prop("disabled", true);
 
@@ -145,7 +153,6 @@ $(document).ready(function () {
 
         // Load initial data
         Promise.all([
-            loadDriverProfile(),
             loadDriverApplications(),
             loadNotifications(),
             checkExistingLicense()
@@ -156,140 +163,87 @@ $(document).ready(function () {
 
     // =================== API FUNCTIONS ===================
 
-    // Load driver profile data
-    function loadDriverProfile() {
+    // Submit license application - Updated to match backend structure
+    function submitLicenseApplication(applicationData, photoFile, medicalFile) {
         return new Promise((resolve, reject) => {
+            const formData = new FormData();
+            
+            // Create application JSON object
+            const applicationJson = {
+                driverId: currentDriverId,
+                licenseType: applicationData.licenseType,
+                examLanguage: applicationData.examLanguage,
+                vehicleClasses: selectedVehicleClasses.map(vc => vc.value), // Send as array of strings
+                nicNumber: applicationData.nicNumber,
+                bloodGroup: applicationData.bloodGroup,
+                dateOfBirth: applicationData.dateOfBirth,
+                phoneNumber: applicationData.phoneNumber,
+                address: applicationData.address,
+            };
+            
+            console.log("Submitting application with data:", {
+                applicationData: applicationJson,
+                photoFile: photoFile.name,
+                medicalFile: medicalFile.name
+            });
+            
+            // Append JSON as string to match @RequestPart("application")
+            formData.append("application", JSON.stringify(applicationJson));
+            
+            // Append files to match @RequestPart("photo") and @RequestPart("medical")
+            formData.append("photo", photoFile);
+            formData.append("medical", medicalFile);
+
             $.ajax({
-                url: `${API_BASE_URL}/drivers/${currentDriverId}`,
-                method: 'GET',
-                success: function(data) {
-                    currentDriverData = data;
-                    updateDriverInfo(data);
-                    resolve(data);
+                url: `${API_BASE_URL}/applications/create-application`,
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                beforeSend: function(xhr) {
+                    if (authToken) {
+                        xhr.setRequestHeader('Authorization', 'Bearer ' + authToken);
+                    }
+                    if (csrfToken) {
+                        xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken);
+                    }
+                    // Don't set Content-Type for multipart/form-data
+                },
+                success: function(response) {
+                    console.log("Application submitted successfully:", response);
+                    resolve(response);
                 },
                 error: function(xhr, status, error) {
-                    console.warn("Failed to load driver profile from API, using cached data");
-                    // Fallback to localStorage data
-                    $("#driverName").text(currentDriverName || "Driver");
-                    resolve(userData);
+                    console.error("Application submission failed:", xhr.responseJSON);
+                    reject({
+                        status: xhr.status,
+                        message: xhr.responseJSON?.message || xhr.responseText || "Failed to submit application",
+                        error: error,
+                        response: xhr.responseJSON
+                    });
                 }
             });
         });
     }
 
-    // Check if driver already has a license
-    function checkExistingLicense() {
-        return new Promise((resolve, reject) => {
-            $.ajax({
-                url: `${API_BASE_URL}/licenses/driver/${currentDriverId}`,
-                method: 'GET',
-                success: function(license) {
-                    if (license && license.id) {
-                        updateLicenseStatus("active", license);
-                        updateLicenseCard(license);
-                    } else {
-                        updateLicenseStatus("pending");
-                    }
-                    resolve(license);
-                },
-                error: function(xhr, status, error) {
-                    if (xhr.status === 404) {
-                        updateLicenseStatus("none");
-                    } else {
-                        updateLicenseStatus("pending");
-                    }
-                    resolve(null);
-                }
-            });
-        });
-    }
-
-    // Load driver applications
+    // Load driver applications using the backend endpoint
     function loadDriverApplications() {
         return new Promise((resolve, reject) => {
             $.ajax({
                 url: `${API_BASE_URL}/applications/driver/${currentDriverId}`,
                 method: 'GET',
                 success: function(applications) {
+                    console.log("Applications loaded:", applications);
                     updateApplicationsInfo(applications);
+                    updateDashboardWithApplications(applications);
                     resolve(applications);
                 },
                 error: function(xhr, status, error) {
                     console.error("Failed to load applications:", error);
+                    if (xhr.status !== 404) {
+                        showAlert("Error", "Failed to load applications", "error");
+                    }
                     resolve([]);
-                }
-            });
-        });
-    }
-
-    // Load notifications
-    function loadNotifications() {
-        return new Promise((resolve, reject) => {
-            $.ajax({
-                url: `${API_BASE_URL}/notifications/driver/${currentDriverId}`,
-                method: 'GET',
-                data: { limit: 10, offset: 0 },
-                success: function(data) {
-                    renderNotifications(data.notifications || data);
-                    updateNotificationBadge(data.unreadCount || 0);
-                    resolve(data);
-                },
-                error: function(xhr, status, error) {
-                    console.error("Failed to load notifications:", error);
-                    showDefaultNotifications();
-                    resolve([]);
-                }
-            });
-        });
-    }
-
-    // Submit license application
-    function submitLicenseApplication(formData) {
-        return new Promise((resolve, reject) => {
-            $.ajax({
-                url: `${API_BASE_URL}/applications`,
-                method: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                beforeSend: function(xhr) {
-                    xhr.setRequestHeader('Authorization', 'Bearer ' + authToken);
-                    // Remove Content-Type header for file uploads
-                    xhr.setRequestHeader('Content-Type', undefined);
-                },
-                success: function(response) {
-                    resolve(response);
-                },
-                error: function(xhr, status, error) {
-                    reject({
-                        status: xhr.status,
-                        message: xhr.responseJSON?.message || "Failed to submit application",
-                        error: error
-                    });
-                }
-            });
-        });
-    }
-
-    // Update driver profile
-    function updateDriverProfile(profileData) {
-        return new Promise((resolve, reject) => {
-            $.ajax({
-                url: `${API_BASE_URL}/drivers/${currentDriverId}`,
-                method: 'PUT',
-                data: JSON.stringify(profileData),
-                success: function(response) {
-                    // Update localStorage with new data
-                    const updatedUserData = { ...userData, ...profileData };
-                    localStorage.setItem('smartreg_user', JSON.stringify(updatedUserData));
-                    resolve(response);
-                },
-                error: function(xhr, status, error) {
-                    reject({
-                        status: xhr.status,
-                        message: xhr.responseJSON?.message || "Failed to update profile",
-                        error: error
-                    });
                 }
             });
         });
@@ -315,35 +269,71 @@ $(document).ready(function () {
         });
     }
 
-    // Search applications
-    function searchApplications(searchParams) {
+    // Get pending application count
+    function getPendingApplicationCount() {
         return new Promise((resolve, reject) => {
             $.ajax({
-                url: `${API_BASE_URL}/applications/search`,
+                url: `${API_BASE_URL}/applications/driver/${currentDriverId}/pending-count`,
                 method: 'GET',
-                data: {
-                    driverId: currentDriverId,
-                    ...searchParams
-                },
-                success: function(applications) {
-                    resolve(applications);
+                success: function(count) {
+                    resolve(count);
                 },
                 error: function(xhr, status, error) {
-                    reject({
-                        status: xhr.status,
-                        message: xhr.responseJSON?.message || "Failed to search applications",
-                        error: error
-                    });
+                    console.error("Failed to get pending count:", error);
+                    resolve(0);
                 }
             });
         });
     }
 
-    // Mark notification as read
-    function markNotificationAsRead(notificationId) {
-        return $.ajax({
-            url: `${API_BASE_URL}/notifications/${notificationId}/read`,
-            method: 'PUT'
+    // Load notifications (mock implementation - replace with your actual endpoint)
+    function loadNotifications() {
+        return new Promise((resolve, reject) => {
+            // Since no notification endpoint was provided, using mock data
+            // Replace this with your actual notification API endpoint
+            const mockNotifications = [
+                {
+                    id: 1,
+                    message: "Welcome to the License Management System!",
+                    createdDate: new Date().toISOString(),
+                    isRead: false,
+                    type: "WELCOME"
+                },
+                {
+                    id: 2,
+                    message: "Your application is being processed",
+                    createdDate: new Date(Date.now() - 86400000).toISOString(), // Yesterday
+                    isRead: true,
+                    type: "APPLICATION_UPDATE"
+                }
+            ];
+            
+            renderNotifications(mockNotifications);
+            updateNotificationBadge(mockNotifications.filter(n => !n.isRead).length);
+            resolve(mockNotifications);
+        });
+    }
+
+    // Check if driver already has a license (mock implementation)
+    function checkExistingLicense() {
+        return new Promise((resolve, reject) => {
+            // This is a mock implementation since no license endpoint was provided
+            // Replace with your actual license API endpoint
+            loadDriverApplications().then(applications => {
+                const approvedApp = applications.find(app => app.status === 'APPROVED');
+                if (approvedApp) {
+                    updateLicenseStatus("active", approvedApp);
+                    updateLicenseCard(approvedApp);
+                } else if (applications.some(app => app.status === 'PENDING')) {
+                    updateLicenseStatus("pending");
+                } else {
+                    updateLicenseStatus("none");
+                }
+                resolve(approvedApp);
+            }).catch(error => {
+                updateLicenseStatus("none");
+                resolve(null);
+            });
         });
     }
 
@@ -360,7 +350,6 @@ $(document).ready(function () {
 
     function updateLicenseStatus(status, licenseData = null) {
         const statusBadge = $("#licenseStatus");
-        const licenseCard = $(".license-info-card");
         
         switch (status) {
             case "active":
@@ -380,16 +369,27 @@ $(document).ready(function () {
         }
     }
 
-    function updateLicenseCard(licenseData) {
+    function updateLicenseCard(applicationData) {
         const cardContent = $(".license-info-card .card-content");
-        if (licenseData) {
+        if (applicationData && applicationData.status === 'APPROVED') {
+            const vehicleClasses = applicationData.vehicleClasses ? 
+                applicationData.vehicleClasses.map(v => v.code || v.value).join(', ') : 'N/A';
+                
             cardContent.html(`
-                <p><strong>License Number:</strong> ${licenseData.licenseNumber}</p>
-                <p><strong>Type:</strong> ${licenseData.licenseType}</p>
-                <p><strong>Valid Until:</strong> ${new Date(licenseData.expiryDate).toLocaleDateString()}</p>
-                <p><strong>Vehicle Classes:</strong> ${licenseData.vehicleClasses.map(v => v.code).join(', ')}</p>
-                <button class="btn-card" onclick="downloadLicense('${licenseData.id}')">
-                    <i class="fas fa-download me-1"></i> Download License
+                <p><strong>Application ID:</strong> ${applicationData.id}</p>
+                <p><strong>License Type:</strong> ${applicationData.licenseType}</p>
+                <p><strong>Vehicle Classes:</strong> ${vehicleClasses}</p>
+                <p><strong>Status:</strong> <span class="badge bg-success">${applicationData.status}</span></p>
+                <p><strong>Submitted:</strong> ${new Date(applicationData.submittedDate).toLocaleDateString()}</p>
+                <button class="btn-card" onclick="viewApplicationDetails('${applicationData.id}')">
+                    <i class="fas fa-eye me-1"></i> View Details
+                </button>
+            `);
+        } else {
+            cardContent.html(`
+                <p>Complete your license registration to get started with your driving journey.</p>
+                <button class="btn-card" onclick="showLicenseForm()">
+                    <i class="fas fa-edit me-1"></i> Register License
                 </button>
             `);
         }
@@ -398,9 +398,57 @@ $(document).ready(function () {
     function updateApplicationsInfo(applications) {
         // Update pending applications count
         const pendingCount = applications.filter(app => app.status === 'PENDING').length;
-        updateNotificationBadge(pendingCount);
         
-        // You can add more application-specific UI updates here
+        // Update license card based on applications
+        if (applications.length > 0) {
+            const latestApplication = applications[0]; // Assuming sorted by date
+            updateLicenseCard(latestApplication);
+        }
+        
+        // Update notification badge with pending count
+        updateNotificationBadge(pendingCount);
+    }
+
+    function updateDashboardWithApplications(applications) {
+        const licenseInfo = $("#licenseInfo");
+        const licenseCard = $(".license-info-card .card-content");
+        
+        if (applications.length === 0) {
+            licenseInfo.text("Complete your license registration to get started with your driving journey.");
+            return;
+        }
+
+        const latestApplication = applications[0];
+        const statusBadgeClass = getStatusBadgeClass(latestApplication.status);
+        // Handle vehicleClasses as array of strings
+        const vehicleClasses = Array.isArray(latestApplication.vehicleClasses) ? 
+            latestApplication.vehicleClasses.join(', ') : 'N/A';
+
+        licenseCard.html(`
+            <div class="application-summary">
+                <p><strong>Latest Application:</strong> #${latestApplication.id}</p>
+                <p><strong>License Type:</strong> ${latestApplication.licenseType}</p>
+                <p><strong>Vehicle Classes:</strong> ${vehicleClasses}</p>
+                <p><strong>Status:</strong> <span class="badge bg-${statusBadgeClass}">${latestApplication.status}</span></p>
+                <p><strong>Submitted:</strong> ${new Date(latestApplication.submittedDate).toLocaleDateString()}</p>
+                
+                <div class="mt-3">
+                    <button class="btn-card me-2" onclick="viewApplicationDetails('${latestApplication.id}')">
+                        <i class="fas fa-eye me-1"></i> View Details
+                    </button>
+                    ${latestApplication.status === 'REJECTED' ? `
+                        <button class="btn-card btn-warning" onclick="showLicenseForm()">
+                            <i class="fas fa-redo me-1"></i> Reapply
+                        </button>
+                    ` : ''}
+                    ${applications.filter(app => app.status === 'PENDING').length === 0 ? `
+                        <button class="btn-card btn-secondary" onclick="showLicenseForm()">
+                            <i class="fas fa-plus me-1"></i> New Application
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        `);
     }
 
     function renderNotifications(notifications) {
@@ -424,10 +472,10 @@ $(document).ready(function () {
                 </li>
             `);
             
-            // Add click handler to mark as read
+            // Add click handler to mark as read (if you have this endpoint)
             item.on('click', function() {
                 if (!notification.isRead) {
-                    markNotificationAsRead(notification.id);
+                    // Mark as read locally
                     $(this).removeClass('unread').find('.unread-indicator').remove();
                 }
             });
@@ -452,9 +500,9 @@ $(document).ready(function () {
 
     function updateNotificationBadge(count) {
         const badge = $("#notificationBadge");
-        if (count > 0) {
+        if (badge.length && count > 0) {
             badge.text(count).show();
-        } else {
+        } else if (badge.length) {
             badge.hide();
         }
     }
@@ -478,6 +526,7 @@ $(document).ready(function () {
         clearValidationMessages();
         hidePhotoPreview();
         hideMedicalPreview();
+        $("#vehicleClass").prop("disabled", true);
     }
 
     // License type change handler
@@ -612,6 +661,23 @@ $(document).ready(function () {
         });
     }
 
+    function validateMedicalFile(file) {
+        if (!file) return false;
+        
+        if (file.type !== 'application/pdf') {
+            showAlert("Invalid File", "Medical certificate must be a PDF file.", "error");
+            return false;
+        }
+        
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        if (file.size > maxSize) {
+            showAlert("File Too Large", "Medical certificate must be less than 5MB.", "error");
+            return false;
+        }
+        
+        return true;
+    }
+
     function showValidationMessage(containerId, message, type) {
         const container = $("#" + containerId);
         const className = type === "error" ? "validation-error" : "validation-success";
@@ -645,8 +711,13 @@ $(document).ready(function () {
     $("#medicalUpload").on("change", function (e) {
         const file = e.target.files[0];
         if (file) {
-            $("#medicalPreview").show();
-            $("#pdfName").text(file.name);
+            if (validateMedicalFile(file)) {
+                $("#medicalPreview").show();
+                $("#pdfName").text(file.name);
+            } else {
+                $(this).val(''); // Clear the input
+                hideMedicalPreview();
+            }
         } else {
             hideMedicalPreview();
         }
@@ -658,6 +729,7 @@ $(document).ready(function () {
 
     function hideMedicalPreview() {
         $("#medicalPreview").hide();
+        $("#pdfName").text("");
     }
 
     // =================== FORM SUBMISSION ===================
@@ -687,17 +759,14 @@ $(document).ready(function () {
                 throw new Error("Please upload a medical certificate.");
             }
 
-            // Create FormData
-            const formData = new FormData();
-            formData.append("photo", photoFile);
-            formData.append("medical", medicalFile);
-            
-            // Add application data
+            if (!validateMedicalFile(medicalFile)) {
+                throw new Error("Please upload a valid medical certificate.");
+            }
+
+            // Collect form data
             const applicationData = {
-                driverId: currentDriverId,
                 licenseType: $("#licenseType").val(),
                 examLanguage: $("#examLanguage").val(),
-                vehicleClasses: selectedVehicleClasses,
                 nicNumber: $("#nicNumber").val(),
                 bloodGroup: $("#bloodGroup").val(),
                 dateOfBirth: $("#dateOfBirth").val(),
@@ -705,22 +774,26 @@ $(document).ready(function () {
                 address: $("#address").val()
             };
 
-            formData.append("application", new Blob([JSON.stringify(applicationData)], { type: "application/json" }));
-
             // Submit application
-            const response = await submitLicenseApplication(formData);
-            
+            const response = await submitLicenseApplication(applicationData, photoFile, medicalFile);
+
             showLoading(false);
             Swal.fire({
-                title: "Success",
-                text: "Application submitted successfully!",
+                title: "Application Submitted Successfully!",
+                html: `
+                    <div class="text-start">
+                        <p><strong>Application ID:</strong> ${response.id}</p>
+                        <p><strong>License Type:</strong> ${applicationData.licenseType}</p>
+                        <p><strong>Status:</strong> <span class="badge bg-warning">PENDING</span></p>
+                        <p><strong>Next Steps:</strong> Your application will be reviewed by our team. You will receive notifications about the status updates.</p>
+                    </div>
+                `,
                 icon: "success",
                 background: "#1a1a1a",
-                color: "#ffffff"
+                color: "#ffffff",
+                confirmButtonText: "OK"
             });
             
-            // Show application details modal
-            showApplicationModal(response);
             closeLicenseModal();
             
             // Refresh data
@@ -729,183 +802,38 @@ $(document).ready(function () {
 
         } catch (error) {
             showLoading(false);
-            Swal.fire({
-                title: "Error",
-                text: error.message || "Failed to submit application",
-                icon: "error",
-                background: "#1a1a1a",
-                color: "#ffffff"
-            });
-        }
-    });
-
-    // =================== UTILITY FUNCTIONS ===================
-
-    function showApplicationModal(applicationData) {
-        Swal.fire({
-            title: `Application #${applicationData.id || applicationData.applicationId}`,
-            html: `
-                <div class="text-start">
-                    <h6>Application Details</h6>
-                    <p><strong>License Type:</strong> ${applicationData.licenseType}</p>
-                    <p><strong>Vehicle Classes:</strong> ${applicationData.vehicleClasses?.map(v => v.value || v.code).join(', ')}</p>
-                    <p><strong>Status:</strong> <span class="badge bg-warning">${applicationData.status || 'PENDING'}</span></p>
-                    <p><strong>Submitted:</strong> ${new Date().toLocaleDateString()}</p>
-                </div>
-            `,
-            icon: 'success',
-            confirmButtonText: 'OK',
-            background: '#1a1a1a',
-            color: '#ffffff'
-        });
-    }
-
-    function getStatusBadgeClass(status) {
-        switch(status) {
-            case 'APPROVED': return 'success';
-            case 'REJECTED': return 'danger';
-            case 'PENDING': return 'warning';
-            default: return 'secondary';
-        }
-    }
-
-    function handleUnauthorized() {
-        localStorage.removeItem('smartreg_token');
-        localStorage.removeItem('smartreg_user');
-        sessionStorage.removeItem('smartreg_token');
-        
-        Swal.fire({
-            title: "Session Expired",
-            text: "Please login again to continue",
-            icon: "error",
-            background: "#1a1a1a",
-            color: "#ffffff",
-            confirmButtonText: "OK"
-        }).then(() => {
-            window.location.href = "../index.html";
-        });
-    }
-
-    function showLoading(show) {
-        if (show) {
-            $("body").append('<div id="loadingOverlay" class="loading-overlay"><div class="spinner-border text-primary"></div></div>');
-        } else {
-            $("#loadingOverlay").remove();
-        }
-    }
-
-    function showAlert(title, message, type) {
-        Swal.fire({
-            title: title,
-            text: message,
-            icon: type,
-            background: '#1a1a1a',
-            color: '#ffffff',
-            confirmButtonColor: type === 'error' ? '#d33' : '#3085d6'
-        });
-    }
-
-    // =================== INPUT FORMATTERS ===================
-
-    // Phone number formatting
-    $("#phoneNumber").on("input", function (e) {
-        let value = $(this).val().replace(/\D/g, "");
-        if (value.startsWith("94")) value = value.substring(2);
-        if (value.startsWith("0")) value = value.substring(1);
-        if (value.length > 0) {
-            value = "+94 " + value.replace(/(\d{2})(\d{3})(\d{4})/, "$1 $2 $3");
-        }
-        $(this).val(value);
-    });
-
-    // NIC validation
-    $("#nicNumber").on("input", function (e) {
-        let value = $(this).val().toUpperCase().replace(/[^A-Z0-9]/g, "");
-        $(this).val(value);
-    });
-
-    // Date validation
-    $("#dateOfBirth").on("change", function (e) {
-        const birthDate = new Date($(this).val());
-        const today = new Date();
-        let age = today.getFullYear() - birthDate.getFullYear();
-        const monthDiff = today.getMonth() - birthDate.getMonth();
-
-        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-            age--;
-        }
-
-        if (age < 18) {
-            Swal.fire({
-                title: "Age Requirement",
-                text: "You must be at least 18 years old to apply for a license.",
-                icon: "error",
-                background: "#1a1a1a",
-                color: "#ffffff"
-            });
-            $(this).val("");
-        }
-    });
-
-    // =================== EVENT HANDLERS ===================
-
-    // Close modal when clicking outside
-    $(window).on("click", function (event) {
-        const modal = $("#licenseModal")[0];
-        if (event.target == modal) {
-            $(modal).hide();
-            resetForm();
-        }
-    });
-
-    // Logout function
-    window.logout = function () {
-        Swal.fire({
-            title: 'Logout Confirmation',
-            text: 'Are you sure you want to logout?',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Yes, logout',
-            background: '#1a1a1a',
-            color: '#ffffff'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Clear all authentication data
-                localStorage.removeItem('smartreg_token');
-                localStorage.removeItem('smartreg_user');
-                sessionStorage.removeItem('smartreg_token');
-                
-                // Set logout flag
-                localStorage.setItem('smartreg_logout', 'true');
-                
-                // Show logout success message
-                Swal.fire({
-                    title: 'Logged Out',
-                    text: 'You have been successfully logged out.',
-                    icon: 'success',
-                    timer: 1500,
-                    showConfirmButton: false,
-                    background: '#1a1a1a',
-                    color: '#ffffff'
-                }).then(() => {
-                    // Redirect to login page
-                    window.location.href = "../index.html";
-                });
+            let errorMessage = error.message || "Failed to submit application";
+            
+            // Include server error message if available
+            if (error.response && error.response.message) {
+                errorMessage += `: ${error.response.message}`;
             }
-        });
-    };
+            
+            console.error("Application submission error:", error);
+            
+            Swal.fire({
+                title: "Application Submission Failed",
+                text: errorMessage,
+                icon: "error",
+                background: "#1a1a1a",
+                color: "#ffffff"
+            });
+        }
+    });
+
+    // =================== PAYMENT FUNCTIONS ===================
 
     // Payment function
     window.showPaymentForm = function () {
         // Check if user has pending applications
-        searchApplications({ status: 'PENDING' })
+        loadDriverApplications()
             .then(applications => {
-                if (applications.length === 0) {
+                const pendingApps = applications.filter(app => app.status === 'PENDING');
+                
+                if (pendingApps.length === 0) {
                     Swal.fire({
                         title: "No Pending Applications",
-                        text: "You don't have any pending applications to pay for.",
+                        text: "You don't have any pending applications to pay for. Please submit an application first.",
                         icon: "info",
                         background: "#1a1a1a",
                         color: "#ffffff"
@@ -914,7 +842,7 @@ $(document).ready(function () {
                 }
 
                 // Show payment modal with application details
-                showPaymentModal(applications);
+                showPaymentModal(pendingApps);
             })
             .catch(error => {
                 Swal.fire({
@@ -928,46 +856,73 @@ $(document).ready(function () {
     };
 
     function showPaymentModal(applications) {
-        const applicationsList = applications.map(app => `
-            <div class="payment-application-item" data-id="${app.id}">
-                <input type="radio" name="paymentApplication" value="${app.id}" id="app_${app.id}">
-                <label for="app_${app.id}">
-                    <strong>Application #${app.id}</strong><br>
-                    License Type: ${app.licenseType}<br>
-                    Amount: Rs. ${app.examFee || '5000'}
-                </label>
-            </div>
-        `).join('');
+        const applicationsList = applications.map(app => {
+            const vehicleClasses = app.vehicleClasses ? 
+                app.vehicleClasses.map(v => v.code || v.value).join(', ') : 'N/A';
+            const examFee = calculateExamFee(app.licenseType, app.vehicleClasses);
+            
+            return `
+                <div class="payment-application-item" data-id="${app.id}">
+                    <input type="radio" name="paymentApplication" value="${app.id}" id="app_${app.id}">
+                    <label for="app_${app.id}" class="w-100 text-start">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <strong>Application #${app.id}</strong><br>
+                                <small>License Type: ${app.licenseType}</small><br>
+                                <small>Vehicle Classes: ${vehicleClasses}</small>
+                            </div>
+                            <div class="text-end">
+                                <strong>Rs. ${examFee}</strong>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            `;
+        }).join('');
 
         Swal.fire({
-            title: 'Exam Payment',
+            title: 'Exam Fee Payment',
             html: `
                 <div class="payment-modal-content">
-                    <h6>Select Application to Pay:</h6>
-                    ${applicationsList}
-                    <div class="payment-methods mt-3">
+                    <h6 class="mb-3">Select Application to Pay:</h6>
+                    <div class="applications-list">
+                        ${applicationsList}
+                    </div>
+                    <div class="payment-methods mt-4">
                         <h6>Payment Method:</h6>
-                        <div class="form-check">
+                        <div class="form-check text-start">
                             <input class="form-check-input" type="radio" name="paymentMethod" id="card" value="card" checked>
-                            <label class="form-check-label" for="card">Credit/Debit Card</label>
+                            <label class="form-check-label" for="card">
+                                <i class="fas fa-credit-card me-2"></i>Credit/Debit Card
+                            </label>
                         </div>
-                        <div class="form-check">
+                        <div class="form-check text-start">
                             <input class="form-check-input" type="radio" name="paymentMethod" id="bank" value="bank">
-                            <label class="form-check-label" for="bank">Bank Transfer</label>
+                            <label class="form-check-label" for="bank">
+                                <i class="fas fa-university me-2"></i>Bank Transfer
+                            </label>
+                        </div>
+                        <div class="form-check text-start">
+                            <input class="form-check-input" type="radio" name="paymentMethod" id="mobile" value="mobile">
+                            <label class="form-check-label" for="mobile">
+                                <i class="fas fa-mobile-alt me-2"></i>Mobile Payment
+                            </label>
                         </div>
                     </div>
                 </div>
             `,
             showCancelButton: true,
             confirmButtonText: 'Proceed to Payment',
+            cancelButtonText: 'Cancel',
             background: '#1a1a1a',
             color: '#ffffff',
+            width: '600px',
             preConfirm: () => {
                 const selectedApp = $('input[name="paymentApplication"]:checked').val();
                 const paymentMethod = $('input[name="paymentMethod"]:checked').val();
                 
                 if (!selectedApp) {
-                    Swal.showValidationMessage('Please select an application');
+                    Swal.showValidationMessage('Please select an application to pay for');
                     return false;
                 }
                 
@@ -980,127 +935,78 @@ $(document).ready(function () {
         });
     }
 
+    function calculateExamFee(licenseType, vehicleClasses) {
+        // Base fee calculation based on license type
+        let baseFee = 3000;
+        
+        switch(licenseType) {
+            case 'learner':
+                baseFee = 2500;
+                break;
+            case 'restricted':
+                baseFee = 3000;
+                break;
+            case 'full':
+                baseFee = 4000;
+                break;
+            case 'heavy':
+                baseFee = 6000;
+                break;
+            case 'commercial':
+                baseFee = 7500;
+                break;
+            case 'international':
+                baseFee = 5000;
+                break;
+            case 'motorcycle':
+                baseFee = 3500;
+                break;
+            case 'special':
+                baseFee = 8000;
+                break;
+            default:
+                baseFee = 3000;
+        }
+        
+        // Additional fee per vehicle class
+        const additionalFee = vehicleClasses ? (vehicleClasses.length - 1) * 500 : 0;
+        
+        return baseFee + additionalFee;
+    }
+
     function processPayment(paymentData) {
         showLoading(true);
         
-        // In a real application, this would integrate with a payment gateway
-        $.ajax({
-            url: `${API_BASE_URL}/payments/process`,
-            method: 'POST',
-            data: JSON.stringify({
-                applicationId: paymentData.applicationId,
-                driverId: currentDriverId,
-                paymentMethod: paymentData.method,
-                amount: 5000 // This should come from the application
-            }),
-            success: function(response) {
-                showLoading(false);
-                Swal.fire({
-                    title: "Payment Successful",
-                    text: "Your exam fee has been paid successfully!",
-                    icon: "success",
-                    background: "#1a1a1a",
-                    color: "#ffffff"
-                });
-                loadDriverApplications(); // Refresh applications
-            },
-            error: function(xhr, status, error) {
-                showLoading(false);
-                Swal.fire({
-                    title: "Payment Failed",
-                    text: "Payment processing failed. Please try again.",
-                    icon: "error",
-                    background: "#1a1a1a",
-                    color: "#ffffff"
-                });
-            }
-        });
-    }
-
-    // Download license function
-    window.downloadLicense = function(licenseId) {
-        showLoading(true);
-        
-        $.ajax({
-            url: `${API_BASE_URL}/licenses/${licenseId}/download`,
-            method: 'GET',
-            xhrFields: {
-                responseType: 'blob'
-            },
-            success: function(blob) {
-                showLoading(false);
-                
-                // Create download link
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `license_${licenseId}.pdf`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                window.URL.revokeObjectURL(url);
-                
-                Swal.fire({
-                    title: "Success",
-                    text: "License downloaded successfully!",
-                    icon: "success",
-                    background: "#1a1a1a",
-                    color: "#ffffff"
-                });
-            },
-            error: function(xhr, status, error) {
-                showLoading(false);
-                Swal.fire({
-                    title: "Download Failed",
-                    text: "Failed to download license. Please try again.",
-                    icon: "error",
-                    background: "#1a1a1a",
-                    color: "#ffffff"
-                });
-            }
-        });
-    };
-
-    // Search applications function
-    window.searchApplications = function(params = {}) {
-        return searchApplications({
-            status: params.status,
-            licenseType: params.licenseType,
-            fromDate: params.fromDate,
-            toDate: params.toDate,
-            ...params
-        });
-    };
-
-    // Refresh dashboard data
-    window.refreshDashboard = function() {
-        showLoading(true);
-        
-        Promise.all([
-            loadDriverProfile(),
-            loadDriverApplications(),
-            loadNotifications(),
-            checkExistingLicense()
-        ]).then(() => {
+        // Mock payment processing - replace with actual payment gateway integration
+        setTimeout(() => {
             showLoading(false);
+            
+            // Simulate successful payment
             Swal.fire({
-                title: "Success",
-                text: "Dashboard refreshed successfully!",
+                title: "Payment Successful!",
+                html: `
+                    <div class="text-start">
+                        <p><strong>Transaction ID:</strong> TXN${Date.now()}</p>
+                        <p><strong>Application ID:</strong> ${paymentData.applicationId}</p>
+                        <p><strong>Payment Method:</strong> ${paymentData.method.toUpperCase()}</p>
+                        <p><strong>Status:</strong> <span class="badge bg-success">Paid</span></p>
+                        <p class="mt-3">Your exam fee has been processed successfully. You will receive an exam date notification soon.</p>
+                    </div>
+                `,
                 icon: "success",
                 background: "#1a1a1a",
-                color: "#ffffff"
+                color: "#ffffff",
+                confirmButtonText: "OK"
             });
-        }).catch(error => {
-            showLoading(false);
-            Swal.fire({
-                title: "Error",
-                text: "Failed to refresh dashboard data.",
-                icon: "error",
-                background: "#1a1a1a",
-                color: "#ffffff"
-            });
-        });
-    };
+            
+            // Refresh applications to show updated payment status
+            loadDriverApplications();
+            loadNotifications();
+            
+        }, 2000); // Simulate processing time
+    }
+
+    // =================== APPLICATION MANAGEMENT ===================
 
     // View application details
     window.viewApplicationDetails = function(applicationId) {
@@ -1125,48 +1031,77 @@ $(document).ready(function () {
 
     function showDetailedApplicationModal(application) {
         const statusBadgeClass = getStatusBadgeClass(application.status);
-        const vehicleClasses = application.vehicleClasses?.map(v => v.code || v.value).join(', ') || 'N/A';
+        // Handle vehicleClasses as array of strings
+        const vehicleClasses = Array.isArray(application.vehicleClasses) ? 
+            application.vehicleClasses.join(', ') : 'N/A';
+        
+        const examFee = calculateExamFee(application.licenseType, application.vehicleClasses);
         
         Swal.fire({
-            title: `Application #${application.id}`,
+            title: `Application Details - #${application.id}`,
             html: `
-                <div class="application-details">
+                <div class="application-details text-start">
                     <div class="row">
                         <div class="col-md-6">
-                            <h6>Application Information</h6>
+                            <h6><i class="fas fa-file-alt me-2"></i>Application Information</h6>
                             <p><strong>Status:</strong> <span class="badge bg-${statusBadgeClass}">${application.status}</span></p>
                             <p><strong>License Type:</strong> ${application.licenseType}</p>
                             <p><strong>Vehicle Classes:</strong> ${vehicleClasses}</p>
                             <p><strong>Exam Language:</strong> ${application.examLanguage}</p>
-                            <p><strong>Submitted Date:</strong> ${new Date(application.submittedDate).toLocaleDateString()}</p>
+                            <p><strong>Exam Fee:</strong> Rs. ${examFee}</p>
+                            <p><strong>Submitted:</strong> ${new Date(application.submittedDate).toLocaleDateString()}</p>
                         </div>
                         <div class="col-md-6">
-                            <h6>Personal Information</h6>
+                            <h6><i class="fas fa-user me-2"></i>Personal Information</h6>
                             <p><strong>NIC:</strong> ${application.nicNumber}</p>
                             <p><strong>Blood Group:</strong> ${application.bloodGroup}</p>
                             <p><strong>Date of Birth:</strong> ${new Date(application.dateOfBirth).toLocaleDateString()}</p>
                             <p><strong>Phone:</strong> ${application.phoneNumber}</p>
+                            <p><strong>Address:</strong> ${application.address}</p>
                         </div>
                     </div>
                     ${application.rejectionReason ? `
-                        <div class="rejection-reason mt-3">
-                            <h6 class="text-danger">Rejection Reason:</h6>
-                            <p class="text-danger">${application.rejectionReason}</p>
+                        <div class="rejection-reason mt-3 p-3" style="background-color: #2d1b1b; border-left: 4px solid #dc3545;">
+                            <h6 class="text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Rejection Reason:</h6>
+                            <p class="text-danger mb-0">${application.rejectionReason}</p>
                         </div>
                     ` : ''}
                     ${application.status === 'APPROVED' ? `
-                        <div class="approval-info mt-3">
-                            <h6 class="text-success">Approval Information:</h6>
-                            <p>Your license will be ready for collection within 7 working days.</p>
+                        <div class="approval-info mt-3 p-3" style="background-color: #1b2d1b; border-left: 4px solid #28a745;">
+                            <h6 class="text-success"><i class="fas fa-check-circle me-2"></i>Application Approved!</h6>
+                            <p class="text-success mb-0">Your license will be ready for collection within 7 working days. You will receive a notification with collection details.</p>
+                        </div>
+                    ` : ''}
+                    ${application.status === 'PENDING' ? `
+                        <div class="pending-info mt-3 p-3" style="background-color: #2d2a1b; border-left: 4px solid #ffc107;">
+                            <h6 class="text-warning"><i class="fas fa-clock me-2"></i>Application Under Review</h6>
+                            <p class="text-warning mb-0">Your application is currently being reviewed. This process typically takes 3-5 business days.</p>
                         </div>
                     ` : ''}
                 </div>
             `,
-            width: '800px',
+            width: '900px',
             background: '#1a1a1a',
             color: '#ffffff',
-            confirmButtonText: 'Close'
+            confirmButtonText: 'Close',
+            showCancelButton: application.status === 'REJECTED',
+            cancelButtonText: application.status === 'REJECTED' ? 'Reapply' : null,
+            cancelButtonColor: '#28a745'
+        }).then((result) => {
+            if (result.dismiss === Swal.DismissReason.cancel && application.status === 'REJECTED') {
+                showLicenseForm();
+            }
         });
+    }
+
+    function getStatusBadgeClass(status) {
+        switch(status) {
+            case 'APPROVED': return 'success';
+            case 'REJECTED': return 'danger';
+            case 'PENDING': return 'warning';
+            case 'UNDER_REVIEW': return 'info';
+            default: return 'secondary';
+        }
     }
 
     // Check application status
@@ -1175,7 +1110,7 @@ $(document).ready(function () {
             .then(application => {
                 const statusMessage = getStatusMessage(application.status);
                 Swal.fire({
-                    title: "Application Status",
+                    title: "Application Status Update",
                     text: statusMessage,
                     icon: getStatusIcon(application.status),
                     background: "#1a1a1a",
@@ -1222,32 +1157,250 @@ $(document).ready(function () {
         }
     }
 
-    // Update profile function (if you have a profile update form)
-    window.updateProfile = function(profileData) {
+    // =================== UTILITY FUNCTIONS ===================
+
+    function handleUnauthorized() {
+        localStorage.removeItem('smartreg_token');
+        localStorage.removeItem('smartreg_user');
+        sessionStorage.removeItem('smartreg_token');
+        
+        Swal.fire({
+            title: "Session Expired",
+            text: "Your session has expired. Please login again to continue.",
+            icon: "error",
+            background: "#1a1a1a",
+            color: "#ffffff",
+            confirmButtonText: "OK"
+        }).then(() => {
+            window.location.href = "../index.html";
+        });
+    }
+
+    function showLoading(show) {
+        if (show) {
+            if ($("#loadingOverlay").length === 0) {
+                $("body").append(`
+                    <div id="loadingOverlay" class="loading-overlay" style="
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background: rgba(0,0,0,0.7);
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        z-index: 9999;
+                    ">
+                        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
+                    </div>
+                `);
+            }
+        } else {
+            $("#loadingOverlay").remove();
+        }
+    }
+
+    function showAlert(title, message, type) {
+        Swal.fire({
+            title: title,
+            text: message,
+            icon: type,
+            background: '#1a1a1a',
+            color: '#ffffff',
+            confirmButtonColor: type === 'error' ? '#d33' : '#3085d6'
+        });
+    }
+
+    // =================== INPUT FORMATTERS ===================
+
+    // Phone number formatting for Sri Lankan numbers
+    $("#phoneNumber").on("input", function (e) {
+        let value = $(this).val().replace(/\D/g, "");
+        
+        // Remove country code if present
+        if (value.startsWith("94")) {
+            value = value.substring(2);
+        }
+        if (value.startsWith("0")) {
+            value = value.substring(1);
+        }
+        
+        // Format the number
+        if (value.length > 0) {
+            if (value.length <= 9) {
+                value = "+94 " + value.replace(/(\d{2})(\d{3})(\d{4})/, "$1 $2 $3");
+            } else {
+                value = "+94 " + value.substring(0, 9).replace(/(\d{2})(\d{3})(\d{4})/, "$1 $2 $3");
+            }
+        }
+        
+        $(this).val(value);
+    });
+
+    // NIC validation for Sri Lankan format
+    $("#nicNumber").on("input", function (e) {
+        let value = $(this).val().toUpperCase().replace(/[^A-Z0-9]/g, "");
+        
+        // Limit length based on NIC format (old: 9 digits + V, new: 12 digits)
+        if (value.length > 12) {
+            value = value.substring(0, 12);
+        }
+        
+        $(this).val(value);
+    });
+
+    // Validate NIC format
+    function validateNIC(nic) {
+        const oldNICPattern = /^[0-9]{9}[VvXx]$/; // Old format: 123456789V
+        const newNICPattern = /^[0-9]{12}$/;      // New format: 123456789012
+        
+        return oldNICPattern.test(nic) || newNICPattern.test(nic);
+    }
+
+    // Date validation
+    $("#dateOfBirth").on("change", function (e) {
+        const birthDate = new Date($(this).val());
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+
+        if (age < 18) {
+            Swal.fire({
+                title: "Age Requirement Not Met",
+                text: "You must be at least 18 years old to apply for a driving license.",
+                icon: "error",
+                background: "#1a1a1a",
+                color: "#ffffff"
+            });
+            $(this).val("");
+        } else if (age > 80) {
+            Swal.fire({
+                title: "Age Verification Required",
+                text: "Applicants over 80 years may require additional medical clearance.",
+                icon: "warning",
+                background: "#1a1a1a",
+                color: "#ffffff"
+            });
+        }
+    });
+
+    // =================== DASHBOARD FUNCTIONS ===================
+
+    // Refresh dashboard data
+    window.refreshDashboard = function() {
         showLoading(true);
         
-        updateDriverProfile(profileData)
-            .then(response => {
-                showLoading(false);
-                Swal.fire({
-                    title: "Success",
-                    text: "Profile updated successfully!",
-                    icon: "success",
-                    background: "#1a1a1a",
-                    color: "#ffffff"
-                });
-                loadDriverProfile(); // Refresh profile data
-            })
-            .catch(error => {
-                showLoading(false);
-                Swal.fire({
-                    title: "Error",
-                    text: error.message || "Failed to update profile.",
-                    icon: "error",
-                    background: "#1a1a1a",
-                    color: "#ffffff"
-                });
+        Promise.all([
+            loadDriverApplications(),
+            loadNotifications(),
+            checkExistingLicense(),
+            getPendingApplicationCount()
+        ]).then(() => {
+            showLoading(false);
+            Swal.fire({
+                title: "Dashboard Refreshed",
+                text: "All data has been updated successfully!",
+                icon: "success",
+                background: "#1a1a1a",
+                color: "#ffffff",
+                timer: 1500,
+                showConfirmButton: false
             });
+        }).catch(error => {
+            showLoading(false);
+            Swal.fire({
+                title: "Refresh Failed",
+                text: "Some data could not be updated. Please try again.",
+                icon: "warning",
+                background: "#1a1a1a",
+                color: "#ffffff"
+            });
+        });
+    };
+
+    // Search applications function
+    window.searchApplications = function(params = {}) {
+        return loadDriverApplications().then(applications => {
+            let filteredApps = applications;
+            
+            if (params.status) {
+                filteredApps = filteredApps.filter(app => app.status === params.status);
+            }
+            
+            if (params.licenseType) {
+                filteredApps = filteredApps.filter(app => app.licenseType === params.licenseType);
+            }
+            
+            if (params.fromDate) {
+                filteredApps = filteredApps.filter(app => 
+                    new Date(app.submittedDate) >= new Date(params.fromDate)
+                );
+            }
+            
+            if (params.toDate) {
+                filteredApps = filteredApps.filter(app => 
+                    new Date(app.submittedDate) <= new Date(params.toDate)
+                );
+            }
+            
+            return filteredApps;
+        });
+    };
+
+    // =================== EVENT HANDLERS ===================
+
+    // Close modal when clicking outside
+    $(window).on("click", function (event) {
+        const modal = $("#licenseModal")[0];
+        if (event.target == modal) {
+            $(modal).hide();
+            resetForm();
+        }
+    });
+
+    // Logout function
+    window.logout = function () {
+        Swal.fire({
+            title: 'Confirm Logout',
+            text: 'Are you sure you want to logout?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, Logout',
+            cancelButtonText: 'Cancel',
+            background: '#1a1a1a',
+            color: '#ffffff'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Clear all authentication data
+                localStorage.removeItem('smartreg_token');
+                localStorage.removeItem('smartreg_user');
+                sessionStorage.removeItem('smartreg_token');
+                
+                // Set logout flag
+                localStorage.setItem('smartreg_logout', 'true');
+                
+                // Show logout success message
+                Swal.fire({
+                    title: 'Logged Out Successfully',
+                    text: 'You have been logged out safely.',
+                    icon: 'success',
+                    timer: 1500,
+                    showConfirmButton: false,
+                    background: '#1a1a1a',
+                    color: '#ffffff'
+                }).then(() => {
+                    // Redirect to login page
+                    window.location.href = "../index.html";
+                });
+            }
+        });
     };
 
     // Toggle mobile menu
@@ -1255,24 +1408,161 @@ $(document).ready(function () {
         $(".navbar-nav").toggleClass("show");
     });
 
-    // Auto-refresh notifications every 5 minutes
-    setInterval(() => {
-        loadNotifications();
-    }, 5 * 60 * 1000);
+    // Auto-refresh functionality
+    let refreshInterval;
 
-    // Auto-refresh applications every 10 minutes
-    setInterval(() => {
-        loadDriverApplications();
-    }, 10 * 60 * 1000);
+    function startAutoRefresh() {
+        // Refresh notifications every 2 minutes
+        refreshInterval = setInterval(() => {
+            if (!document.hidden) {
+                loadNotifications();
+                getPendingApplicationCount().then(count => {
+                    updateNotificationBadge(count);
+                });
+            }
+        }, 2 * 60 * 1000);
+    }
 
-    // Handle page visibility change to refresh data when page becomes visible
+    function stopAutoRefresh() {
+        if (refreshInterval) {
+            clearInterval(refreshInterval);
+        }
+    }
+
+    // Handle page visibility change
     document.addEventListener('visibilitychange', function() {
         if (!document.hidden) {
+            // Page became visible - refresh data
             loadNotifications();
             loadDriverApplications();
         }
     });
 
+    // Handle browser beforeunload
+    window.addEventListener('beforeunload', function() {
+        stopAutoRefresh();
+    });
+
+    // =================== FORM VALIDATION HELPERS ===================
+
+    function validateFormData() {
+        const errors = [];
+        
+        // Validate required fields
+        if (!$("#licenseType").val()) {
+            errors.push("License type is required");
+        }
+        
+        if (!$("#examLanguage").val()) {
+            errors.push("Exam language is required");
+        }
+        
+        if (selectedVehicleClasses.length === 0) {
+            errors.push("At least one vehicle class must be selected");
+        }
+        
+        const nicNumber = $("#nicNumber").val();
+        if (!nicNumber) {
+            errors.push("NIC number is required");
+        } else if (!validateNIC(nicNumber)) {
+            errors.push("Invalid NIC number format");
+        }
+        
+        if (!$("#bloodGroup").val()) {
+            errors.push("Blood group is required");
+        }
+        
+        if (!$("#dateOfBirth").val()) {
+            errors.push("Date of birth is required");
+        }
+        
+        const phoneNumber = $("#phoneNumber").val();
+        if (!phoneNumber) {
+            errors.push("Phone number is required");
+        } else if (phoneNumber.replace(/\D/g, "").length < 9) {
+            errors.push("Invalid phone number format");
+        }
+        
+        if (!$("#address").val().trim()) {
+            errors.push("Address is required");
+        }
+        
+        return errors;
+    }
+
+    // =================== HELPER FUNCTIONS ===================
+
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('en-LK', {
+            style: 'currency',
+            currency: 'LKR',
+            minimumFractionDigits: 0
+        }).format(amount);
+    }
+
+    function formatDate(dateString) {
+        return new Date(dateString).toLocaleDateString('en-LK', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    }
+
+    function formatDateTime(dateString) {
+        return new Date(dateString).toLocaleString('en-LK', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    // =================== KEYBOARD SHORTCUTS ===================
+
+    $(document).on('keydown', function(e) {
+        // Ctrl/Cmd + R for refresh
+        if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+            e.preventDefault();
+            refreshDashboard();
+        }
+        
+        // Escape to close modal
+        if (e.key === 'Escape') {
+            if ($("#licenseModal").is(':visible')) {
+                closeLicenseModal();
+            }
+        }
+    });
+
+    // =================== ERROR HANDLING ===================
+
+    function handleApiError(error, defaultMessage = "An error occurred") {
+        console.error("API Error:", error);
+        
+        let errorMessage = defaultMessage;
+        
+        if (error.response && error.response.message) {
+            errorMessage = error.response.message;
+        } else if (error.message) {
+            errorMessage = error.message;
+        } else if (typeof error === 'string') {
+            errorMessage = error;
+        }
+        
+        return errorMessage;
+    }
+
+    // =================== INITIALIZATION ===================
+
+    // Start auto-refresh
+    startAutoRefresh();
+    
     // Initialize the application
     initialize();
+
+    // Log successful initialization
+    console.log("Driver Dashboard initialized successfully");
+    console.log("Current Driver ID:", currentDriverId);
+    console.log("Current Driver Name:", currentDriverName);
 });

@@ -1,12 +1,17 @@
 package lk.ijse.gdse72.backend.controller;
 
+import lk.ijse.gdse72.backend.dto.NotificationDTO;
 import lk.ijse.gdse72.backend.entity.Notification;
 import lk.ijse.gdse72.backend.service.NotificationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("api/v1/notifications")
