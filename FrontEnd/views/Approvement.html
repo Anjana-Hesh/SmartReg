@@ -3,9 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../assets/images/titleIcon.png" type="image/x-icon">
 <title>Driver License Applications</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
 
 <style>
 :root {
@@ -206,9 +208,74 @@ body {
 .action-cell {
     white-space: nowrap;
 }
+
+.form-control {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--glass-border);
+    color: var(--text-light);
+}
+
+.form-control:focus {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--primary);
+    color: var(--text-light);
+    box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+}
+
+.form-select {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--glass-border);
+    color: var(--text-light);
+}
+
+.form-select:focus {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--primary);
+    color: var(--text-light);
+    box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+}
+
+.loading-spinner {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+}
+
+.spinner-border {
+    color: var(--primary);
+}
+
+.decline-reason-item {
+    padding: 8px 12px;
+    margin: 4px 0;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.decline-reason-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(5px);
+}
+
+.decline-reason-item i {
+    color: #e74c3c;
+    margin-right: 10px;
+}
 </style>
 </head>
 <body>
+
+<div class="loading-spinner">
+    <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
 
 <div class="container py-5">
     <div class="glass-card">
@@ -227,17 +294,20 @@ body {
                         <li><h6 class="dropdown-header">Status</h6></li>
                         <li><a class="dropdown-item filter-option" href="#" data-filter="status" data-value="all">All Applications</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item filter-option" href="#" data-filter="status" data-value="pending"><span class="status-badge status-pending me-2">Pending</span>Pending</a></li>
-                        <li><a class="dropdown-item filter-option" href="#" data-filter="status" data-value="approved"><span class="status-badge status-approved me-2">Approved</span>Approved</a></li>
-                        <li><a class="dropdown-item filter-option" href="#" data-filter="status" data-value="rejected"><span class="status-badge status-rejected me-2">Rejected</span>Rejected</a></li>
+                        <li><a class="dropdown-item filter-option" href="#" data-filter="status" data-value="PENDING"><span class="status-badge status-pending me-2">Pending</span>Pending</a></li>
+                        <li><a class="dropdown-item filter-option" href="#" data-filter="status" data-value="APPROVED"><span class="status-badge status-approved me-2">Approved</span>Approved</a></li>
+                        <li><a class="dropdown-item filter-option" href="#" data-filter="status" data-value="REJECTED"><span class="status-badge status-rejected me-2">Rejected</span>Rejected</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><h6 class="dropdown-header">License Type</h6></li>
                         <li><a class="dropdown-item filter-option" href="#" data-filter="license" data-value="all">All Types</a></li>
-                        <li><a class="dropdown-item filter-option" href="#" data-filter="license" data-value="learner">Learner</a></li>
-                        <li><a class="dropdown-item filter-option" href="#" data-filter="license" data-value="full">Full</a></li>
-                        <li><a class="dropdown-item filter-option" href="#" data-filter="license" data-value="international">International</a></li>
+                        <li><a class="dropdown-item filter-option" href="#" data-filter="license" data-value="LEARNER">Learner</a></li>
+                        <li><a class="dropdown-item filter-option" href="#" data-filter="license" data-value="FULL">Full</a></li>
+                        <li><a class="dropdown-item filter-option" href="#" data-filter="license" data-value="INTERNATIONAL">International</a></li>
                     </ul>
                 </div>
+                <button class="btn btn-outline-success ms-2" id="refreshBtn">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
             </div>
         </div>
 
@@ -255,177 +325,23 @@ body {
                     </tr>
                 </thead>
                 <tbody id="applicationsTable">
-                    <!-- Application 1 -->
-                    <tr>
-                        <td class="chevron-cell" data-bs-toggle="collapse" data-bs-target="#details1" aria-expanded="false">
-                            <i class="fas fa-chevron-down rotate-icon"></i>
-                        </td>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <img src="https://randomuser.me/api/portraits/men/32.jpg" class="rounded-circle me-2" width="30" height="30">
-                                <span>John Doe</span>
-                            </div>
-                        </td>
-                        <td>Full</td>
-                        <td>English</td>
-                        <td><span class="status-badge status-pending">Pending</span></td>
-                        <td>2023-07-15</td>
-                        <td class="action-cell">
-                            <button class="btn btn-sm btn-approve me-1 approve-btn" data-id="1"><i class="fas fa-check"></i> Approve</button>
-                            <button class="btn btn-sm btn-decline decline-btn" data-id="1"><i class="fas fa-times"></i> Decline</button>
-                        </td>
-                    </tr>
-                    <tr class="collapse" id="details1">
-                        <td colspan="7" class="collapse-row">
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <strong>Vehicle Classes:</strong> <span class="badge bg-primary me-1">B</span> <span class="badge bg-primary">C1</span><br>
-                                    <strong>NIC:</strong> 987654321V<br>
-                                    <strong>DOB:</strong> 1990-05-15<br>
-                                    <strong>Blood Group:</strong> O+
-                                </div>
-                                <div class="col-md-4">
-                                    <strong>Phone:</strong> +94 77 123 4567<br>
-                                    <strong>Email:</strong> john.doe@example.com<br>
-                                    <strong>Address:</strong> 123 Main St, Colombo
-                                </div>
-                                <div class="col-md-2 text-center">
-                                    <strong>Photo</strong><br>
-                                    <img src="https://randomuser.me/api/portraits/men/32.jpg" class="photo-thumbnail mt-1"
-                                         data-bs-toggle="modal" data-bs-target="#photoModal"
-                                         data-photo="https://randomuser.me/api/portraits/men/32.jpg">
-                                </div>
-                                <div class="col-md-2 text-center">
-                                    <strong>Documents</strong><br>
-                                    <i class="fas fa-file-pdf pdf-icon mt-1 me-2"
-                                       data-bs-toggle="modal" data-bs-target="#pdfModal"
-                                       data-pdf="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"></i>
-                                    <i class="fas fa-file-pdf pdf-icon mt-1"
-                                       data-bs-toggle="modal" data-bs-target="#pdfModal"
-                                       data-pdf="https://www.africau.edu/images/default/sample.pdf"></i>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                    
-                    <!-- Application 2 -->
-                    <tr>
-                        <td class="chevron-cell" data-bs-toggle="collapse" data-bs-target="#details2" aria-expanded="false">
-                            <i class="fas fa-chevron-down rotate-icon"></i>
-                        </td>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <img src="https://randomuser.me/api/portraits/women/44.jpg" class="rounded-circle me-2" width="30" height="30">
-                                <span>Jane Smith</span>
-                            </div>
-                        </td>
-                        <td>Learner</td>
-                        <td>Sinhala</td>
-                        <td><span class="status-badge status-approved">Approved</span></td>
-                        <td>2023-07-10</td>
-                        <td class="action-cell">
-                            <button class="btn btn-sm btn-approve me-1 approve-btn" data-id="2" disabled><i class="fas fa-check"></i> Approve</button>
-                            <button class="btn btn-sm btn-decline decline-btn" data-id="2" disabled><i class="fas fa-times"></i> Decline</button>
-                        </td>
-                    </tr>
-                    <tr class="collapse" id="details2">
-                        <td colspan="7" class="collapse-row">
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <strong>Vehicle Classes:</strong> <span class="badge bg-primary me-1">B</span><br>
-                                    <strong>NIC:</strong> 876543219V<br>
-                                    <strong>DOB:</strong> 1995-08-22<br>
-                                    <strong>Blood Group:</strong> A-
-                                </div>
-                                <div class="col-md-4">
-                                    <strong>Phone:</strong> +94 76 987 6543<br>
-                                    <strong>Email:</strong> jane.smith@example.com<br>
-                                    <strong>Address:</strong> 456 Oak Ave, Kandy
-                                </div>
-                                <div class="col-md-2 text-center">
-                                    <strong>Photo</strong><br>
-                                    <img src="https://randomuser.me/api/portraits/women/44.jpg" class="photo-thumbnail mt-1"
-                                         data-bs-toggle="modal" data-bs-target="#photoModal"
-                                         data-photo="https://randomuser.me/api/portraits/women/44.jpg">
-                                </div>
-                                <div class="col-md-2 text-center">
-                                    <strong>Documents</strong><br>
-                                    <i class="fas fa-file-pdf pdf-icon mt-1 me-2"
-                                       data-bs-toggle="modal" data-bs-target="#pdfModal"
-                                       data-pdf="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"></i>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                    
-                    <!-- Application 3 -->
-                    <tr>
-                        <td class="chevron-cell" data-bs-toggle="collapse" data-bs-target="#details3" aria-expanded="false">
-                            <i class="fas fa-chevron-down rotate-icon"></i>
-                        </td>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <img src="https://randomuser.me/api/portraits/men/67.jpg" class="rounded-circle me-2" width="30" height="30">
-                                <span>Robert Johnson</span>
-                            </div>
-                        </td>
-                        <td>International</td>
-                        <td>English</td>
-                        <td><span class="status-badge status-rejected">Rejected</span></td>
-                        <td>2023-07-05</td>
-                        <td class="action-cell">
-                            <button class="btn btn-sm btn-approve me-1 approve-btn" data-id="3" disabled><i class="fas fa-check"></i> Approve</button>
-                            <button class="btn btn-sm btn-decline decline-btn" data-id="3" disabled><i class="fas fa-times"></i> Decline</button>
-                        </td>
-                    </tr>
-                    <tr class="collapse" id="details3">
-                        <td colspan="7" class="collapse-row">
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <strong>Vehicle Classes:</strong> <span class="badge bg-primary me-1">B</span> <span class="badge bg-primary">D</span><br>
-                                    <strong>NIC:</strong> 765432198V<br>
-                                    <strong>DOB:</strong> 1985-11-30<br>
-                                    <strong>Blood Group:</strong> B+
-                                </div>
-                                <div class="col-md-4">
-                                    <strong>Phone:</strong> +94 71 456 7890<br>
-                                    <strong>Email:</strong> robert.j@example.com<br>
-                                    <strong>Address:</strong> 789 Pine Rd, Galle
-                                </div>
-                                <div class="col-md-2 text-center">
-                                    <strong>Photo</strong><br>
-                                    <img src="https://randomuser.me/api/portraits/men/67.jpg" class="photo-thumbnail mt-1"
-                                         data-bs-toggle="modal" data-bs-target="#photoModal"
-                                         data-photo="https://randomuser.me/api/portraits/men/67.jpg">
-                                </div>
-                                <div class="col-md-2 text-center">
-                                    <strong>Documents</strong><br>
-                                    <i class="fas fa-file-pdf pdf-icon mt-1 me-2"
-                                       data-bs-toggle="modal" data-bs-target="#pdfModal"
-                                       data-pdf="https://www.africau.edu/images/default/sample.pdf"></i>
-                                    <i class="fas fa-file-pdf pdf-icon mt-1"
-                                       data-bs-toggle="modal" data-bs-target="#pdfModal"
-                                       data-pdf="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"></i>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
+                    <!-- Dynamic content will be loaded here -->
                 </tbody>
             </table>
             
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <i class="fas fa-inbox"></i>
+                <h4>No Applications Found</h4>
+                <p>There are no driver license applications to display.</p>
+            </div>
+            
             <div class="d-flex justify-content-between align-items-center mt-3">
                 <div class="text-muted">
-                    Showing <span id="showingFrom">1</span> to <span id="showingTo">3</span> of <span id="totalItems">3</span> applications
+                    Showing <span id="showingFrom">0</span> to <span id="showingTo">0</span> of <span id="totalItems">0</span> applications
                 </div>
                 <nav>
-                    <ul class="pagination">
-                        <li class="page-item disabled">
-                            <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
-                        </li>
-                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                        <li class="page-item">
-                            <a class="page-link" href="#">Next</a>
-                        </li>
+                    <ul class="pagination" id="pagination">
+                        <!-- Pagination will be generated dynamically -->
                     </ul>
                 </nav>
             </div>
@@ -469,173 +385,872 @@ body {
     </div>
 </div>
 
-<!-- Confirmation Modal -->
-<div class="modal fade" id="confirmModal" tabindex="-1">
+<!-- Approve Modal with Exam Date -->
+<div class="modal fade" id="approveModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="confirmModalTitle">Confirm Action</h5>
+                <h5 class="modal-title">
+                    <i class="fas fa-check-circle text-success me-2"></i>Approve Application
+                </h5>
                 <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" id="confirmModalBody">
-                Are you sure you want to perform this action?
+            <div class="modal-body">
+                <div class="alert alert-success">
+                    <i class="fas fa-info-circle me-2"></i>
+                    This action will approve the driver license application and schedule an exam.
+                </div>
+                
+                <div class="mb-3">
+                    <label for="examDate" class="form-label">
+                        <i class="fas fa-calendar-alt me-2"></i>Exam Date <span class="text-danger">*</span>
+                    </label>
+                    <input type="date" class="form-control" id="examDate" required>
+                    <div class="invalid-feedback">
+                        Please select a valid exam date (must be in the future).
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="examTime" class="form-label">
+                        <i class="fas fa-clock me-2"></i>Exam Time <span class="text-danger">*</span>
+                    </label>
+                    <select class="form-select" id="examTime" required>
+                        <option value="">Select Time</option>
+                        <option value="09:00">09:00 AM</option>
+                        <option value="10:00">10:00 AM</option>
+                        <option value="11:00">11:00 AM</option>
+                        <option value="14:00">02:00 PM</option>
+                        <option value="15:00">03:00 PM</option>
+                        <option value="16:00">04:00 PM</option>
+                    </select>
+                    <div class="invalid-feedback">
+                        Please select an exam time.
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="examLocation" class="form-label">
+                        <i class="fas fa-map-marker-alt me-2"></i>Exam Location
+                    </label>
+                    <select class="form-select" id="examLocation">
+                        <option value="Colombo DMT">Colombo Department of Motor Traffic</option>
+                        <option value="Kandy DMT">Kandy Department of Motor Traffic</option>
+                        <option value="Galle DMT">Galle Department of Motor Traffic</option>
+                        <option value="Kurunegala DMT">Kurunegala Department of Motor Traffic</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="approvalNotes" class="form-label">
+                        <i class="fas fa-sticky-note me-2"></i>Notes (Optional)
+                    </label>
+                    <textarea class="form-control" id="approvalNotes" rows="3" placeholder="Additional notes for the applicant..."></textarea>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="confirmActionBtn">Confirm</button>
+                <button type="button" class="btn btn-success" id="confirmApproveBtn">
+                    <i class="fas fa-check me-1"></i> Approve & Schedule
+                </button>
             </div>
         </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Decline Modal with Reasons -->
+<div class="modal fade" id="declineModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-times-circle text-danger me-2"></i>Decline Application
+                </h5>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Please select a reason for declining this application. The applicant will be notified.
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">
+                        <i class="fas fa-list me-2"></i>Decline Reason <span class="text-danger">*</span>
+                    </label>
+                    <div class="decline-reasons">
+                        <div class="decline-reason-item" data-reason="photo">
+                            <i class="fas fa-camera"></i>
+                            <strong>Photo Issues</strong>
+                            <br><small class="text-muted">Photo quality is poor or doesn't meet requirements</small>
+                        </div>
+                        <div class="decline-reason-item" data-reason="medical">
+                            <i class="fas fa-file-medical"></i>
+                            <strong>Medical Certificate Issues</strong>
+                            <br><small class="text-muted">Medical certificate is invalid or expired</small>
+                        </div>
+                        <div class="decline-reason-item" data-reason="documents">
+                            <i class="fas fa-file-alt"></i>
+                            <strong>Incomplete Documents</strong>
+                            <br><small class="text-muted">Required documents are missing or incomplete</small>
+                        </div>
+                        <div class="decline-reason-item" data-reason="information">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Incorrect Information</strong>
+                            <br><small class="text-muted">Personal information doesn't match documents</small>
+                        </div>
+                        <div class="decline-reason-item" data-reason="age">
+                            <i class="fas fa-birthday-cake"></i>
+                            <strong>Age Requirements</strong>
+                            <br><small class="text-muted">Applicant doesn't meet age requirements</small>
+                        </div>
+                        <div class="decline-reason-item" data-reason="other">
+                            <i class="fas fa-ellipsis-h"></i>
+                            <strong>Other Reason</strong>
+                            <br><small class="text-muted">Specify custom reason below</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3" id="customReasonDiv" style="display: none;">
+                    <label for="customReason" class="form-label">Custom Reason</label>
+                    <textarea class="form-control" id="customReason" rows="3" placeholder="Please specify the reason..."></textarea>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="declineNotes" class="form-label">
+                        <i class="fas fa-comment me-2"></i>Additional Notes
+                    </label>
+                    <textarea class="form-control" id="declineNotes" rows="3" placeholder="Additional feedback for the applicant..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeclineBtn" disabled>
+                    <i class="fas fa-times me-1"></i> Decline Application
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+// Configuration
+const API_BASE_URL = "http://localhost:8080/api/v1"; // Update with your backend URL
+
+// Get authentication data from localStorage
+const authToken = localStorage.getItem('smartreg_token') || sessionStorage.getItem('smartreg_token');
+const userData = JSON.parse(localStorage.getItem('smartreg_user') || sessionStorage.getItem('smartreg_user') || '{}');
+const currentDriverId = userData.id;
+const currentDriverName = userData.fullName || userData.name;
+
+// Get CSRF token from meta tag (if your backend uses CSRF protection)
+const csrfToken = $('meta[name="csrf-token"]').attr('content') || '';
+
+// Application variables
+let allApplications = [];
+let filteredApplications = [];
+let currentPage = 1;
+const itemsPerPage = 10;
+let currentApplicationId = null;
+let selectedDeclineReason = '';
+
+// Check authentication
+if (!authToken) {
+    Swal.fire({
+        title: "Authentication Required",
+        text: "Please login to continue",
+        icon: "error",
+        background: "rgba(30, 35, 50, 0.95)",
+        color: "#ffffff",
+        confirmButtonText: "Go to Login",
+        confirmButtonColor: "#4e73df"
+    }).then(() => {
+        window.location.href = "../index.html";
+    });
+}
+
+// Handle unauthorized access
+function handleUnauthorized() {
+    localStorage.removeItem('smartreg_token');
+    localStorage.removeItem('smartreg_user');
+    sessionStorage.removeItem('smartreg_token');
+    sessionStorage.removeItem('smartreg_user');
     
+    Swal.fire({
+        title: "Session Expired",
+        text: "Your session has expired. Please login again.",
+        icon: "warning",
+        background: "rgba(30, 35, 50, 0.95)",
+        color: "#ffffff",
+        confirmButtonText: "Go to Login",
+        confirmButtonColor: "#4e73df"
+    }).then(() => {
+        window.location.href = "../index.html";
+    });
+}
+
+// Setup AJAX defaults with authentication
+$.ajaxSetup({
+    beforeSend: function(xhr) {
+        if (authToken) {
+            xhr.setRequestHeader('Authorization', 'Bearer ' + authToken);
+        }
+        if (csrfToken) {
+            xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken);
+        }
+        xhr.setRequestHeader('Content-Type', 'application/json');
+    },
+    error: function(xhr, status, error) {
+        console.error('AJAX Error:', {
+            status: xhr.status,
+            statusText: xhr.statusText,
+            responseText: xhr.responseText,
+            error: error
+        });
+        
+        if (xhr.status === 401) {
+            handleUnauthorized();
+        } else if (xhr.status === 403) {
+            Swal.fire({
+                title: "Access Denied",
+                text: "You don't have permission to perform this action",
+                icon: "error",
+                background: "rgba(30, 35, 50, 0.95)",
+                color: "#ffffff",
+                confirmButtonColor: "#e74c3c"
+            });
+        } else if (xhr.status === 404) {
+            Swal.fire({
+                title: "Not Found",
+                text: "The requested resource was not found",
+                icon: "error",
+                background: "rgba(30, 35, 50, 0.95)",
+                color: "#ffffff",
+                confirmButtonColor: "#e74c3c"
+            });
+        } else if (xhr.status >= 500) {
+            Swal.fire({
+                title: "Server Error",
+                text: "Internal server error. Please try again later.",
+                icon: "error",
+                background: "rgba(30, 35, 50, 0.95)",
+                color: "#ffffff",
+                confirmButtonColor: "#e74c3c"
+            });
+        } else if (xhr.status === 0) {
+            Swal.fire({
+                title: "Connection Error",
+                text: "Cannot connect to server. Please check if the server is running.",
+                icon: "error",
+                background: "rgba(30, 35, 50, 0.95)",
+                color: "#ffffff",
+                confirmButtonColor: "#e74c3c"
+            });
+        }
+    }
+});
+
 $(document).ready(function() {
-    // Initialize modals
-    const photoModal = new bootstrap.Modal(document.getElementById('photoModal'));
-    const pdfModal = new bootstrap.Modal(document.getElementById('pdfModal'));
-    const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    // Check if user has admin role (adjust based on your user data structure)
+    if (userData.role !== 'ADMIN' && userData.roles && !userData.roles.includes('ADMIN')) {
+        Swal.fire({
+            title: "Access Denied",
+            text: "Only administrators can access this page",
+            icon: "error",
+            background: "rgba(30, 35, 50, 0.95)",
+            color: "#ffffff",
+            confirmButtonText: "Go Back",
+            confirmButtonColor: "#e74c3c"
+        }).then(() => {
+            window.history.back();
+        });
+        return;
+    }
+    // Set minimum date for exam date to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    $('#examDate').attr('min', tomorrow.toISOString().split('T')[0]);
     
-    let currentAction = null;
-    let currentApplicationId = null;
+    // Initialize the application
+    loadApplications();
+    
+    // Event listeners
+    $('#refreshBtn').on('click', loadApplications);
+    $('#searchInput').on('input', handleSearch);
+    $('.filter-option').on('click', handleFilter);
+    
+    // Modal event listeners
+    $(document).on('click', '.approve-btn:not(:disabled)', handleApproveClick);
+    $(document).on('click', '.decline-btn:not(:disabled)', handleDeclineClick);
+    $('#confirmApproveBtn').on('click', handleApproveConfirm);
+    $('#confirmDeclineBtn').on('click', handleDeclineConfirm);
+    
+    // Decline reason selection
+    $('.decline-reason-item').on('click', function() {
+        $('.decline-reason-item').removeClass('selected').css('background', 'rgba(255, 255, 255, 0.05)');
+        $(this).addClass('selected').css('background', 'rgba(231, 76, 60, 0.2)');
+        
+        selectedDeclineReason = $(this).data('reason');
+        $('#confirmDeclineBtn').prop('disabled', false);
+        
+        if (selectedDeclineReason === 'other') {
+            $('#customReasonDiv').show();
+        } else {
+            $('#customReasonDiv').hide();
+        }
+    });
     
     // Photo modal handler
-    $('#photoModal').on('show.bs.modal', function(e) {
-        const photoUrl = $(e.relatedTarget).data('photo');
+    $(document).on('click', '.photo-thumbnail', function() {
+        const photoUrl = $(this).data('photo');
         $('#enlargedPhoto').attr('src', photoUrl);
     });
     
     // PDF modal handler
-    $('#pdfModal').on('show.bs.modal', function(e) {
-        const pdfUrl = $(e.relatedTarget).data('pdf');
+    $(document).on('click', '.pdf-icon', function() {
+        const pdfUrl = $(this).data('pdf');
         $('#pdfViewer').attr('src', pdfUrl + "#toolbar=0");
     });
     
-    // Chevron click handler - only for expanding/collapsing
-    $('.chevron-cell').on('click', function(e) {
-        // Prevent event bubbling to parent elements
+    // Chevron click handler
+    $(document).on('click', '.chevron-cell', function(e) {
         e.stopPropagation();
-        
-        // Toggle the chevron icon
         $(this).find('.rotate-icon').toggleClass('rotated');
-        
-        // Let Bootstrap handle the collapse/expand
     });
-    
-    // Approve button click handler
-    $(document).on('click', '.approve-btn:not(:disabled)', function(e) {
-        e.stopPropagation();
-        currentApplicationId = $(this).data('id');
-        currentAction = 'approve';
-        
-        $('#confirmModalTitle').text('Approve Application');
-        $('#confirmModalBody').html(`
-            <p>Are you sure you want to approve this driver license application?</p>
-            <div class="alert alert-success mt-3">
-                <i class="fas fa-info-circle me-2"></i>
-                This action will grant the applicant their requested license.
-            </div>
-        `);
-        $('#confirmActionBtn').removeClass('btn-danger').addClass('btn-success').html('<i class="fas fa-check me-1"></i> Approve');
-        confirmModal.show();
-    });
-    
-    // Decline button click handler
-    $(document).on('click', '.decline-btn:not(:disabled)', function(e) {
-        e.stopPropagation();
-        currentApplicationId = $(this).data('id');
-        currentAction = 'decline';
-        
-        $('#confirmModalTitle').text('Decline Application');
-        $('#confirmModalBody').html(`
-            <p>Are you sure you want to decline this driver license application?</p>
-            <div class="alert alert-danger mt-3">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                This action cannot be undone. The applicant will need to submit a new application.
-            </div>
-        `);
-        $('#confirmActionBtn').removeClass('btn-success').addClass('btn-danger').html('<i class="fas fa-times me-1"></i> Decline');
-        confirmModal.show();
-    });
-    
-    // Confirm action button handler
-    $('#confirmActionBtn').on('click', function() {
-        if (currentAction && currentApplicationId) {
-            const row = $(`.approve-btn[data-id="${currentApplicationId}"]`).closest('tr');
-            const statusBadge = row.find('.status-badge');
-            const actionButtons = row.find('.approve-btn, .decline-btn');
-            
-            if (currentAction === 'approve') {
-                // Update status badge
-                statusBadge.removeClass('status-pending status-rejected').addClass('status-approved').text('Approved');
-                
-                // Disable action buttons
-                actionButtons.prop('disabled', true);
-                
-                // Update the status in the details row if expanded
-                const detailsRow = row.next('.collapse');
-                if (detailsRow.length) {
-                    detailsRow.find('.status-badge').removeClass('status-pending status-rejected').addClass('status-approved').text('Approved');
-                }
-                
-                showToast('success', 'Application Approved', 'The driver license application has been approved successfully.');
-            } else if (currentAction === 'decline') {
-                // Update status badge
-                statusBadge.removeClass('status-pending status-approved').addClass('status-rejected').text('Rejected');
-                
-                // Disable action buttons
-                actionButtons.prop('disabled', true);
-                
-                // Update the status in the details row if expanded
-                const detailsRow = row.next('.collapse');
-                if (detailsRow.length) {
-                    detailsRow.find('.status-badge').removeClass('status-pending status-approved').addClass('status-rejected').text('Rejected');
-                }
-                
-                showToast('error', 'Application Declined', 'The driver license application has been declined.');
+});
+
+async function loadApplications() {
+    showLoading();
+    try {
+        const response = await $.ajax({
+            url: `${API_BASE_URL}/applications/getall`,
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + authToken,
+                'Content-Type': 'application/json'
             }
-            
-            confirmModal.hide();
+        });
+        
+        allApplications = response || [];
+        filteredApplications = [...allApplications];
+        renderApplications();
+        
+        if (allApplications.length === 0) {
+            showInfo('No Applications', 'No driver license applications found.');
         }
+        
+    } catch (error) {
+        console.error('Error loading applications:', error);
+        
+        // Handle specific error cases
+        if (error.status === 0) {
+            showError('Connection Error', 'Cannot connect to server. Please ensure the backend server is running on http://localhost:8080');
+        } else if (error.status === 401) {
+            handleUnauthorized();
+        } else if (error.status === 403) {
+            showError('Access Denied', 'You don\'t have permission to view applications.');
+        } else {
+            showError('Error', `Failed to load applications: ${error.statusText || 'Unknown error'}`);
+        }
+        
+        // Show empty state
+        $('#applicationsTable').html(`
+            <tr>
+                <td colspan="7" class="text-center py-5">
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle text-warning fa-3x mb-3"></i>
+                        <h5>Failed to Load Applications</h5>
+                        <p class="text-muted mb-3">
+                            ${error.status === 0 ? 'Server connection failed. Please check if the backend is running.' : 'An error occurred while loading applications.'}
+                        </p>
+                        <button class="btn btn-outline-primary" onclick="loadApplications()">
+                            <i class="fas fa-retry me-1"></i> Retry
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `);
+        $('#emptyState').hide();
+    } finally {
+        hideLoading();
+    }
+}
+
+function renderApplications() {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const pageApplications = filteredApplications.slice(startIndex, endIndex);
+    
+    if (pageApplications.length === 0) {
+        $('#applicationsTable').empty();
+        $('#emptyState').show();
+        updatePaginationInfo(0, 0, 0);
+        return;
+    }
+    
+    $('#emptyState').hide();
+    
+    const tbody = $('#applicationsTable');
+    tbody.empty();
+    
+    pageApplications.forEach((app, index) => {
+        const rowHtml = generateApplicationRow(app, startIndex + index);
+        tbody.append(rowHtml);
     });
     
-    // Enhanced toast notification function
-    function showToast(type, title, message) {
-        // Remove any existing toasts
-        $('.custom-toast').remove();
-        
-        // Create toast element
-        const toast = $(`
-            <div class="custom-toast position-fixed bottom-0 end-0 p-3" style="z-index: 11">
-                <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
-                    <div class="toast-header bg-${type === 'success' ? 'success' : 'danger'} text-white">
-                        <strong class="me-auto">${title}</strong>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-                    </div>
-                    <div class="toast-body bg-light">
-                        ${message}
-                    </div>
+    updatePaginationInfo(startIndex + 1, Math.min(endIndex, filteredApplications.length), filteredApplications.length);
+    generatePagination();
+}
+
+function generateApplicationRow(app, index) {
+    const statusClass = getStatusClass(app.status);
+    const statusText = app.status.charAt(0).toUpperCase() + app.status.slice(1).toLowerCase();
+    const isDisabled = app.status !== 'PENDING' ? 'disabled' : '';
+    console.log("app data: " + app.driver);
+    
+    return `
+        <tr>
+            <td class="chevron-cell" data-bs-toggle="collapse" data-bs-target="#details${app.id}" aria-expanded="false">
+                <i class="fas fa-chevron-down rotate-icon"></i>
+            </td>
+            <td>
+                <div class="d-flex align-items-center">
+                    <img src="${app.photoBase64 ? 'data:image/jpeg;base64,' + app.photoBase64 : 'https://via.placeholder.com/30'}" 
+                         class="rounded-circle me-2" width="30" height="30">
+                    <span>${app.driver || 'N/A'}</span>
                 </div>
+            </td>
+            <td>${app.licenseType || 'N/A'}</td>
+            <td>${app.examLanguage || 'N/A'}</td>
+            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+            <td>${formatDate(app.submittedDate)}</td>
+            <td class="action-cell">
+                <button class="btn btn-sm btn-approve me-1 approve-btn" data-id="${app.id}" ${isDisabled}>
+                    <i class="fas fa-check"></i> Approve
+                </button>
+                <button class="btn btn-sm btn-decline decline-btn" data-id="${app.id}" ${isDisabled}>
+                    <i class="fas fa-times"></i> Decline
+                </button>
+            </td>
+        </tr>
+        <tr class="collapse" id="details${app.id}">
+            <td colspan="7" class="collapse-row">
+                ${generateDetailsRow(app)}
+            </td>
+        </tr>
+    `;
+}
+
+function generateDetailsRow(app) {
+    return `
+        <div class="row">
+            <div class="col-md-4">
+                <strong>Vehicle Classes:</strong> ${formatVehicleClasses(app.vehicleClasses)}<br>
+                <strong>NIC:</strong> ${app.nic || 'N/A'}<br>
+                <strong>DOB:</strong> ${formatDate(app.dateOfBirth)}<br>
+                <strong>Blood Group:</strong> ${app.bloodGroup || 'N/A'}
+                ${app.examDate ? `<br><strong>Exam Date:</strong> ${formatDate(app.examDate)}` : ''}
             </div>
-        `);
-        
-        // Add to DOM
-        $('body').append(toast);
-        
-        // Auto-remove after 5 seconds
-        setTimeout(() => {
-            toast.remove();
-        }, 5000);
-        
-        // Close button handler
-        toast.find('.btn-close').on('click', function() {
-            toast.remove();
+            <div class="col-md-4">
+                <strong>Phone:</strong> ${app.phoneNumber || 'N/A'}<br>
+                <strong>Email:</strong> ${app.email || 'N/A'}<br>
+                <strong>Address:</strong> ${app.address || 'N/A'}
+            </div>
+            <div class="col-md-2 text-center">
+                <strong>Photo</strong><br>
+                <img src="${app.photoBase64 ? 'data:image/jpeg;base64,' + app.photoBase64 : 'https://via.placeholder.com/45'}" 
+                     class="photo-thumbnail mt-1"
+                     data-bs-toggle="modal" data-bs-target="#photoModal"
+                     data-photo="${app.photoBase64 ? 'data:image/jpeg;base64,' + app.photoBase64 : 'https://via.placeholder.com/300'}">
+            </div>
+            <div class="col-md-2 text-center">
+                <strong>Documents</strong><br>
+                ${app.medicalCertificateBase64 ? `<i class="fas fa-file-pdf pdf-icon mt-1 me-2"
+                   data-bs-toggle="modal" data-bs-target="#pdfModal"
+                   data-pdf="data:application/pdf;base64,${app.medicalCertificateBase64}" title="Medical Certificate"></i>` : ''}
+                ${app.additionalDocuments ? `<i class="fas fa-file-pdf pdf-icon mt-1"
+                   data-bs-toggle="modal" data-bs-target="#pdfModal"
+                   data-pdf="${app.additionalDocuments}" title="Additional Documents"></i>` : ''}
+            </div>
+        </div>
+    `;
+}
+
+function getStatusClass(status) {
+    switch (status?.toUpperCase()) {
+        case 'PENDING': return 'status-pending';
+        case 'APPROVED': return 'status-approved';
+        case 'REJECTED': return 'status-rejected';
+        default: return 'status-pending';
+    }
+}
+
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    try {
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    } catch (error) {
+        return dateString;
+    }
+}
+
+function formatVehicleClasses(classes) {
+    if (!classes || !Array.isArray(classes)) return 'N/A';
+    return classes.map(cls => `<span class="badge bg-primary me-1">${cls}</span>`).join(' ');
+}
+
+function handleSearch() {
+    const searchTerm = $('#searchInput').val().toLowerCase().trim();
+    
+    if (searchTerm === '') {
+        filteredApplications = [...allApplications];
+    } else {
+        filteredApplications = allApplications.filter(app => {
+            return (app.driverName?.toLowerCase().includes(searchTerm)) ||
+                   (app.nic?.toLowerCase().includes(searchTerm)) ||
+                   (app.email?.toLowerCase().includes(searchTerm)) ||
+                   (app.phoneNumber?.includes(searchTerm)) ||
+                   (app.licenseType?.toLowerCase().includes(searchTerm));
         });
     }
-});
+    
+    currentPage = 1;
+    renderApplications();
+}
+
+function handleFilter(e) {
+    e.preventDefault();
+    const filterType = $(this).data('filter');
+    const filterValue = $(this).data('value');
+    
+    if (filterValue === 'all') {
+        filteredApplications = [...allApplications];
+    } else {
+        if (filterType === 'status') {
+            filteredApplications = allApplications.filter(app => app.status?.toUpperCase() === filterValue);
+        } else if (filterType === 'license') {
+            filteredApplications = allApplications.filter(app => app.licenseType?.toUpperCase() === filterValue);
+        }
+    }
+    
+    currentPage = 1;
+    renderApplications();
+}
+
+function handleApproveClick(e) {
+    e.stopPropagation();
+    currentApplicationId = $(this).data('id');
+    
+    // Reset form
+    $('#examDate').val('');
+    $('#examTime').val('');
+    $('#examLocation').val('Colombo DMT');
+    $('#approvalNotes').val('');
+    
+    // Clear validation classes
+    $('#examDate, #examTime').removeClass('is-invalid');
+    
+    const approveModal = new bootstrap.Modal(document.getElementById('approveModal'));
+    approveModal.show();
+}
+
+function handleDeclineClick(e) {
+    e.stopPropagation();
+    currentApplicationId = $(this).data('id');
+    
+    // Reset form
+    $('.decline-reason-item').removeClass('selected').css('background', 'rgba(255, 255, 255, 0.05)');
+    $('#customReason').val('');
+    $('#declineNotes').val('');
+    $('#customReasonDiv').hide();
+    $('#confirmDeclineBtn').prop('disabled', true);
+    selectedDeclineReason = '';
+    
+    const declineModal = new bootstrap.Modal(document.getElementById('declineModal'));
+    declineModal.show();
+}
+
+async function handleApproveConfirm() {
+    const examDate = $('#examDate').val();
+    const examTime = $('#examTime').val();
+    const examLocation = $('#examLocation').val();
+    const approvalNotes = $('#approvalNotes').val();
+    
+    // Validate required fields
+    let isValid = true;
+    
+    if (!examDate) {
+        $('#examDate').addClass('is-invalid');
+        isValid = false;
+    } else {
+        const selectedDate = new Date(examDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        if (selectedDate <= today) {
+            $('#examDate').addClass('is-invalid');
+            isValid = false;
+        } else {
+            $('#examDate').removeClass('is-invalid');
+        }
+    }
+    
+    if (!examTime) {
+        $('#examTime').addClass('is-invalid');
+        isValid = false;
+    } else {
+        $('#examTime').removeClass('is-invalid');
+    }
+    
+    if (!isValid) {
+        return;
+    }
+    
+    showLoading();
+    
+    try {
+        await $.ajax({
+            url: `${API_BASE_URL}/applications/${currentApplicationId}/status?status=APPROVED`,
+            method: 'PUT',
+            headers: {
+                'Authorization': 'Bearer ' + authToken,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        // Update local data
+        const appIndex = allApplications.findIndex(app => app.id === currentApplicationId);
+        if (appIndex !== -1) {
+            allApplications[appIndex].status = 'APPROVED';
+            allApplications[appIndex].examDate = examDate;
+        }
+        
+        const filteredIndex = filteredApplications.findIndex(app => app.id === currentApplicationId);
+        if (filteredIndex !== -1) {
+            filteredApplications[filteredIndex].status = 'APPROVED';
+            filteredApplications[filteredIndex].examDate = examDate;
+        }
+        
+        // Hide modal and refresh display
+        const approveModal = bootstrap.Modal.getInstance(document.getElementById('approveModal'));
+        approveModal.hide();
+        
+        renderApplications();
+        showSuccess('Application Approved', `Application has been approved successfully. Exam scheduled for ${formatDate(examDate)} at ${examTime}.`);
+        
+    } catch (error) {
+        console.error('Error approving application:', error);
+        
+        if (error.status === 401) {
+            handleUnauthorized();
+        } else if (error.status === 403) {
+            showError('Access Denied', 'You don\'t have permission to approve applications.');
+        } else if (error.status === 404) {
+            showError('Not Found', 'Application not found or may have been deleted.');
+        } else {
+            showError('Error', `Failed to approve application: ${error.statusText || 'Unknown error'}`);
+        }
+    } finally {
+        hideLoading();
+    }
+}
+
+async function handleDeclineConfirm() {
+    if (!selectedDeclineReason) {
+        return;
+    }
+    
+    showLoading();
+    
+    try {
+        await $.ajax({
+            url: `${API_BASE_URL}/applications/${currentApplicationId}/status?status=REJECTED`,
+            method: 'PUT',
+            headers: {
+                'Authorization': 'Bearer ' + authToken,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        // Update local data
+        const appIndex = allApplications.findIndex(app => app.id === currentApplicationId);
+        if (appIndex !== -1) {
+            allApplications[appIndex].status = 'REJECTED';
+        }
+        
+        const filteredIndex = filteredApplications.findIndex(app => app.id === currentApplicationId);
+        if (filteredIndex !== -1) {
+            filteredApplications[filteredIndex].status = 'REJECTED';
+        }
+        
+        // Hide modal and refresh display
+        const declineModal = bootstrap.Modal.getInstance(document.getElementById('declineModal'));
+        declineModal.hide();
+        
+        renderApplications();
+        
+        let reasonText = getDeclineReasonText(selectedDeclineReason);
+        if (selectedDeclineReason === 'other') {
+            reasonText = $('#customReason').val() || 'Other reason specified';
+        }
+        
+        showError('Application Declined', `Application has been declined. Reason: ${reasonText}`);
+        
+    } catch (error) {
+        console.error('Error declining application:', error);
+        
+        if (error.status === 401) {
+            handleUnauthorized();
+        } else if (error.status === 403) {
+            showError('Access Denied', 'You don\'t have permission to decline applications.');
+        } else if (error.status === 404) {
+            showError('Not Found', 'Application not found or may have been deleted.');
+        } else {
+            showError('Error', `Failed to decline application: ${error.statusText || 'Unknown error'}`);
+        }
+    } finally {
+        hideLoading();
+    }
+}
+
+function getDeclineReasonText(reason) {
+    const reasons = {
+        'photo': 'Photo Issues',
+        'medical': 'Medical Certificate Issues', 
+        'documents': 'Incomplete Documents',
+        'information': 'Incorrect Information',
+        'age': 'Age Requirements',
+        'other': 'Other Reason'
+    };
+    return reasons[reason] || 'Unknown Reason';
+}
+
+function updatePaginationInfo(from, to, total) {
+    $('#showingFrom').text(from);
+    $('#showingTo').text(to);
+    $('#totalItems').text(total);
+}
+
+function generatePagination() {
+    const totalPages = Math.ceil(filteredApplications.length / itemsPerPage);
+    const pagination = $('#pagination');
+    pagination.empty();
+    
+    if (totalPages <= 1) return;
+    
+    // Previous button
+    const prevDisabled = currentPage === 1 ? 'disabled' : '';
+    pagination.append(`
+        <li class="page-item ${prevDisabled}">
+            <a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a>
+        </li>
+    `);
+    
+    // Page numbers
+    const startPage = Math.max(1, currentPage - 2);
+    const endPage = Math.min(totalPages, currentPage + 2);
+    
+    for (let i = startPage; i <= endPage; i++) {
+        const activeClass = i === currentPage ? 'active' : '';
+        pagination.append(`
+            <li class="page-item ${activeClass}">
+                <a class="page-link" href="#" data-page="${i}">${i}</a>
+            </li>
+        `);
+    }
+    
+    // Next button
+    const nextDisabled = currentPage === totalPages ? 'disabled' : '';
+    pagination.append(`
+        <li class="page-item ${nextDisabled}">
+            <a class="page-link" href="#" data-page="${currentPage + 1}">Next</a>
+        </li>
+    `);
+    
+    // Add click handlers
+    pagination.find('.page-link').on('click', function(e) {
+        e.preventDefault();
+        const newPage = parseInt($(this).data('page'));
+        if (newPage && newPage !== currentPage && newPage >= 1 && newPage <= totalPages) {
+            currentPage = newPage;
+            renderApplications();
+        }
+    });
+}
+
+function showLoading() {
+    $('.loading-spinner').show();
+}
+
+function hideLoading() {
+    $('.loading-spinner').hide();
+}
+
+function showSuccess(title, message) {
+    Swal.fire({
+        title: title,
+        text: message,
+        icon: "success",
+        background: "rgba(30, 35, 50, 0.95)",
+        color: "#ffffff",
+        confirmButtonColor: "#2ecc71",
+        timer: 3000,
+        timerProgressBar: true
+    });
+}
+
+function showError(title, message) {
+    Swal.fire({
+        title: title,
+        text: message,
+        icon: "error",
+        background: "rgba(30, 35, 50, 0.95)",
+        color: "#ffffff",
+        confirmButtonColor: "#e74c3c"
+    });
+}
+
+function showInfo(title, message) {
+    Swal.fire({
+        title: title,
+        text: message,
+        icon: "info",
+        background: "rgba(30, 35, 50, 0.95)",
+        color: "#ffffff",
+        confirmButtonColor: "#4e73df"
+    });
+}
+
+function showToast(type, title, message) {
+    // Use SweetAlert2 toast instead of custom toast
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 4000,
+        timerProgressBar: true,
+        background: type === 'success' ? '#2ecc71' : '#e74c3c',
+        color: '#ffffff',
+        didOpen: (toast) => {
+            toast.addEventListener('mouseenter', Swal.stopTimer)
+            toast.addEventListener('mouseleave', Swal.resumeTimer)
+        }
+    });
+
+    Toast.fire({
+        icon: type,
+        title: title,
+        text: message
+    });
+}
 </script>
 
 </body>
