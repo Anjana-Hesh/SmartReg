@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -59,6 +60,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         application.setMedicalCertificatePath(medicalPath);
         application.setStatus("PENDING");
         application.setDriver(driver);
+        application.setSubmittedDate(LocalDateTime.now());
 
         Application savedApplication = applicationRepository.save(application);
 
@@ -91,6 +93,13 @@ public class ApplicationServiceImpl implements ApplicationService {
     @Override
     public int getPendingApplicationCount(Long driverId) {
         return applicationRepository.countByDriverIdAndStatus(driverId, "PENDING");
+    }
+
+    @Override
+    public List<ApplicationDTO> getAllApplications() {
+        return applicationRepository.findAll().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     private ApplicationDTO convertToDTO(Application application) {

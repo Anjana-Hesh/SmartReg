@@ -45,7 +45,8 @@ public class DriverServiceImpl implements DriverService {
                         app.getPhotoPath(),
                         app.getMedicalCertificatePath(),
                         app.getStatus(),
-                        app.getDriver().getId()
+                        app.getDriver().getId(),
+                        app.getSubmittedDate()
                 ))
                 .collect(Collectors.toList());
 

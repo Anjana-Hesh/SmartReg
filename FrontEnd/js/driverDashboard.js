@@ -1030,6 +1030,8 @@ $(document).ready(function () {
     };
 
     function showDetailedApplicationModal(application) {
+        // console.log("Application details:", application);
+
         const statusBadgeClass = getStatusBadgeClass(application.status);
         // Handle vehicleClasses as array of strings
         const vehicleClasses = Array.isArray(application.vehicleClasses) ? 

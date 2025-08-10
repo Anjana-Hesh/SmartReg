@@ -54,6 +54,13 @@ public class ApplicationController {
         return ResponseEntity.ok(updatedApplication);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/getall")
+    public ResponseEntity<List<ApplicationDTO>> getAllApplications() {
+        List<ApplicationDTO> applications = applicationService.getAllApplications();
+        return ResponseEntity.ok(applications);
+    }
+
     @GetMapping("/driver/{driverId}")
     public ResponseEntity<List<ApplicationDTO>> getApplicationsByDriver(
             @PathVariable Long driverId) {

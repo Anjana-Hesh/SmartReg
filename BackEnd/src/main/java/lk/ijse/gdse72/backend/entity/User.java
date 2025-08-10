@@ -31,7 +31,6 @@ public class User {
     @Column(nullable = false, unique = true)
     private Integer phoneNumber;
 
-
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private Role role = Role.DRIVER;                         // default role

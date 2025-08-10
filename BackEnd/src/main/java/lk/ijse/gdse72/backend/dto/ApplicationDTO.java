@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -26,5 +27,5 @@ public class ApplicationDTO {
     private String medicalCertificatePath;
     private String status;
     private Long driverId;
-
+    private LocalDateTime submittedDate;
 }

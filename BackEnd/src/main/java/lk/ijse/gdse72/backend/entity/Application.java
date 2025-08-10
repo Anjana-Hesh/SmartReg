@@ -3,6 +3,7 @@ package lk.ijse.gdse72.backend.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -60,4 +61,7 @@ public class Application {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "driver_id")
     private User driver;
+
+    @Column(name = "submitted_date")
+    private LocalDateTime submittedDate;
 }

@@ -12,4 +12,7 @@ public interface ApplicationService {
     List<ApplicationDTO> getApplicationsByDriver(Long driverId);
     ApplicationDTO getApplicationById(Long applicationId);
     int getPendingApplicationCount(Long driverId);
+
+    List<ApplicationDTO> getAllApplications();
+
 }
