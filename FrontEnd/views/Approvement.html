@@ -294,6 +294,40 @@ body {
     font-size: 0.75rem;
     font-weight: 500;
 }
+
+/* File display styles */
+.file-error {
+    color: #ff6b6b;
+    font-size: 0.8rem;
+    text-align: center;
+    padding: 10px;
+}
+
+.file-loading {
+    color: #4e73df;
+    font-size: 0.8rem;
+    text-align: center;
+    padding: 10px;
+}
+
+.photo-placeholder {
+    width: 45px;
+    height: 45px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px dashed var(--glass-border);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+}
+
+.pdf-placeholder {
+    color: #666;
+    font-size: 1.4rem;
+    opacity: 0.5;
+}
 </style>
 </head>
 <body>
@@ -412,6 +446,9 @@ body {
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a id="pdfDownloadBtn" class="btn btn-primary" download>
+                    <i class="fas fa-download me-1"></i> Download
+                </a>
             </div>
         </div>
     </div>
@@ -702,10 +739,11 @@ $(document).ready(function() {
         $('#enlargedPhoto').attr('src', photoUrl);
     });
     
-    // PDF modal handler
+    // PDF modal handler  
     $(document).on('click', '.pdf-icon', function() {
         const pdfUrl = $(this).data('pdf');
-        $('#pdfViewer').attr('src', pdfUrl + "#toolbar=0");
+        $('#pdfViewer').attr('src', pdfUrl);
+        $('#pdfDownloadBtn').attr('href', pdfUrl);
     });
     
     // Chevron click handler
@@ -794,10 +832,104 @@ function renderApplications() {
     pageApplications.forEach((app, index) => {
         const rowHtml = generateApplicationRow(app, startIndex + index);
         tbody.append(rowHtml);
+        
+        // Load files after DOM is updated
+        setTimeout(() => {
+            loadApplicationFiles(app);
+        }, 100);
     });
     
     updatePaginationInfo(startIndex + 1, Math.min(endIndex, filteredApplications.length), filteredApplications.length);
     generatePagination();
+}
+
+// Function to load application files with proper authentication
+async function loadApplicationFiles(app) {
+    // Load photo
+    if (app.photoPath) {
+        try {
+            const photoResponse = await fetch(`${API_BASE_URL}/files/${app.photoPath}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + authToken
+                }
+            });
+            
+            if (photoResponse.ok) {
+                const photoBlob = await photoResponse.blob();
+                const photoUrl = URL.createObjectURL(photoBlob);
+                
+                // Update small photo
+                const smallPhotoDiv = $(`#photo-${app.id}`);
+                if (smallPhotoDiv.length) {
+                    smallPhotoDiv.html(`<img src="${photoUrl}" class="rounded-circle" width="30" height="30" style="object-fit: cover;">`);
+                }
+                
+                // Update detailed photo with click handler
+                const detailPhotoDiv = $(`#photo-detail-${app.id}`);
+                if (detailPhotoDiv.length) {
+                    detailPhotoDiv.html(`
+                        <img src="${photoUrl}" 
+                             class="photo-thumbnail"
+                             data-bs-toggle="modal" data-bs-target="#photoModal"
+                             data-photo="${photoUrl}"
+                             style="cursor: pointer;">
+                    `);
+                }
+            } else {
+                console.warn(`Failed to load photo for application ${app.id}:`, photoResponse.status);
+            }
+        } catch (error) {
+            console.error(`Error loading photo for application ${app.id}:`, error);
+        }
+    }
+    
+    // Load medical certificate PDF
+    if (app.medicalCertificatePath) {
+        try {
+            const pdfResponse = await fetch(`${API_BASE_URL}/files/${app.medicalCertificatePath}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + authToken
+                }
+            });
+            
+            if (pdfResponse.ok) {
+                const pdfBlob = await pdfResponse.blob();
+                const pdfUrl = URL.createObjectURL(pdfBlob);
+                
+                // Update PDF icon with click handler
+                const pdfDiv = $(`#pdf-detail-${app.id}`);
+                if (pdfDiv.length) {
+                    pdfDiv.html(`
+                        <i class="fas fa-file-pdf pdf-icon"
+                           data-bs-toggle="modal" data-bs-target="#pdfModal"
+                           data-pdf="${pdfUrl}" 
+                           title="Medical Certificate"
+                           style="cursor: pointer;"></i>
+                    `);
+                }
+            } else {
+                console.warn(`Failed to load PDF for application ${app.id}:`, pdfResponse.status);
+                const pdfDiv = $(`#pdf-detail-${app.id}`);
+                if (pdfDiv.length) {
+                    pdfDiv.html(`<i class="fas fa-file-pdf pdf-placeholder" title="No Medical Certificate"></i>`);
+                }
+            }
+        } catch (error) {
+            console.error(`Error loading PDF for application ${app.id}:`, error);
+            const pdfDiv = $(`#pdf-detail-${app.id}`);
+            if (pdfDiv.length) {
+                pdfDiv.html(`<i class="fas fa-file-pdf pdf-placeholder" title="Error loading PDF"></i>`);
+            }
+        }
+    } else {
+        // No medical certificate path
+        const pdfDiv = $(`#pdf-detail-${app.id}`);
+        if (pdfDiv.length) {
+            pdfDiv.html(`<i class="fas fa-file-pdf pdf-placeholder" title="No Medical Certificate"></i>`);
+        }
+    }
 }
 
 function generateApplicationRow(app, index) {
@@ -805,11 +937,7 @@ function generateApplicationRow(app, index) {
     const statusText = app.status ? app.status.charAt(0).toUpperCase() + app.status.slice(1).toLowerCase() : 'Unknown';
     const isDisabled = app.status !== 'PENDING' ? 'disabled' : '';
     
-    // Default placeholder photo
-    const photoSrc = app.photoBase64 ? 
-        `data:image/jpeg;base64,${app.photoBase64}` : 
-        'https://via.placeholder.com/30x30/4e73df/ffffff?text=N/A';
-    
+    // Get driver name from the driver object
     const driverName = app.driver || 'Unknown Driver';
     
     return `
@@ -819,9 +947,9 @@ function generateApplicationRow(app, index) {
             </td>
             <td>
                 <div class="d-flex align-items-center">
-                    <img src="${photoSrc}" 
-                         class="rounded-circle me-2" width="30" height="30"
-                         style="object-fit: cover;">
+                    <div id="photo-${app.id}" class="rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 30px; height: 30px; background: rgba(78, 115, 223, 0.2); color: #4e73df; font-size: 0.7rem;">
+                        <i class="fas fa-user"></i>
+                    </div>
                     <span>${driverName}</span>
                 </div>
             </td>
@@ -847,14 +975,6 @@ function generateApplicationRow(app, index) {
 }
 
 function generateDetailsRow(app) {
-    const photoSrc = app.photoBase64 ? 
-        `data:image/jpeg;base64,${app.photoBase64}` : 
-        'https://via.placeholder.com/45x45/4e73df/ffffff?text=No%20Photo';
-    
-    const enlargedPhotoSrc = app.photoBase64 ? 
-        `data:image/jpeg;base64,${app.photoBase64}` : 
-        'https://via.placeholder.com/300x300/4e73df/ffffff?text=No%20Photo';
-    
     return `
         <div class="row">
             <div class="col-md-4">
@@ -871,21 +991,15 @@ function generateDetailsRow(app) {
             </div>
             <div class="col-md-2 text-center">
                 <strong>Photo</strong><br>
-                <img src="${photoSrc}" 
-                     class="photo-thumbnail mt-1"
-                     data-bs-toggle="modal" data-bs-target="#photoModal"
-                     data-photo="${enlargedPhotoSrc}">
+                <div id="photo-detail-${app.id}" class="photo-placeholder mt-1" style="width: 45px; height: 45px; margin: 0 auto;">
+                    <i class="fas fa-user" style="line-height: 45px;"></i>
+                </div>
             </div>
             <div class="col-md-2 text-center">
                 <strong>Documents</strong><br>
-                ${app.medicalCertificateBase64 ? `
-                    <i class="fas fa-file-pdf pdf-icon mt-1"
-                       data-bs-toggle="modal" data-bs-target="#pdfModal"
-                       data-pdf="data:application/pdf;base64,${app.medicalCertificateBase64}" 
-                       title="Medical Certificate"></i>
-                ` : `
-                    <span class="text-muted mt-1 d-block" style="font-size: 0.8rem;">No documents</span>
-                `}
+                <div id="pdf-detail-${app.id}" class="mt-1">
+                    <i class="fas fa-file-pdf pdf-placeholder" title="Loading..."></i>
+                </div>
             </div>
         </div>
     `;
@@ -927,9 +1041,10 @@ function handleSearch() {
         filteredApplications = [...allApplications];
     } else {
         filteredApplications = allApplications.filter(app => {
-            return (app.driver?.toLowerCase().includes(searchTerm)) ||
+            const driverName = app.driver ? (app.driver.firstName + ' ' + app.driver.lastName).toLowerCase() : '';
+            return driverName.includes(searchTerm) ||
                    (app.nicNumber?.toLowerCase().includes(searchTerm)) ||
-                   (app.email?.toLowerCase().includes(searchTerm)) ||
+                   (app.driver?.email?.toLowerCase().includes(searchTerm)) ||
                    (app.phoneNumber?.includes(searchTerm)) ||
                    (app.licenseType?.toLowerCase().includes(searchTerm));
         });
