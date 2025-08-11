@@ -28,4 +28,7 @@ public class ApplicationDTO {
     private String status;
     private Long driverId;
     private LocalDateTime submittedDate;
+
+    private String driver; // Driver full name
+    private String email;
 }

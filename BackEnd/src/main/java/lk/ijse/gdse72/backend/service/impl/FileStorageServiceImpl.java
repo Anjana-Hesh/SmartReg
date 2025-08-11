@@ -20,32 +20,46 @@ public class FileStorageServiceImpl implements FileStorageService {
     private String uploadDir;
 
     @Override
-    public String storeFile(MultipartFile file, String prefix) throws IOException {
-        // Normalize and get absolute path
-        Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+    public String storeFile(MultipartFile file, String fileType) throws IOException {
+        // Normalize file name
+        String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
 
-        // Create directories if they don't exist
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
+        try {
+            // Check if the file's name contains invalid characters
+            if (originalFileName.contains("..")) {
+                throw new IOException("Sorry! Filename contains invalid path sequence " + originalFileName);
+            }
+
+            // Generate unique filename
+            String fileExtension = "";
+            if (originalFileName.contains(".")) {
+                fileExtension = originalFileName.substring(originalFileName.lastIndexOf("."));
+            }
+            String fileName = fileType + "_" + UUID.randomUUID().toString() + fileExtension;
+
+            // Create the directories if they don't exist
+            Path uploadPath = Paths.get(uploadDir);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            // Copy file to the target location (Replacing existing file with the same name)
+            Path targetLocation = uploadPath.resolve(fileName);
+            Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+
+            return fileName;
+        } catch (IOException ex) {
+            throw new IOException("Could not store file " + originalFileName + ". Please try again!", ex);
         }
+    }
 
-        // Validate and clean filename
-        if (file.getOriginalFilename() == null || file.getOriginalFilename().isEmpty()) {
-            throw new IOException("File has no name");
+    @Override
+    public void deleteFile(String fileName) throws IOException {
+        try {
+            Path filePath = Paths.get(uploadDir).resolve(fileName);
+            Files.deleteIfExists(filePath);
+        } catch (IOException ex) {
+            throw new IOException("Could not delete file " + fileName, ex);
         }
-
-        String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
-        String fileExtension = originalFilename.contains(".")
-                ? originalFilename.substring(originalFilename.lastIndexOf("."))
-                : "";
-
-        // Generate unique filename
-        String filename = prefix + "_" + UUID.randomUUID() + fileExtension;
-
-        // Save file
-        Path targetLocation = uploadPath.resolve(filename);
-        Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
-
-        return filename;
     }
 }

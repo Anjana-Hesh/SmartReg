@@ -19,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -64,6 +65,7 @@ public class ApplicationServiceImpl implements ApplicationService {
 
         Application savedApplication = applicationRepository.save(application);
 
+//        return convertToDTO(savedApplication);
         return modelMapper.map(savedApplication, ApplicationDTO.class);
     }
 
@@ -116,9 +118,20 @@ public class ApplicationServiceImpl implements ApplicationService {
         dto.setDateOfBirth(application.getDateOfBirth());
         dto.setPhoneNumber(application.getPhoneNumber());
         dto.setAddress(application.getAddress());
-        dto.setPhotoPath(uploadDir + "/" + application.getPhotoPath());
-        dto.setMedicalCertificatePath(uploadDir + "/" + application.getMedicalCertificatePath());
+//        dto.setPhotoPath(uploadDir + "/" + application.getPhotoPath());
+//        dto.setMedicalCertificatePath(uploadDir + "/" + application.getMedicalCertificatePath());
+//        dto.setStatus(application.getStatus());
+        dto.setPhotoPath(application.getPhotoPath());
+        dto.setMedicalCertificatePath(application.getMedicalCertificatePath());
+
         dto.setStatus(application.getStatus());
+        dto.setSubmittedDate(application.getSubmittedDate());
+
+        if (application.getDriver() != null) {
+            dto.setDriver(application.getDriver().getFullName());
+            dto.setEmail(application.getDriver().getEmail());
+        }
+
         return dto;
     }
 }
