@@ -22,7 +22,7 @@ public class FileController {
     @Value("${file.upload-dir}")
     private String uploadDir;
 
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DRIVER')")
     @GetMapping("/{filename:.+}")
     public ResponseEntity<Resource> serveFile(@PathVariable String filename) {
         try {

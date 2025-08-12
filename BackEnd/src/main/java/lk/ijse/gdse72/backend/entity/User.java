@@ -33,7 +33,7 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     @Builder.Default
-    private Role role = Role.DRIVER;                         // default role
+    private Role role = Role.DRIVER;                      // default role
 
     @Enumerated(EnumType.STRING)
     @Builder.Default
@@ -41,6 +41,6 @@ public class User {
 
     @Column(nullable = false)
     @Builder.Default
-    private boolean isAdmin = false;                        // default false
+    private boolean isAdmin = false;                      // default false
 
 }

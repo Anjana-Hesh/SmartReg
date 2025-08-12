@@ -58,7 +58,7 @@ public class Application {
     @Column(name = "status", nullable = false)
     private String status = "PENDING";
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY ,  cascade = {CascadeType.ALL})
     @JoinColumn(name = "driver_id")
     private User driver;
 

@@ -117,7 +117,54 @@ body {
 
 .status-pending { background: rgba(241,196,15,0.2); color: #f1c40f; }
 .status-approved { background: rgba(46,204,113,0.2); color: #2ecc71; }
-.status-rejected { background: rgba(231,76,60,0.2); color: #e74c3c; }
+.status-rejected { 
+    background: rgba(231,76,60,0.2); 
+    color: #e74c3c; 
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(231,76,60,0.3);
+}
+
+.status-rejected:hover {
+    background: rgba(231,76,60,0.3);
+    transform: scale(1.05);
+}
+
+.rejection-reason {
+    background: rgba(231, 76, 60, 0.1);
+    border: 1px solid rgba(231, 76, 60, 0.3);
+    border-radius: 8px;
+    padding: 10px 15px;
+    margin-top: 8px;
+    color: #ff6b6b;
+    font-size: 0.85rem;
+    display: none;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 100px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+}
+
+.rejection-reason.show {
+    display: block;
+}
+
+.rejection-reason i {
+    color: #e74c3c;
+    margin-right: 8px;
+}
 
 .modal-content {
     background: rgba(30, 35, 50, 0.9);
@@ -614,6 +661,16 @@ const API_BASE_URL = "http://localhost:8080/api/v1";
 const authToken = localStorage.getItem('smartreg_token') || sessionStorage.getItem('smartreg_token');
 const userData = JSON.parse(localStorage.getItem('smartreg_user') || sessionStorage.getItem('smartreg_user') || '{}');
 
+// Rejection reasons mapping
+const rejectionReasons = {
+    'photo': 'Photo quality is poor or doesn\'t meet requirements',
+    'medical': 'Medical certificate is invalid or expired',
+    'documents': 'Required documents are missing or incomplete', 
+    'information': 'Personal information doesn\'t match documents',
+    'age': 'Applicant doesn\'t meet age requirements',
+    'other': 'Other reason specified by administrator'
+};
+
 // Application variables
 let allApplications = [];
 let filteredApplications = [];
@@ -621,6 +678,7 @@ let currentPage = 1;
 const itemsPerPage = 10;
 let currentApplicationId = null;
 let selectedDeclineReason = '';
+let showRejected = true; // Flag to toggle rejected applications visibility
 
 // Check authentication
 if (!authToken) {
@@ -718,6 +776,29 @@ $(document).ready(function() {
     $('#confirmApproveBtn').on('click', handleApproveConfirm);
     $('#confirmDeclineBtn').on('click', handleDeclineConfirm);
     
+    // Status badge click handler for rejected applications
+    $(document).on('click', '.status-rejected', function(e) {
+        e.stopPropagation();
+        const appId = $(this).data('app-id');
+        const reasonDiv = $(`#rejection-reason-${appId}`);
+        
+        if (reasonDiv.hasClass('show')) {
+            reasonDiv.removeClass('show').slideUp(300);
+        } else {
+            $('.rejection-reason.show').removeClass('show').slideUp(300);
+            reasonDiv.addClass('show').slideDown(300);
+        }
+    });
+    
+    // Toggle rejected applications button
+    $('#toggleRejectedBtn').on('click', function() {
+        showRejected = !showRejected;
+        $(this).html(showRejected ? 
+            '<i class="fas fa-eye-slash me-1"></i> Hide Rejected' : 
+            '<i class="fas fa-eye me-1"></i> Show Rejected');
+        renderApplications();
+    });
+    
     // Decline reason selection
     $('.decline-reason-item').on('click', function() {
         $('.decline-reason-item').removeClass('selected').css('background', 'rgba(255, 255, 255, 0.05)');
@@ -756,16 +837,40 @@ $(document).ready(function() {
 async function loadApplications() {
     showLoading();
     try {
-        const response = await $.ajax({
-            url: `${API_BASE_URL}/applications/getall`,
-            method: 'GET',
-            headers: {
-                'Authorization': 'Bearer ' + authToken,
-                'Content-Type': 'application/json'
+        // Load applications
+        const [applicationsResponse, declinesResponse] = await Promise.all([
+            $.ajax({
+                url: `${API_BASE_URL}/applications/getall`,
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + authToken,
+                    'Content-Type': 'application/json'
+                }
+            }),
+            $.ajax({
+                url: `${API_BASE_URL}/declines/getalldecines`,
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + authToken,
+                    'Content-Type': 'application/json'
+                }
+            })
+        ]);
+        
+        // Map decline reasons to applications
+        allApplications = applicationsResponse.map(app => {
+            const declineInfo = declinesResponse.find(d => d.applicationId === app.id);
+            if (declineInfo) {
+                return {
+                    ...app,
+                    status: 'REJECTED',
+                    rejectionReason: declineInfo.declineReason,
+                    rejectionNotes: declineInfo.declineNotes
+                };
             }
+            return app;
         });
         
-        allApplications = response || [];
         filteredApplications = [...allApplications];
         renderApplications();
         
@@ -815,7 +920,13 @@ function handleLoadError(error) {
 function renderApplications() {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    const pageApplications = filteredApplications.slice(startIndex, endIndex);
+    
+    // Filter applications based on showRejected flag
+    const visibleApplications = showRejected ? 
+        filteredApplications : 
+        filteredApplications.filter(app => app.status !== 'REJECTED');
+    
+    const pageApplications = visibleApplications.slice(startIndex, endIndex);
     
     if (pageApplications.length === 0) {
         $('#applicationsTable').empty();
@@ -833,19 +944,16 @@ function renderApplications() {
         const rowHtml = generateApplicationRow(app, startIndex + index);
         tbody.append(rowHtml);
         
-        // Load files after DOM is updated
         setTimeout(() => {
             loadApplicationFiles(app);
         }, 100);
     });
     
-    updatePaginationInfo(startIndex + 1, Math.min(endIndex, filteredApplications.length), filteredApplications.length);
+    updatePaginationInfo(startIndex + 1, Math.min(endIndex, visibleApplications.length), visibleApplications.length);
     generatePagination();
 }
 
-// Function to load application files with proper authentication
 async function loadApplicationFiles(app) {
-    // Load photo
     if (app.photoPath) {
         try {
             const photoResponse = await fetch(`${API_BASE_URL}/files/${app.photoPath}`, {
@@ -859,13 +967,11 @@ async function loadApplicationFiles(app) {
                 const photoBlob = await photoResponse.blob();
                 const photoUrl = URL.createObjectURL(photoBlob);
                 
-                // Update small photo
                 const smallPhotoDiv = $(`#photo-${app.id}`);
                 if (smallPhotoDiv.length) {
                     smallPhotoDiv.html(`<img src="${photoUrl}" class="rounded-circle" width="30" height="30" style="object-fit: cover;">`);
                 }
                 
-                // Update detailed photo with click handler
                 const detailPhotoDiv = $(`#photo-detail-${app.id}`);
                 if (detailPhotoDiv.length) {
                     detailPhotoDiv.html(`
@@ -876,15 +982,12 @@ async function loadApplicationFiles(app) {
                              style="cursor: pointer;">
                     `);
                 }
-            } else {
-                console.warn(`Failed to load photo for application ${app.id}:`, photoResponse.status);
             }
         } catch (error) {
             console.error(`Error loading photo for application ${app.id}:`, error);
         }
     }
     
-    // Load medical certificate PDF
     if (app.medicalCertificatePath) {
         try {
             const pdfResponse = await fetch(`${API_BASE_URL}/files/${app.medicalCertificatePath}`, {
@@ -898,7 +1001,6 @@ async function loadApplicationFiles(app) {
                 const pdfBlob = await pdfResponse.blob();
                 const pdfUrl = URL.createObjectURL(pdfBlob);
                 
-                // Update PDF icon with click handler
                 const pdfDiv = $(`#pdf-detail-${app.id}`);
                 if (pdfDiv.length) {
                     pdfDiv.html(`
@@ -909,25 +1011,9 @@ async function loadApplicationFiles(app) {
                            style="cursor: pointer;"></i>
                     `);
                 }
-            } else {
-                console.warn(`Failed to load PDF for application ${app.id}:`, pdfResponse.status);
-                const pdfDiv = $(`#pdf-detail-${app.id}`);
-                if (pdfDiv.length) {
-                    pdfDiv.html(`<i class="fas fa-file-pdf pdf-placeholder" title="No Medical Certificate"></i>`);
-                }
             }
         } catch (error) {
             console.error(`Error loading PDF for application ${app.id}:`, error);
-            const pdfDiv = $(`#pdf-detail-${app.id}`);
-            if (pdfDiv.length) {
-                pdfDiv.html(`<i class="fas fa-file-pdf pdf-placeholder" title="Error loading PDF"></i>`);
-            }
-        }
-    } else {
-        // No medical certificate path
-        const pdfDiv = $(`#pdf-detail-${app.id}`);
-        if (pdfDiv.length) {
-            pdfDiv.html(`<i class="fas fa-file-pdf pdf-placeholder" title="No Medical Certificate"></i>`);
         }
     }
 }
@@ -937,8 +1023,19 @@ function generateApplicationRow(app, index) {
     const statusText = app.status ? app.status.charAt(0).toUpperCase() + app.status.slice(1).toLowerCase() : 'Unknown';
     const isDisabled = app.status !== 'PENDING' ? 'disabled' : '';
     
-    // Get driver name from the driver object
     const driverName = app.driver || 'Unknown Driver';
+    
+    let rejectionReasonHtml = '';
+    if (app.status === 'REJECTED' && app.rejectionReason) {
+        const reasonText = rejectionReasons[app.rejectionReason] || app.rejectionReason;
+        rejectionReasonHtml = `
+            <div id="rejection-reason-${app.id}" class="rejection-reason">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>Rejection Reason:</strong> ${reasonText}
+                ${app.rejectionNotes ? `<br><small>Notes: ${app.rejectionNotes}</small>` : ''}
+            </div>
+        `;
+    }
     
     return `
         <tr>
@@ -955,7 +1052,12 @@ function generateApplicationRow(app, index) {
             </td>
             <td>${app.licenseType || 'N/A'}</td>
             <td>${app.examLanguage || 'N/A'}</td>
-            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+            <td>
+                <span class="status-badge ${statusClass}" ${app.status === 'REJECTED' ? `data-app-id="${app.id}" title="Click to view rejection reason"` : ''}>
+                    ${statusText}
+                </span>
+                ${rejectionReasonHtml}
+            </td>
             <td>${formatDate(app.submittedDate)}</td>
             <td class="action-cell">
                 <button class="btn btn-sm btn-approve me-1 approve-btn" data-id="${app.id}" ${isDisabled}>
@@ -1077,13 +1179,11 @@ function handleApproveClick(e) {
     e.stopPropagation();
     currentApplicationId = $(this).data('id');
     
-    // Reset form
     $('#examDate').val('');
     $('#examTime').val('');
     $('#examLocation').val('Colombo DMT');
     $('#approvalNotes').val('');
     
-    // Clear validation classes
     $('#examDate, #examTime').removeClass('is-invalid');
     
     const approveModal = new bootstrap.Modal(document.getElementById('approveModal'));
@@ -1094,7 +1194,6 @@ function handleDeclineClick(e) {
     e.stopPropagation();
     currentApplicationId = $(this).data('id');
     
-    // Reset form
     $('.decline-reason-item').removeClass('selected').css('background', 'rgba(255, 255, 255, 0.05)');
     $('#customReason').val('');
     $('#declineNotes').val('');
@@ -1110,7 +1209,6 @@ async function handleApproveConfirm() {
     const examDate = $('#examDate').val();
     const examTime = $('#examTime').val();
     
-    // Validate required fields
     let isValid = true;
     
     if (!examDate) {
@@ -1152,10 +1250,8 @@ async function handleApproveConfirm() {
             }
         });
         
-        // Update local data
         updateApplicationStatus(currentApplicationId, 'APPROVED', examDate);
         
-        // Hide modal and refresh display
         const approveModal = bootstrap.Modal.getInstance(document.getElementById('approveModal'));
         approveModal.hide();
         
@@ -1172,12 +1268,35 @@ async function handleApproveConfirm() {
 
 async function handleDeclineConfirm() {
     if (!selectedDeclineReason) {
+        showError('Error', 'Please select a decline reason');
         return;
     }
-    
+
     showLoading();
     
     try {
+        // Get decline notes and custom reason
+        const declineNotes = $('#declineNotes').val();
+        let customReason = '';
+        if (selectedDeclineReason === 'other') {
+            customReason = $('#customReason').val();
+            if (!customReason || customReason.trim() === '') {
+                showError('Error', 'Please specify a custom reason');
+                hideLoading();
+                return;
+            }
+        }
+
+        // Prepare simple decline data
+        const declineData = {
+            applicationId: currentApplicationId,
+            declineReason: selectedDeclineReason,
+            declineNotes: declineNotes || customReason,
+            declinedBy: userData.username || 'Admin'
+            // declinedAt will be set by backend
+        };
+
+        // First, update the application status to REJECTED
         await $.ajax({
             url: `${API_BASE_URL}/applications/${currentApplicationId}/status?status=REJECTED`,
             method: 'PUT',
@@ -1186,44 +1305,63 @@ async function handleDeclineConfirm() {
                 'Content-Type': 'application/json'
             }
         });
-        
-        // Update local data
-        updateApplicationStatus(currentApplicationId, 'REJECTED');
-        
+
+        // Then, save the simple decline details
+        await $.ajax({
+            url: `${API_BASE_URL}/declines/create-decline`,
+            method: 'POST',
+            data: JSON.stringify(declineData),
+            headers: {
+                'Authorization': 'Bearer ' + authToken,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        // Update local data with rejection reason
+        updateApplicationStatus(
+            currentApplicationId, 
+            'REJECTED', 
+            null, 
+            selectedDeclineReason, 
+            declineNotes || customReason
+        );
+
         // Hide modal and refresh display
         const declineModal = bootstrap.Modal.getInstance(document.getElementById('declineModal'));
         declineModal.hide();
-        
+
         renderApplications();
         
         let reasonText = getDeclineReasonText(selectedDeclineReason);
         if (selectedDeclineReason === 'other') {
-            reasonText = $('#customReason').val() || 'Other reason specified';
+            reasonText = customReason || 'Other reason specified';
         }
         
-        showError('Application Declined', `Application has been declined. Reason: ${reasonText}`);
+        showSuccess('Application Declined', `Application has been declined. Reason: ${reasonText}`);
         
     } catch (error) {
         console.error('Error declining application:', error);
-        handleActionError(error, 'decline');
+        showError('Decline Failed', 'Failed to decline application. Please try again.');
     } finally {
         hideLoading();
     }
 }
 
-function updateApplicationStatus(applicationId, status, examDate = null) {
-    // Update in allApplications
+function updateApplicationStatus(applicationId, status, examDate = null, rejectionReason = null, rejectionNotes = null) {
     const appIndex = allApplications.findIndex(app => app.id === applicationId);
     if (appIndex !== -1) {
         allApplications[appIndex].status = status;
         if (examDate) allApplications[appIndex].examDate = examDate;
+        if (rejectionReason) allApplications[appIndex].rejectionReason = rejectionReason;
+        if (rejectionNotes) allApplications[appIndex].rejectionNotes = rejectionNotes;
     }
     
-    // Update in filteredApplications
     const filteredIndex = filteredApplications.findIndex(app => app.id === applicationId);
     if (filteredIndex !== -1) {
         filteredApplications[filteredIndex].status = status;
         if (examDate) filteredApplications[filteredIndex].examDate = examDate;
+        if (rejectionReason) filteredApplications[filteredIndex].rejectionReason = rejectionReason;
+        if (rejectionNotes) filteredApplications[filteredIndex].rejectionNotes = rejectionNotes;
     }
 }
 
@@ -1258,13 +1396,16 @@ function updatePaginationInfo(from, to, total) {
 }
 
 function generatePagination() {
-    const totalPages = Math.ceil(filteredApplications.length / itemsPerPage);
+    const visibleApplications = showRejected ? 
+        filteredApplications : 
+        filteredApplications.filter(app => app.status !== 'REJECTED');
+    
+    const totalPages = Math.ceil(visibleApplications.length / itemsPerPage);
     const pagination = $('#pagination');
     pagination.empty();
     
     if (totalPages <= 1) return;
     
-    // Previous button
     const prevDisabled = currentPage === 1 ? 'disabled' : '';
     pagination.append(`
         <li class="page-item ${prevDisabled}">
@@ -1272,7 +1413,6 @@ function generatePagination() {
         </li>
     `);
     
-    // Page numbers
     const startPage = Math.max(1, currentPage - 2);
     const endPage = Math.min(totalPages, currentPage + 2);
     
@@ -1285,7 +1425,6 @@ function generatePagination() {
         `);
     }
     
-    // Next button
     const nextDisabled = currentPage === totalPages ? 'disabled' : '';
     pagination.append(`
         <li class="page-item ${nextDisabled}">
@@ -1293,7 +1432,6 @@ function generatePagination() {
         </li>
     `);
     
-    // Add click handlers
     pagination.find('.page-link').on('click', function(e) {
         e.preventDefault();
         const newPage = parseInt($(this).data('page'));
