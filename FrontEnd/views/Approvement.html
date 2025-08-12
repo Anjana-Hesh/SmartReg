@@ -1204,13 +1204,16 @@ function handleDeclineClick(e) {
     const declineModal = new bootstrap.Modal(document.getElementById('declineModal'));
     declineModal.show();
 }
-
+// Updated handleApproveConfirm function in your frontend
 async function handleApproveConfirm() {
     const examDate = $('#examDate').val();
     const examTime = $('#examTime').val();
+    const examLocation = $('#examLocation').val();
+    const approvalNotes = $('#approvalNotes').val();
     
     let isValid = true;
     
+    // Validation
     if (!examDate) {
         $('#examDate').addClass('is-invalid');
         isValid = false;
@@ -1241,6 +1244,7 @@ async function handleApproveConfirm() {
     showLoading();
     
     try {
+        // First, approve the application
         await $.ajax({
             url: `${API_BASE_URL}/applications/${currentApplicationId}/status?status=APPROVED`,
             method: 'PUT',
@@ -1250,17 +1254,44 @@ async function handleApproveConfirm() {
             }
         });
         
+        // Then, schedule the written exam
+        const writtenExamData = {
+            applicationId: currentApplicationId,
+            writtenExamDate: examDate,
+            writtenExamTime: examTime,
+            writtenExamLocation: examLocation || 'Colombo Department of Motor Traffic',
+            note: approvalNotes || 'Application approved and exam scheduled',
+            writtenExamResult: null // Will be updated after exam
+        };
+        
+        await $.ajax({
+            url: `${API_BASE_URL}/written-exams/schedule`,
+            method: 'POST',
+            data: JSON.stringify(writtenExamData),
+            headers: {
+                'Authorization': 'Bearer ' + authToken,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        // Update local data
         updateApplicationStatus(currentApplicationId, 'APPROVED', examDate);
         
+        // Hide modal and refresh display
         const approveModal = bootstrap.Modal.getInstance(document.getElementById('approveModal'));
         approveModal.hide();
         
         renderApplications();
-        showSuccess('Application Approved', `Application has been approved successfully. Exam scheduled for ${formatDate(examDate)} at ${examTime}.`);
+        showSuccess('Application Approved', 
+            `Application has been approved successfully. Written exam scheduled for ${formatDate(examDate)} at ${examTime} in ${examLocation}.`);
         
     } catch (error) {
         console.error('Error approving application:', error);
-        handleActionError(error, 'approve');
+        if (error.responseJSON && error.responseJSON.message) {
+            showError('Approval Failed', error.responseJSON.message);
+        } else {
+            handleActionError(error, 'approve');
+        }
     } finally {
         hideLoading();
     }
