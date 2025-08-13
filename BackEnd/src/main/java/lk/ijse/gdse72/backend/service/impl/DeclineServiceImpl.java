@@ -60,6 +60,21 @@ public class DeclineServiceImpl implements DeclineService {
     }
 
     @Override
+    public DeclineDTO findDeclineByApplicationId(Long applicationId) {
+        if (applicationId == null) {
+            throw new IllegalArgumentException("Application ID cannot be null or empty");
+        }
+
+        // Find the application to ensure it exists
+        Application application = applicationRepo.findById(applicationId)
+                .orElseThrow(() -> new EntityNotFoundException("Application not found with ID: " + applicationId));
+
+        return declineRepo.findByApplication(application)
+                .map(decline -> modelMapper.map(decline, DeclineDTO.class))
+                .orElse(null);
+    }
+
+    @Override
     public List<DeclineDTO> getAllDeclines() {
         return declineRepo.findAll().stream()
                 .map(decline -> modelMapper.map(decline, DeclineDTO.class))

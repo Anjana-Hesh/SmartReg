@@ -12,35 +12,30 @@ import java.util.Optional;
 @Repository
 public interface WrittenExamRepository extends JpaRepository<WrittenExam, Long> {
 
-    /**
-     * Find written exam by application ID
-     */
-    Optional<WrittenExam> findByApplicationId(Long applicationId);
+    @Query("SELECT we FROM WrittenExam we " +
+            "LEFT JOIN FETCH we.application a " +
+            "LEFT JOIN FETCH a.driver " +
+            "WHERE we.application.id = :applicationId")
+    Optional<WrittenExam> findByApplicationId(@Param("applicationId") Long applicationId);
 
-    /**
-     * Find all written exams for a specific application
-     */
-    List<WrittenExam> findAllByApplicationId(Long applicationId);
+    @Query("SELECT we FROM WrittenExam we " +
+            "LEFT JOIN FETCH we.application a " +
+            "LEFT JOIN FETCH a.driver " +
+            "WHERE we.writtenExamResult = :result")
+    List<WrittenExam> findByWrittenExamResultWithApplication(@Param("result") String result);
 
-    /**
-     * Find written exams by result
-     */
     List<WrittenExam> findByWrittenExamResult(String result);
 
-    /**
-     * Check if a written exam exists for an application
-     */
     boolean existsByApplicationId(Long applicationId);
 
-    /**
-     * Find written exams with application details
-     */
-    @Query("SELECT we FROM WrittenExam we JOIN FETCH we.application WHERE we.id = :examId")
+    @Query("SELECT we FROM WrittenExam we " +
+            "LEFT JOIN FETCH we.application a " +
+            "LEFT JOIN FETCH a.driver " +
+            "WHERE we.id = :examId")
     Optional<WrittenExam> findByIdWithApplication(@Param("examId") Long examId);
 
-    /**
-     * Find all written exams with application details
-     */
-    @Query("SELECT we FROM WrittenExam we JOIN FETCH we.application")
+    @Query("SELECT we FROM WrittenExam we " +
+            "LEFT JOIN FETCH we.application a " +
+            "LEFT JOIN FETCH a.driver")
     List<WrittenExam> findAllWithApplication();
 }

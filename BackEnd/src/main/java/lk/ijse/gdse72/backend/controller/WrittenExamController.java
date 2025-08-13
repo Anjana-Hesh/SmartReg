@@ -23,10 +23,6 @@ public class WrittenExamController {
 
     private final WrittenExamService writtenExamService;
 
-    /**
-     * Schedule a written exam for an application
-     * This method should be called when approving an application
-     */
     @PostMapping("/schedule")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<WrittenExamDto> scheduleWrittenExam(@Valid @RequestBody WrittenExamRequestDto requestDto) {
@@ -43,9 +39,6 @@ public class WrittenExamController {
         }
     }
 
-    /**
-     * Get written exam by ID
-     */
     @GetMapping("/{examId}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('DRIVER')")
     public ResponseEntity<WrittenExamDto> getWrittenExamById(@PathVariable Long examId) {
@@ -60,26 +53,36 @@ public class WrittenExamController {
         }
     }
 
-    /**
-     * Get written exam by application ID
-     */
     @GetMapping("/application/{applicationId}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('DRIVER')")
     public ResponseEntity<WrittenExamDto> getWrittenExamByApplicationId(@PathVariable Long applicationId) {
         try {
             log.info("Fetching written exam for application ID: {}", applicationId);
             Optional<WrittenExamDto> exam = writtenExamService.getWrittenExamByApplicationId(applicationId);
+
             return exam.map(ResponseEntity::ok)
-                    .orElse(ResponseEntity.notFound().build());
+                    .orElseGet(() -> {
+                        // Return a properly constructed default DTO with all required fields
+                        WrittenExamDto defaultDto = WrittenExamDto.builder()
+                                .id(null)
+                                .writtenExamDate(null)
+                                .writtenExamTime(null)
+                                .writtenExamLocation("Not scheduled")
+                                .note("No written exam scheduled for this application")
+                                .writtenExamResult(null)
+                                .applicationId(applicationId)
+                                .driverName(null)
+                                .licenseType(null)
+                                .examLanguage(null)
+                                .build();
+                        return ResponseEntity.ok(defaultDto);
+                    });
         } catch (Exception e) {
             log.error("Error fetching written exam for application ID: {}", applicationId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    /**
-     * Get all written exams
-     */
     @GetMapping("/all")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<WrittenExamDto>> getAllWrittenExams() {
@@ -93,9 +96,6 @@ public class WrittenExamController {
         }
     }
 
-    /**
-     * Update written exam details
-     */
     @PutMapping("/{examId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<WrittenExamDto> updateWrittenExam(
@@ -114,9 +114,6 @@ public class WrittenExamController {
         }
     }
 
-    /**
-     * Update exam result
-     */
     @PatchMapping("/{examId}/result")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<WrittenExamDto> updateExamResult(
@@ -142,9 +139,6 @@ public class WrittenExamController {
         }
     }
 
-    /**
-     * Delete written exam
-     */
     @DeleteMapping("/{examId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteWrittenExam(@PathVariable Long examId) {
@@ -161,9 +155,6 @@ public class WrittenExamController {
         }
     }
 
-    /**
-     * Get written exams by result
-     */
     @GetMapping("/result/{result}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<WrittenExamDto>> getWrittenExamsByResult(@PathVariable String result) {
@@ -182,9 +173,6 @@ public class WrittenExamController {
         }
     }
 
-    /**
-     * Check if written exam exists for application
-     */
     @GetMapping("/exists/application/{applicationId}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('DRIVER')")
     public ResponseEntity<Boolean> existsByApplicationId(@PathVariable Long applicationId) {
@@ -198,9 +186,6 @@ public class WrittenExamController {
         }
     }
 
-    /**
-     * Validate exam result
-     */
     private boolean isValidResult(String result) {
         return result != null && (
                 result.equalsIgnoreCase("PASS") ||

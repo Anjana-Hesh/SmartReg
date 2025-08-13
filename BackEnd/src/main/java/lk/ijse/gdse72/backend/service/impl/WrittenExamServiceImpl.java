@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -67,8 +68,30 @@ public class WrittenExamServiceImpl implements WrittenExamService {
     @Transactional(readOnly = true)
     public Optional<WrittenExamDto> getWrittenExamByApplicationId(Long applicationId) {
         log.info("Fetching written exam for application ID: {}", applicationId);
-        return writtenExamRepository.findByApplicationId(applicationId)
-                .map(this::convertToDto);
+        try {
+            Optional<WrittenExam> examOpt = writtenExamRepository.findByApplicationId(applicationId);
+
+            if (examOpt.isEmpty()) {
+                log.debug("No written exam found for application ID: {}", applicationId);
+                return Optional.empty();
+            }
+
+            WrittenExam exam = examOpt.get();
+            log.debug("Found written exam: {}", exam.getId());
+
+            // Verify application is loaded
+            if (exam.getApplication() == null) {
+                log.warn("Written exam {} has no application loaded, attempting to reload", exam.getId());
+                // Try to reload the exam with application
+                exam = writtenExamRepository.findByIdWithApplication(exam.getId())
+                        .orElseThrow(() -> new IllegalStateException("Could not reload written exam with application"));
+            }
+
+            return Optional.of(convertToDto(exam));
+        } catch (Exception e) {
+            log.error("Error fetching written exam for application ID: " + applicationId, e);
+            throw e; // Re-throw to be handled by controller
+        }
     }
 
     @Override
@@ -85,7 +108,7 @@ public class WrittenExamServiceImpl implements WrittenExamService {
     public WrittenExamDto updateWrittenExam(Long examId, WrittenExamRequestDto requestDto) {
         log.info("Updating written exam with ID: {}", examId);
 
-        WrittenExam existingExam = writtenExamRepository.findById(examId)
+        WrittenExam existingExam = writtenExamRepository.findByIdWithApplication(examId)
                 .orElseThrow(() -> new RuntimeException("Written exam not found with ID: " + examId));
 
         // Update fields
@@ -108,7 +131,7 @@ public class WrittenExamServiceImpl implements WrittenExamService {
     public WrittenExamDto updateExamResult(Long examId, String result, String note) {
         log.info("Updating exam result for written exam ID: {} with result: {}", examId, result);
 
-        WrittenExam existingExam = writtenExamRepository.findById(examId)
+        WrittenExam existingExam = writtenExamRepository.findByIdWithApplication(examId)
                 .orElseThrow(() -> new RuntimeException("Written exam not found with ID: " + examId));
 
         existingExam.setWrittenExamResult(result);
@@ -139,7 +162,7 @@ public class WrittenExamServiceImpl implements WrittenExamService {
     @Transactional(readOnly = true)
     public List<WrittenExamDto> getWrittenExamsByResult(String result) {
         log.info("Fetching written exams with result: {}", result);
-        return writtenExamRepository.findByWrittenExamResult(result)
+        return writtenExamRepository.findByWrittenExamResultWithApplication(result)
                 .stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
@@ -151,10 +174,10 @@ public class WrittenExamServiceImpl implements WrittenExamService {
         return writtenExamRepository.existsByApplicationId(applicationId);
     }
 
-    /**
-     * Convert WrittenExam entity to DTO
-     */
     private WrittenExamDto convertToDto(WrittenExam writtenExam) {
+        Objects.requireNonNull(writtenExam, "WrittenExam cannot be null");
+        Objects.requireNonNull(writtenExam.getApplication(), "Application cannot be null");
+
         WrittenExamDto.WrittenExamDtoBuilder builder = WrittenExamDto.builder()
                 .id(writtenExam.getId())
                 .writtenExamDate(writtenExam.getWrittenExamDate())
@@ -164,15 +187,24 @@ public class WrittenExamServiceImpl implements WrittenExamService {
                 .writtenExamResult(writtenExam.getWrittenExamResult())
                 .applicationId(writtenExam.getApplication().getId());
 
-        // Add application details if available
-        if (writtenExam.getApplication() != null) {
+        // Safely handle driver information
+        try {
             Application app = writtenExam.getApplication();
             if (app.getDriver() != null) {
-                String driverName = app.getDriver().getFullName();
-                builder.driverName(driverName);
+                builder.driverName(app.getDriver().getFullName());
+            } else {
+                log.debug("Application {} has no driver associated", app.getId());
+                builder.driverName(null);
             }
+
             builder.licenseType(app.getLicenseType())
                     .examLanguage(app.getExamLanguage());
+        } catch (Exception e) {
+            log.error("Error converting application/driver details for exam ID: {}", writtenExam.getId(), e);
+            // Set safe defaults
+            builder.driverName(null)
+                    .licenseType(null)
+                    .examLanguage(null);
         }
 
         return builder.build();

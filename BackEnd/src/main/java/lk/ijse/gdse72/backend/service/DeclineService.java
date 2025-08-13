@@ -8,4 +8,6 @@ public interface DeclineService {
     List<DeclineDTO> getAllDeclines();
 
     DeclineDTO createDecline(DeclineDTO declineDTO);
+
+    DeclineDTO findDeclineByApplicationId(Long applicationId);
 }

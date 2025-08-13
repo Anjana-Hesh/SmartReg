@@ -36,4 +36,22 @@ public class DeclineController {
         List<DeclineDTO> declines = declineService.getAllDeclines();
         return ResponseEntity.ok(declines);
     }
+
+    @GetMapping("/application/{applicationId}")
+    public ResponseEntity<?> getDeclineByApplicationId(@PathVariable Long applicationId) {
+        try {
+            DeclineDTO decline = declineService.findDeclineByApplicationId(applicationId);
+            if (decline != null) {
+                return ResponseEntity.ok(decline);
+            }
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "No decline record found for application ID: " + applicationId));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "message", "Error retrieving decline record",
+                            "error", e.getMessage()
+                    ));
+        }
+    }
 }
