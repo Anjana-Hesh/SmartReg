@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" href="../assets/images/titleIcon.png" type="image/x-icon">
-  <title>Driver Management System</title>
+  <title> Manage License </title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -13,15 +13,19 @@
 </head>
 <body>
 <div class="container">
-  <!-- Header -->
+
+<div class="back-button-container mb-3">
+  <button class="btn btn-secondary" id="backButton">
+    <i class="fas fa-arrow-left"></i> Back
+  </button>
+</div>
+
   <div class="header">
-    <h1><i class="fas fa-users-cog"></i> Driver Management System</h1>
+    <h1><i class="fas fa-users-cog"></i> Manage Licence</h1>
     <p>Comprehensive solution for managing driver licenses and vehicle information</p>
   </div>
 
-  <!-- Main Content -->
   <div class="row">
-    <!-- Right Side - Driver Management -->
     <div class="">
       <div class="management-section">
         <h3 class="section-title">
@@ -29,7 +33,6 @@
           Driver Management
         </h3>
 
-        <!-- Enhanced Search and Filter -->
         <div class="row mb-4">
           <div class="col-md-8">
             <div class="input-group">
@@ -50,7 +53,6 @@
           </div>
         </div>
 
-        <!-- Advanced Filters (Initially hidden) -->
         <div id="advancedFilters" class="row mb-4 hidden">
           <div class="col-md-4">
             <label for="filterLicenseType" class="form-label">License Type</label>
@@ -94,7 +96,6 @@
           </div>
         </div>
 
-        <!-- Stats Summary -->
         <div class="row mb-4">
           <div class="col-md-3">
             <div class="stat-item">
@@ -122,15 +123,13 @@
           </div>
         </div>
 
-        <!-- Drivers List -->
         <div id="driversList" class="mb-4">
-          <!-- Driver cards will be populated here -->
+
         </div>
 
-        <!-- Pagination -->
         <nav aria-label="Driver pagination">
           <ul class="pagination" id="pagination">
-            <!-- Pagination will be generated here -->
+
           </ul>
         </nav>
       </div>
@@ -138,7 +137,6 @@
   </div>
 </div>
 
-<!-- Add Driver Modal -->
 <div class="modal fade" id="addDriverModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content" style="background: var(--card-bg); color: var(--text-primary);">
@@ -214,7 +212,6 @@
   </div>
 </div>
 
-<!-- Driver Details Modal -->
 <div class="modal fade" id="driverDetailsModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content" style="background: var(--card-bg); color: var(--text-primary);">
@@ -223,7 +220,7 @@
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body" id="driverModalBody">
-        <!-- Content will be dynamically inserted here -->
+
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -233,12 +230,10 @@
   </div>
 </div>
 
-<!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
-  // Enhanced Data Structure
   let drivers = [
     {
       id: 1,
@@ -331,38 +326,32 @@
     }
   ];
 
-  // Pagination variables
   let currentPage = 1;
   const driversPerPage = 5;
   let filteredDrivers = [];
 
-  // Initialize the application
   $(document).ready(function() {
     renderDriversList();
     setupEventListeners();
+    setupBackButton();
     updateStats();
   });
 
-  // Setup event listeners
   function setupEventListeners() {
-    // Search functionality
     $('#searchDriver').on('input', function() {
       currentPage = 1;
       applyFilters();
     });
 
-    // Advanced filter toggle
     $('#advancedFilterBtn').click(function() {
       $('#advancedFilters').toggleClass('hidden');
     });
 
-    // Modal events
     $('#addDriverModal').on('hidden.bs.modal', function() {
       $('#addDriverForm')[0].reset();
     });
   }
 
-  // Render drivers list with pagination
   function renderDriversList(driversToRender = drivers) {
     filteredDrivers = driversToRender;
     updateStats();
@@ -483,7 +472,6 @@
 
     modalTitle.html(`<i class="fas fa-sync-alt"></i> Renew License: ${driver.name}`);
 
-    // Calculate new expiry date (5 years from today)
     const today = new Date();
     const newExpiryDate = new Date(today);
     newExpiryDate.setFullYear(today.getFullYear() + 5);
@@ -504,7 +492,6 @@
       <input type="hidden" id="renewNewIssueDate" value="${formattedTodayDate}">
 
       <div class="row g-3">
-        <!-- Driver Basic Info (Read-only for renewal) -->
         <div class="col-md-6">
           <label for="renewDriverName" class="form-label">Full Name</label>
           <input type="text" class="form-control" id="renewDriverName" value="${driver.name}" readonly>
@@ -514,7 +501,6 @@
           <input type="text" class="form-control" id="renewDriverNIC" value="${driver.nic}" readonly>
         </div>
 
-        <!-- License Information -->
         <div class="col-md-6">
           <label for="renewLicenseNumber" class="form-label">License Number</label>
           <input type="text" class="form-control" id="renewLicenseNumber" value="${driver.licenseNumber}" readonly>
@@ -524,7 +510,6 @@
           <input type="text" class="form-control" id="renewVehicleClass" value="${driver.vehicleClass}" readonly>
         </div>
 
-        <!-- Renewal Dates -->
         <div class="col-md-6">
           <label for="renewIssueDate" class="form-label">New Issue Date</label>
           <input type="date" class="form-control" id="renewIssueDate" value="${formattedTodayDate}" readonly>
@@ -534,7 +519,6 @@
           <input type="date" class="form-control" id="renewExpiryDate" value="${formattedExpiryDate}" readonly>
         </div>
 
-        <!-- Medical Report - Main Focus -->
         <div class="col-12">
           <div class="card border-primary">
             <div class="card-header bg-primary text-white">
@@ -567,7 +551,6 @@
           </div>
         </div>
 
-        <!-- Additional Notes -->
         <div class="col-12">
           <label for="renewNotes" class="form-label">Renewal Notes (Optional)</label>
           <textarea class="form-control" id="renewNotes" rows="3"
@@ -577,17 +560,14 @@
     </form>
   `);
 
-    // Update the save button functionality
     $('#saveDriverChanges').off('click').on('click', function() {
       processLicenseRenewal(driverId);
     });
 
-    // Focus on medical report field after modal is shown
     $('#driverDetailsModal').on('shown.bs.modal', function() {
       $('#renewMedicalReport').focus();
     });
 
-    // Show the modal
     const modal = new bootstrap.Modal(document.getElementById('driverDetailsModal'));
     modal.show();
   }
@@ -596,13 +576,11 @@
     const form = $('#renewLicenseForm')[0];
     const medicalFile = $('#renewMedicalReport')[0].files[0];
 
-    // Validate form
     if (!form.checkValidity()) {
       form.reportValidity();
       return;
     }
 
-    // Check if medical report is uploaded
     if (!medicalFile) {
       Swal.fire({
         title: 'Medical Report Required!',
@@ -614,7 +592,6 @@
       return;
     }
 
-    // Validate file type
     if (!medicalFile.type.includes('pdf')) {
       Swal.fire({
         title: 'Invalid File Type!',
@@ -625,7 +602,6 @@
       return;
     }
 
-    // Find and update the driver
     const driverIndex = drivers.findIndex(d => d.id === driverId);
     if (driverIndex === -1) return;
 
@@ -633,7 +609,6 @@
     const newExpiryDate = $('#renewNewExpiryDate').val();
     const notes = $('#renewNotes').val();
 
-    // Update driver information
     drivers[driverIndex] = {
       ...drivers[driverIndex],
       issueDate: renewalDate,
@@ -644,7 +619,6 @@
       lastRenewalDate: renewalDate
     };
 
-    // Show success message with renewal details
     Swal.fire({
       title: 'License Renewed Successfully!',
       html: `
@@ -665,12 +639,10 @@
       renderDriversList();
       updateStats();
 
-      // Optional: Show a brief notification
       showNotification('License renewed successfully!', 'success');
     });
   }
 
-  // Helper function for notifications (optional)
   function showNotification(message, type = 'info') {
     const toast = `
     <div class="toast align-items-center text-white bg-${type === 'success' ? 'success' : 'info'} border-0"
@@ -691,7 +663,6 @@
     const bsToast = new bootstrap.Toast(toastElement[0]);
     bsToast.show();
 
-    // Auto remove after toast hides
     toastElement.on('hidden.bs.toast', function() {
       $(this).remove();
     });
@@ -821,7 +792,7 @@
 
     const expiredLicenses = filteredDrivers.filter(d => {
       if (d.status === 'expired') return true;
-      if (d.examStatus === 'passed') return false; // Passed exams don't expire
+      if (d.examStatus === 'passed') return false;
       const expiryDate = new Date(d.expiryDate);
       return d.status === 'active' && expiryDate < today;
     }).length;
@@ -883,9 +854,9 @@
     const expiryDate = new Date(today);
 
     if (licenseType === 'Learner') {
-      expiryDate.setMonth(today.getMonth() + 6); // 6 months for learner
+      expiryDate.setMonth(today.getMonth() + 6);
     } else {
-      expiryDate.setFullYear(today.getFullYear() + 5); // 5 years for full
+      expiryDate.setFullYear(today.getFullYear() + 5);
     }
 
     return expiryDate.toISOString().split('T')[0];
@@ -983,7 +954,6 @@
       </div>
     `);
 
-    // Hide save button for view mode
     $('#saveDriverChanges').hide();
 
     const modal = new bootstrap.Modal(document.getElementById('driverDetailsModal'));
@@ -1040,7 +1010,6 @@
             </select>
           </div>
 
-          <!-- Exam Status Section -->
           <div class="col-12">
             <label for="editExamStatus" class="form-label"><strong>Exam Status</strong></label>
             <select class="form-select" id="editExamStatus" required onchange="toggleExamFields(this.value)">
@@ -1050,20 +1019,17 @@
             </select>
           </div>
 
-          <!-- Base Exam Date - Always visible -->
           <div class="col-md-6">
             <label for="editDriverExamDate" class="form-label">Exam Date</label>
             <input type="date" class="form-control" id="editDriverExamDate" value="${driver.examDate || ''}" required>
           </div>
 
-          <!-- Conditional Fields Based on Exam Status -->
           <div id="examFields"></div>
 
         </div>
       </form>
     `);
 
-    // Initialize the conditional fields
     toggleExamFields(driver.examStatus || 'pending');
 
     $('#saveDriverChanges').show().off('click').on('click', function() {
@@ -1103,7 +1069,7 @@
             </div>
           </div>
         `);
-        // Hide expiry date field when passed
+
         $('#editDriverExpiryDate').closest('.col-md-6').hide();
         break;
 
@@ -1129,7 +1095,7 @@
             </div>
           </div>
         `);
-        // Show expiry date field and make it required
+
         if ($('#editDriverExpiryDate').length === 0) {
           $('#editDriverStatus').closest('.col-md-6').after(`
             <div class="col-md-6">
@@ -1161,7 +1127,7 @@
             </div>
           </div>
         `);
-        // Show expiry date field
+
         if ($('#editDriverExpiryDate').length === 0) {
           $('#editDriverStatus').closest('.col-md-6').after(`
             <div class="col-md-6">
@@ -1188,7 +1154,6 @@
 
     const examStatus = $('#editExamStatus').val();
 
-    // Build updated driver object
     let updatedDriver = {
       ...drivers[driverIndex],
       name: $('#editDriverName').val(),
@@ -1202,12 +1167,11 @@
       status: $('#editDriverStatus').val()
     };
 
-    // Handle conditional fields based on exam status
     switch(examStatus) {
       case 'passed':
         updatedDriver.trialDate = $('#editTrialDate').val() || null;
         updatedDriver.nextExamDate = null;
-        updatedDriver.expiryDate = null; // Passed licenses don't expire
+        updatedDriver.expiryDate = null;
         break;
       case 'failed':
         updatedDriver.nextExamDate = $('#editNextExamDate').val();
@@ -1222,7 +1186,6 @@
         break;
     }
 
-    // Validate required fields for failed status
     if (examStatus === 'failed' && !updatedDriver.nextExamDate) {
       Swal.fire({
         title: 'Missing Information!',
@@ -1280,6 +1243,1071 @@
       updateStats();
     });
   }
+
+function setupBackButton() {
+  $('#backButton').click(function() {
+    window.history.back();
+  });
+}
+
+</script>
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="../assets/images/titleIcon.png" type="image/x-icon">
+  <title> Manage License </title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="../css/license.css">
+
+</head>
+<body>
+<div class="container">
+
+<div class="back-button-container mb-3">
+  <button class="btn btn-secondary" id="backButton">
+    <i class="fas fa-arrow-left"></i> Back
+  </button>
+</div>
+
+  <!-- Header -->
+  <div class="header">
+    <h1><i class="fas fa-users-cog"></i> Manage License</h1>
+    <p>Comprehensive solution for managing driver licenses and applications</p>
+  </div>
+
+  <!-- Main Content -->
+  <div class="row">
+    <div class="col-12">
+      <div class="management-section">
+        <h3 class="section-title">
+          <i class="fas fa-users"></i>
+          Driver Management
+        </h3>
+
+        <!-- Enhanced Search and Filter -->
+        <div class="row mb-4">
+          <div class="col-md-8">
+            <div class="input-group">
+              <span class="input-group-text"><i class="fas fa-search"></i></span>
+              <input type="text" id="searchDriver" class="form-control" placeholder="Search by name, NIC or license number...">
+              <button class="btn btn-outline-secondary" type="button" id="advancedFilterBtn">
+                <i class="fas fa-sliders-h"></i>
+              </button>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <select id="sortBy" class="form-select" onchange="sortApplications()">
+              <option value="name_asc">Sort by: Name (A-Z)</option>
+              <option value="name_desc">Sort by: Name (Z-A)</option>
+              <option value="date_asc">Sort by: Date (Oldest)</option>
+              <option value="date_desc">Sort by: Date (Newest)</option>
+              <option value="status_asc">Sort by: Status</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Advanced Filters (Initially hidden) -->
+        <div id="advancedFilters" class="row mb-4 hidden">
+          <div class="col-md-4">
+            <label for="filterLicenseType" class="form-label">License Type</label>
+            <select id="filterLicenseType" class="form-select" onchange="applyFilters()">
+              <option value="">All Types</option>
+              <option value="A">Class A - Motorcycles</option>
+              <option value="B">Class B - Cars</option>
+              <option value="C">Class C - Trucks</option>
+              <option value="D">Class D - Buses</option>
+              <option value="CE">Class CE - Heavy Vehicles</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label for="filterStatus" class="form-label">Status</label>
+            <select id="filterStatus" class="form-select" onchange="applyFilters()">
+              <option value="">All Statuses</option>
+              <option value="PENDING">Pending</option>
+              <option value="APPROVED">Approved</option>
+              <option value="DECLINED">Declined</option>
+              <option value="COMPLETED">Completed</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label for="filterExam" class="form-label">Exam Status</label>
+            <select id="filterExam" class="form-select" onchange="applyFilters()">
+              <option value="">All</option>
+              <option value="PASS">Passed</option>
+              <option value="FAIL">Failed</option>
+              <option value="PENDING">Pending</option>
+              <option value="ABSENT">Absent</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Stats Summary -->
+        <div class="row mb-4">
+          <div class="col-md-3">
+            <div class="stat-item">
+              <div class="stat-value" id="totalApplications">0</div>
+              <div class="stat-label">Total Applications</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="stat-item">
+              <div class="stat-value text-warning" id="pendingApplications">0</div>
+              <div class="stat-label">Pending Applications</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="stat-item">
+              <div class="stat-value text-success" id="approvedApplications">0</div>
+              <div class="stat-label">Approved Applications</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="stat-item">
+              <div class="stat-value text-danger" id="declinedApplications">0</div>
+              <div class="stat-label">Declined Applications</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Applications List -->
+        <div id="applicationsList" class="mb-4">
+          <!-- Application cards will be populated here -->
+          <div class="loading-spinner">
+            <div class="spinner-border" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <nav aria-label="Application pagination">
+          <ul class="pagination" id="pagination">
+            <!-- Pagination will be generated here -->
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Application Details Modal -->
+<div class="modal fade" id="applicationDetailsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="applicationModalTitle">Application Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="applicationModalBody">
+        <!-- Content will be dynamically inserted here -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" id="saveChanges">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Exam Result Modal -->
+<div class="modal fade" id="examResultModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Update Exam Result</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="examResultForm">
+          <input type="hidden" id="examId" name="examId">
+          <div class="mb-3">
+            <label for="examResult" class="form-label">Exam Result</label>
+            <select class="form-select" id="examResult" required>
+              <option value="">Select Result</option>
+              <option value="PASS">Pass</option>
+              <option value="FAIL">Fail</option>
+              <option value="ABSENT">Absent</option>
+            </select>
+          </div>
+          <div class="mb-3" id="nextExamDateContainer" style="display: none;">
+            <label for="nextExamDate" class="form-label">Next Exam Date</label>
+            <input type="date" class="form-control" id="nextExamDate">
+          </div>
+          <div class="mb-3">
+            <label for="examNote" class="form-label">Notes (Optional)</label>
+            <textarea class="form-control" id="examNote" rows="3" placeholder="Add any notes..."></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="saveExamResult()">Save Result</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+$(document).ready(function () {
+  // =================== CONFIGURATION ===================
+  const API_BASE_URL = "http://localhost:8080/api/v1";
+
+  // Authentication data
+  const authToken = localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token");
+  const userData = JSON.parse(localStorage.getItem("smartreg_user") || sessionStorage.getItem("smartreg_user") || "{}");
+  const currentUserId = userData.id;
+  const currentUserName = userData.fullName || userData.name;
+  const currentUserRole = userData.role;
+
+  // Global variables
+  let currentApplications = [];
+  let filteredApplications = [];
+  let currentPage = 1;
+  const applicationsPerPage = 10;
+
+  // =================== AUTHENTICATION CHECK ===================
+  if (!authToken || !currentUserId) {
+    Swal.fire({
+      title: "Authentication Required",
+      text: "Please login to continue",
+      icon: "error",
+      confirmButtonText: "Login Now",
+      allowOutsideClick: false,
+    }).then(() => {
+      window.location.href = "../index.html";
+    });
+    return;
+  }
+
+  // =================== AJAX SETUP WITH AUTH ===================
+  $.ajaxSetup({
+    beforeSend: function (xhr) {
+      if (authToken) {
+        xhr.setRequestHeader("Authorization", "Bearer " + authToken);
+      }
+    },
+    error: function (xhr, status, error) {
+      if (xhr.status === 401) {
+        handleUnauthorized();
+      } else if (xhr.status === 403) {
+        showAlert("Access Denied", "You don't have permission to perform this action", "error");
+      }
+    },
+  });
+
+  function handleUnauthorized() {
+    localStorage.removeItem("smartreg_token");
+    localStorage.removeItem("smartreg_user");
+    sessionStorage.removeItem("smartreg_token");
+    sessionStorage.removeItem("smartreg_user");
+    
+    Swal.fire({
+      title: "Session Expired",
+      text: "Please login again",
+      icon: "warning",
+      confirmButtonText: "Login",
+      allowOutsideClick: false,
+    }).then(() => {
+      window.location.href = "../index.html";
+    });
+  }
+
+  // =================== INITIALIZATION ===================
+  initializeApp();
+  setupEventListeners();
+  setupBackButton();
+
+  function initializeApp() {
+    loadApplications();
+  }
+
+  function setupEventListeners() {
+    // Search functionality
+    $('#searchDriver').on('input', debounce(function() {
+      currentPage = 1;
+      applyFilters();
+    }, 300));
+
+    // Advanced filter toggle
+    $('#advancedFilterBtn').click(function() {
+      $('#advancedFilters').toggleClass('hidden');
+    });
+
+    // Exam result change handler
+    $('#examResult').on('change', function() {
+      const result = $(this).val();
+      if (result === 'FAIL' || result === 'ABSENT') {
+        $('#nextExamDateContainer').show();
+        $('#nextExamDate').prop('required', true);
+      } else {
+        $('#nextExamDateContainer').hide();
+        $('#nextExamDate').prop('required', false);
+      }
+    });
+  }
+
+  function setupBackButton() {
+    $('#backButton').click(function() {
+      window.history.back();
+    });
+  }
+
+  // =================== API CALLS ===================
+  function loadApplications() {
+    const loadingHtml = `
+      <div class="loading-spinner">
+        <div class="spinner-border" role="status">
+          <span class="visually-hidden">Loading applications...</span>
+        </div>
+      </div>
+    `;
+    $('#applicationsList').html(loadingHtml);
+
+    // Determine which endpoint to use based on user role
+    const endpoint = currentUserRole === 'ADMIN' ? 
+      `${API_BASE_URL}/applications/getall` : 
+      `${API_BASE_URL}/applications/driver/${currentUserId}`;
+
+    $.ajax({
+      url: endpoint,
+      method: 'GET',
+      success: function(data) {
+        currentApplications = data || [];
+        
+        // Load exam data for each application
+        loadExamDataForApplications();
+      },
+      error: function(xhr, status, error) {
+        console.error('Error loading applications:', error);
+        $('#applicationsList').html(`
+          <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle"></i>
+            Failed to load applications. Please try again.
+          </div>
+        `);
+      }
+    });
+  }
+
+  function loadExamDataForApplications() {
+    const promises = currentApplications.map(application => {
+      return $.ajax({
+        url: `${API_BASE_URL}/written-exams/application/${application.id}`,
+        method: 'GET',
+      }).then(examData => {
+        application.examData = examData;
+        return application;
+      }).catch(() => {
+        application.examData = null;
+        return application;
+      });
+    });
+
+    Promise.all(promises).then(applicationsWithExams => {
+      currentApplications = applicationsWithExams;
+      renderApplicationsList();
+      updateStats();
+    });
+  }
+
+  function updateExamResult(examId, result, note, nextExamDate = null) {
+    const params = new URLSearchParams({
+      result: result
+    });
+    
+    if (note) {
+      params.append('note', note);
+    }
+
+    return $.ajax({
+      url: `${API_BASE_URL}/written-exams/${examId}/result?${params.toString()}`,
+      method: 'PATCH',
+    });
+  }
+
+  function scheduleWrittenExam(applicationId, examDate, examTime, location, language = 'ENGLISH') {
+    const examData = {
+      applicationId: applicationId,
+      writtenExamDate: examDate,
+      writtenExamTime: examTime,
+      writtenExamLocation: location,
+      examLanguage: language
+    };
+
+    return $.ajax({
+      url: `${API_BASE_URL}/written-exams/schedule`,
+      method: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify(examData)
+    });
+  }
+
+  // =================== RENDERING FUNCTIONS ===================
+  function renderApplicationsList(applicationsToRender = currentApplications) {
+    filteredApplications = applicationsToRender;
+
+    const container = $('#applicationsList');
+    container.empty();
+
+    if (filteredApplications.length === 0) {
+      container.append(`
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle"></i> No applications found matching your criteria
+        </div>
+      `);
+      return;
+    }
+
+    const totalPages = Math.ceil(filteredApplications.length / applicationsPerPage);
+    const startIndex = (currentPage - 1) * applicationsPerPage;
+    const endIndex = Math.min(startIndex + applicationsPerPage, filteredApplications.length);
+    const paginatedApplications = filteredApplications.slice(startIndex, endIndex);
+
+    paginatedApplications.forEach(application => {
+      const card = createApplicationCard(application);
+      container.append(card);
+    });
+
+    renderPagination(totalPages);
+  }
+
+  function createApplicationCard(application) {
+    const statusClass = getStatusClass(application.status);
+    const examStatus = application.examData ? application.examData.writtenExamResult : 'PENDING';
+    const examStatusBadge = getExamStatusBadge(examStatus);
+
+    return `
+      <div class="driver-card mb-3" data-id="${application.id}">
+        <div class="driver-info">
+          <div>
+            <div class="driver-name">${application.fullName} 
+              <small class="text-muted">${application.nic}</small>
+            </div>
+            <div class="driver-license">Application #${application.id} • ${application.licenseType}</div>
+          </div>
+          <div>
+            <span class="status-badge ${statusClass}">${application.status}</span>
+          </div>
+        </div>
+
+        <div class="driver-stats">
+          <div class="stat-item">
+            <div class="stat-value">${formatDate(application.applicationDate)}</div>
+            <div class="stat-label">Applied Date</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">${application.licenseType}</div>
+            <div class="stat-label">License Type</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">${application.vehicleClasses.join(', ')}</div>
+            <div class="stat-label">Vehicle Classes</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">${examStatusBadge}</div>
+            <div class="stat-label">Exam Status</div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-sm btn-primary" onclick="viewApplicationDetails(${application.id})">
+            <i class="fas fa-eye"></i> View Details
+          </button>
+          ${currentUserRole === 'ADMIN' ? getAdminActions(application) : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  function getStatusClass(status) {
+    switch(status?.toLowerCase()) {
+      case 'approved': return 'status-active';
+      case 'pending': return 'status-pending';
+      case 'declined': return 'status-expired';
+      default: return 'status-pending';
+    }
+  }
+
+  function getExamStatusBadge(status) {
+    switch(status?.toUpperCase()) {
+      case 'PASS':
+        return '<span class="badge bg-success">Passed</span>';
+      case 'FAIL':
+        return '<span class="badge bg-danger">Failed</span>';
+      case 'ABSENT':
+        return '<span class="badge bg-warning">Absent</span>';
+      case 'PENDING':
+      default:
+        return '<span class="badge bg-secondary">Pending</span>';
+    }
+  }
+
+  function getAdminActions(application) {
+    let actions = `
+      <button class="btn btn-sm btn-warning" onclick="editApplication(${application.id})">
+        <i class="fas fa-edit"></i> Edit
+      </button>
+    `;
+
+    // Add exam management actions
+    if (application.examData && application.examData.id) {
+      actions += `
+        <button class="btn btn-sm btn-info" onclick="updateExamResultModal(${application.examData.id})">
+          <i class="fas fa-clipboard-check"></i> Update Result
+        </button>
+      `;
+    } else if (application.status === 'APPROVED') {
+      actions += `
+        <button class="btn btn-sm btn-success" onclick="scheduleExamModal(${application.id})">
+          <i class="fas fa-calendar-plus"></i> Schedule Exam
+        </button>
+      `;
+    }
+
+    return actions;
+  }
+
+  // =================== MODAL FUNCTIONS ===================
+  function viewApplicationDetails(applicationId) {
+    const application = currentApplications.find(app => app.id === applicationId);
+    if (!application) return;
+
+    const modalTitle = $('#applicationModalTitle');
+    const modalBody = $('#applicationModalBody');
+
+    modalTitle.html(`<i class="fas fa-file-alt"></i> Application Details - ${application.fullName}`);
+
+    const examInfo = application.examData ? `
+      <div class="card mb-3">
+        <div class="card-header">
+          <h5><i class="fas fa-clipboard-check"></i> Exam Information</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <p><strong>Exam Date:</strong> ${application.examData.writtenExamDate || 'Not scheduled'}</p>
+              <p><strong>Exam Time:</strong> ${application.examData.writtenExamTime || 'Not scheduled'}</p>
+              <p><strong>Location:</strong> ${application.examData.writtenExamLocation || 'Not set'}</p>
+            </div>
+            <div class="col-md-6">
+              <p><strong>Result:</strong> ${getExamStatusBadge(application.examData.writtenExamResult)}</p>
+              <p><strong>Language:</strong> ${application.examData.examLanguage || 'Not set'}</p>
+              ${application.examData.note ? `<p><strong>Notes:</strong> ${application.examData.note}</p>` : ''}
+            </div>
+          </div>
+        </div>
+      </div>
+    ` : '<div class="alert alert-info">No exam scheduled yet</div>';
+
+    modalBody.html(`
+      <div class="row">
+        <div class="col-12">
+          <div class="card mb-3">
+            <div class="card-header">
+              <h5><i class="fas fa-user"></i> Personal Information</h5>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <p><strong>Full Name:</strong> ${application.fullName}</p>
+                  <p><strong>NIC:</strong> ${application.nic}</p>
+                  <p><strong>Date of Birth:</strong> ${formatDate(application.dateOfBirth)}</p>
+                  <p><strong>Address:</strong> ${application.address}</p>
+                </div>
+                <div class="col-md-6">
+                  <p><strong>Phone:</strong> ${application.phoneNumber}</p>
+                  <p><strong>Email:</strong> ${application.email}</p>
+                  <p><strong>Blood Group:</strong> ${application.bloodGroup}</p>
+                  <p><strong>Application Date:</strong> ${formatDate(application.applicationDate)}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card mb-3">
+            <div class="card-header">
+              <h5><i class="fas fa-id-card"></i> License Information</h5>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <p><strong>License Type:</strong> ${application.licenseType}</p>
+                  <p><strong>Vehicle Classes:</strong> ${application.vehicleClasses.join(', ')}</p>
+                </div>
+                <div class="col-md-6">
+                  <p><strong>Status:</strong> <span class="status-badge ${getStatusClass(application.status)}">${application.status}</span></p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          ${examInfo}
+        </div>
+      </div>
+    `);
+
+    $('#saveChanges').hide();
+    const modal = new bootstrap.Modal(document.getElementById('applicationDetailsModal'));
+    modal.show();
+  }
+
+  function updateExamResultModal(examId) {
+    $('#examId').val(examId);
+    $('#examResult').val('');
+    $('#nextExamDate').val('');
+    $('#examNote').val('');
+    $('#nextExamDateContainer').hide();
+    
+    const modal = new bootstrap.Modal(document.getElementById('examResultModal'));
+    modal.show();
+  }
+
+  function saveExamResult() {
+    const examId = $('#examId').val();
+    const result = $('#examResult').val();
+    const note = $('#examNote').val();
+    const nextExamDate = $('#nextExamDate').val();
+
+    if (!result) {
+      showAlert('Error', 'Please select an exam result', 'error');
+      return;
+    }
+
+    if ((result === 'FAIL' || result === 'ABSENT') && !nextExamDate) {
+      showAlert('Error', 'Next exam date is required for failed or absent results', 'error');
+      return;
+    }
+
+    // Show loading
+    Swal.fire({
+      title: 'Updating Result...',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    updateExamResult(examId, result, note, nextExamDate)
+      .then(response => {
+        Swal.fire({
+          title: 'Success!',
+          text: 'Exam result updated successfully',
+          icon: 'success'
+        }).then(() => {
+          $('#examResultModal').modal('hide');
+          loadApplications(); // Reload to get updated data
+        });
+      })
+      .catch(error => {
+        console.error('Error updating exam result:', error);
+        Swal.fire({
+          title: 'Error!',
+          text: 'Failed to update exam result. Please try again.',
+          icon: 'error'
+        });
+      });
+  }
+
+  function scheduleExamModal(applicationId) {
+    Swal.fire({
+      title: 'Schedule Written Exam',
+      html: `
+        <form id="scheduleExamForm" class="text-start">
+          <div class="mb-3">
+            <label for="scheduleExamDate" class="form-label">Exam Date</label>
+            <input type="date" class="form-control" id="scheduleExamDate" required>
+          </div>
+          <div class="mb-3">
+            <label for="scheduleExamTime" class="form-label">Exam Time</label>
+            <input type="time" class="form-control" id="scheduleExamTime" required>
+          </div>
+          <div class="mb-3">
+            <label for="scheduleExamLocation" class="form-label">Exam Location</label>
+            <input type="text" class="form-control" id="scheduleExamLocation" 
+                   placeholder="e.g., RMV Office - Colombo" required>
+          </div>
+          <div class="mb-3">
+            <label for="scheduleExamLanguage" class="form-label">Exam Language</label>
+            <select class="form-control" id="scheduleExamLanguage" required>
+              <option value="ENGLISH">English</option>
+              <option value="SINHALA">Sinhala</option>
+              <option value="TAMIL">Tamil</option>
+            </select>
+          </div>
+        </form>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Schedule Exam',
+      cancelButtonText: 'Cancel',
+      preConfirm: () => {
+        const form = document.getElementById('scheduleExamForm');
+        if (!form.checkValidity()) {
+          form.reportValidity();
+          return false;
+        }
+
+        const examDate = document.getElementById('scheduleExamDate').value;
+        const examTime = document.getElementById('scheduleExamTime').value;
+        const examLocation = document.getElementById('scheduleExamLocation').value;
+        const examLanguage = document.getElementById('scheduleExamLanguage').value;
+
+        return { examDate, examTime, examLocation, examLanguage };
+      }
+    }).then((result) => {
+      if (result.isConfirmed && result.value) {
+        const { examDate, examTime, examLocation, examLanguage } = result.value;
+        
+        Swal.fire({
+          title: 'Scheduling Exam...',
+          allowOutsideClick: false,
+          didOpen: () => {
+            Swal.showLoading();
+          }
+        });
+
+        scheduleWrittenExam(applicationId, examDate, examTime, examLocation, examLanguage)
+          .then(response => {
+            Swal.fire({
+              title: 'Success!',
+              text: 'Written exam scheduled successfully',
+              icon: 'success'
+            }).then(() => {
+              loadApplications(); // Reload to get updated data
+            });
+          })
+          .catch(error => {
+            console.error('Error scheduling exam:', error);
+            Swal.fire({
+              title: 'Error!',
+              text: 'Failed to schedule exam. Please try again.',
+              icon: 'error'
+            });
+          });
+      }
+    });
+  }
+
+  function editApplication(applicationId) {
+    const application = currentApplications.find(app => app.id === applicationId);
+    if (!application) return;
+
+    Swal.fire({
+      title: 'Update Application Status',
+      html: `
+        <form id="updateStatusForm" class="text-start">
+          <div class="mb-3">
+            <label for="newStatus" class="form-label">Application Status</label>
+            <select class="form-control" id="newStatus" required>
+              <option value="PENDING" ${application.status === 'PENDING' ? 'selected' : ''}>Pending</option>
+              <option value="APPROVED" ${application.status === 'APPROVED' ? 'selected' : ''}>Approved</option>
+              <option value="DECLINED" ${application.status === 'DECLINED' ? 'selected' : ''}>Declined</option>
+              <option value="COMPLETED" ${application.status === 'COMPLETED' ? 'selected' : ''}>Completed</option>
+            </select>
+          </div>
+          <div class="mb-3" id="declineReasonContainer" style="display: none;">
+            <label for="declineReason" class="form-label">Decline Reason</label>
+            <textarea class="form-control" id="declineReason" rows="3" 
+                      placeholder="Please provide reason for declining..."></textarea>
+          </div>
+        </form>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Update Status',
+      cancelButtonText: 'Cancel',
+      didOpen: () => {
+        // Show/hide decline reason based on status
+        document.getElementById('newStatus').addEventListener('change', function() {
+          const declineContainer = document.getElementById('declineReasonContainer');
+          if (this.value === 'DECLINED') {
+            declineContainer.style.display = 'block';
+            document.getElementById('declineReason').required = true;
+          } else {
+            declineContainer.style.display = 'none';
+            document.getElementById('declineReason').required = false;
+          }
+        });
+
+        // Trigger change event to set initial state
+        document.getElementById('newStatus').dispatchEvent(new Event('change'));
+      },
+      preConfirm: () => {
+        const newStatus = document.getElementById('newStatus').value;
+        const declineReason = document.getElementById('declineReason').value;
+
+        if (newStatus === 'DECLINED' && !declineReason.trim()) {
+          Swal.showValidationMessage('Decline reason is required when declining an application');
+          return false;
+        }
+
+        return { newStatus, declineReason };
+      }
+    }).then((result) => {
+      if (result.isConfirmed && result.value) {
+        const { newStatus, declineReason } = result.value;
+        
+        Swal.fire({
+          title: 'Updating Status...',
+          allowOutsideClick: false,
+          didOpen: () => {
+            Swal.showLoading();
+          }
+        });
+
+        updateApplicationStatus(applicationId, newStatus, declineReason)
+          .then(response => {
+            Swal.fire({
+              title: 'Success!',
+              text: 'Application status updated successfully',
+              icon: 'success'
+            }).then(() => {
+              loadApplications(); // Reload to get updated data
+            });
+          })
+          .catch(error => {
+            console.error('Error updating status:', error);
+            Swal.fire({
+              title: 'Error!',
+              text: 'Failed to update application status. Please try again.',
+              icon: 'error'
+            });
+          });
+      }
+    });
+  }
+
+  function updateApplicationStatus(applicationId, status, declineReason = null) {
+    const params = new URLSearchParams({ status });
+    
+    const promise = $.ajax({
+      url: `${API_BASE_URL}/applications/${applicationId}/status?${params.toString()}`,
+      method: 'PUT'
+    });
+
+    // If declining, also create decline record
+    if (status === 'DECLINED' && declineReason) {
+      return promise.then(response => {
+        return $.ajax({
+          url: `${API_BASE_URL}/declines/create-decline`,
+          method: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify({
+            applicationId: applicationId,
+            reason: declineReason,
+            declinedDate: new Date().toISOString().split('T')[0]
+          })
+        });
+      });
+    }
+
+    return promise;
+  }
+
+  // =================== UTILITY FUNCTIONS ===================
+  function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
+
+  function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  }
+
+  function showAlert(title, text, icon) {
+    Swal.fire({
+      title: title,
+      text: text,
+      icon: icon,
+      confirmButtonText: 'OK'
+    });
+  }
+
+  // =================== FILTERING AND SORTING ===================
+  function applyFilters() {
+    const searchTerm = $('#searchDriver').val().toLowerCase();
+    const licenseType = $('#filterLicenseType').val();
+    const status = $('#filterStatus').val();
+    const examStatus = $('#filterExam').val();
+
+    let filtered = currentApplications;
+
+    if (searchTerm) {
+      filtered = filtered.filter(app =>
+        app.fullName.toLowerCase().includes(searchTerm) ||
+        app.nic.includes(searchTerm) ||
+        app.id.toString().includes(searchTerm)
+      );
+    }
+
+    if (licenseType) {
+      filtered = filtered.filter(app => 
+        app.vehicleClasses.includes(licenseType)
+      );
+    }
+
+    if (status) {
+      filtered = filtered.filter(app => app.status === status);
+    }
+
+    if (examStatus) {
+      filtered = filtered.filter(app => {
+        const appExamStatus = app.examData ? app.examData.writtenExamResult : 'PENDING';
+        return appExamStatus === examStatus;
+      });
+    }
+
+    currentPage = 1;
+    renderApplicationsList(filtered);
+  }
+
+  function sortApplications() {
+    const sortBy = $('#sortBy').val();
+    let sorted = [...filteredApplications];
+
+    switch (sortBy) {
+      case 'name_asc':
+        sorted.sort((a, b) => a.fullName.localeCompare(b.fullName));
+        break;
+      case 'name_desc':
+        sorted.sort((a, b) => b.fullName.localeCompare(a.fullName));
+        break;
+      case 'date_asc':
+        sorted.sort((a, b) => new Date(a.applicationDate) - new Date(b.applicationDate));
+        break;
+      case 'date_desc':
+        sorted.sort((a, b) => new Date(b.applicationDate) - new Date(a.applicationDate));
+        break;
+      case 'status_asc':
+        sorted.sort((a, b) => a.status.localeCompare(b.status));
+        break;
+    }
+
+    renderApplicationsList(sorted);
+  }
+
+  function updateStats() {
+    if (!filteredApplications.length) return;
+
+    $('#totalApplications').text(filteredApplications.length);
+
+    const pendingCount = filteredApplications.filter(app => app.status === 'PENDING').length;
+    $('#pendingApplications').text(pendingCount);
+
+    const approvedCount = filteredApplications.filter(app => app.status === 'APPROVED').length;
+    $('#approvedApplications').text(approvedCount);
+
+    const declinedCount = filteredApplications.filter(app => app.status === 'DECLINED').length;
+    $('#declinedApplications').text(declinedCount);
+  }
+
+  // =================== PAGINATION ===================
+  function renderPagination(totalPages) {
+    const pagination = $('#pagination');
+    pagination.empty();
+
+    if (totalPages <= 1) return;
+
+    pagination.append(`
+      <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+        <a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;">
+          <i class="fas fa-chevron-left"></i>
+        </a>
+      </li>
+    `);
+
+    // Show page numbers with ellipsis for large page counts
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage < maxVisiblePages - 1) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    if (startPage > 1) {
+      pagination.append(`
+        <li class="page-item">
+          <a class="page-link" href="#" onclick="changePage(1); return false;">1</a>
+        </li>
+      `);
+      if (startPage > 2) {
+        pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+      }
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pagination.append(`
+        <li class="page-item ${i === currentPage ? 'active' : ''}">
+          <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+        </li>
+      `);
+    }
+
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+      }
+      pagination.append(`
+        <li class="page-item">
+          <a class="page-link" href="#" onclick="changePage(${totalPages}); return false;">${totalPages}</a>
+        </li>
+      `);
+    }
+
+    pagination.append(`
+      <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+        <a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;">
+          <i class="fas fa-chevron-right"></i>
+        </a>
+      </li>
+    `);
+  }
+
+  // Make functions globally accessible
+  window.changePage = function(page) {
+    if (page < 1 || page > Math.ceil(filteredApplications.length / applicationsPerPage)) return;
+    currentPage = page;
+    renderApplicationsList(filteredApplications);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  window.viewApplicationDetails = viewApplicationDetails;
+  window.editApplication = editApplication;
+  window.updateExamResultModal = updateExamResultModal;
+  window.scheduleExamModal = scheduleExamModal;
+  window.saveExamResult = saveExamResult;
+  window.sortApplications = sortApplications;
+  window.applyFilters = applyFilters;
+
+  // Auto-refresh data every 5 minutes
+  setInterval(() => {
+    loadApplications();
+  }, 5 * 60 * 1000);
+});
 </script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-// Admin Dashboard Functions - CORRECTED VERSION
+// Admin Dashboard Functions - CORRECTED VERSION WITH REAL DB VALUES AND NAVIGATION
 document.addEventListener('DOMContentLoaded', function() {
     // Configuration
     const API_BASE_URL = "http://localhost:8080/api/v1"; // Update with your backend URL
@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add event listeners
     addEventListeners();
 
-    // Load initial data
+    // Load initial data with real database values
     loadDashboardData();
 });
 
@@ -130,6 +130,61 @@ function initializeDashboard() {
         card.style.animationDelay = `${index * 0.1}s`;
         card.classList.add('animate-fade-in');
     });
+
+    // Add click handlers to stats cards for navigation
+    addStatsCardClickHandlers();
+}
+
+function addStatsCardClickHandlers() {
+    // Get all stats cards
+    const statsCards = document.querySelectorAll('.floating-element');
+    
+    if (statsCards.length >= 4) {
+        // Total Licenses card - navigate to all licenses
+        statsCards[0].style.cursor = 'pointer';
+        statsCards[0].addEventListener('click', function() {
+            navigateToDriverSearch('all');
+        });
+
+        // Registered Vehicles card - navigate to all vehicles (if you have vehicle page)
+        statsCards[1].style.cursor = 'pointer';
+        statsCards[1].addEventListener('click', function() {
+            // Navigate to vehicle records or show info
+            showAlert('Vehicle Records', 'Vehicle management coming soon!', 'info');
+        });
+
+        // Pending Renewals card - navigate to pending licenses
+        statsCards[2].style.cursor = 'pointer';
+        statsCards[2].addEventListener('click', function() {
+            navigateToDriverSearch('pending');
+        });
+
+        // Staff Members card - navigate to staff management
+        statsCards[3].style.cursor = 'pointer';
+        statsCards[3].addEventListener('click', function() {
+            window.location.href = 'staffManagement.html';
+        });
+    }
+
+    // Add hover effects
+    statsCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.transition = 'transform 0.3s ease';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+}
+
+function navigateToDriverSearch(filterType) {
+    // Store the filter type in localStorage to be used by driverLicenseSearch page
+    localStorage.setItem('dashboard_filter', filterType);
+    
+    // Navigate to driver license search page
+    window.location.href = 'driverLicenseSearch.html';
 }
 
 function addEventListeners() {
@@ -257,9 +312,9 @@ function handleUnauthorized() {
 function loadDashboardData() {
     showLoading(true);
     
-    // Load all dashboard data
+    // Load all dashboard data with real API calls
     Promise.all([
-        loadStatsData(),
+        loadRealStatsData(),
         loadRecentActivity(),
         loadNotifications(),
         loadSystemStatus()
@@ -273,54 +328,154 @@ function loadDashboardData() {
     });
 }
 
-// API Functions for fetching real data
-async function loadStatsData() {
+// CORRECTED: Load real stats data from database
+async function loadRealStatsData() {
     try {
-        // Replace with actual API endpoints
-        const [licensesResponse, vehiclesResponse, pendingResponse, staffResponse] = await Promise.allSettled([
-            fetch(`${API_BASE_URL}/admin/stats/licenses`),
-            fetch(`${API_BASE_URL}/admin/stats/vehicles`),
-            fetch(`${API_BASE_URL}/admin/stats/pending-renewals`),
-            fetch(`${API_BASE_URL}/admin/stats/staff`)
+        const token = localStorage.getItem('smartreg_token') || sessionStorage.getItem('smartreg_token');
+        
+        // Make parallel API calls to get real statistics
+        const [
+            totalLicensesResponse,
+            vehiclesResponse,
+            pendingResponse,
+            approvedResponse,
+            rejectedResponse,
+            expiredResponse,
+            staffResponse
+        ] = await Promise.allSettled([
+            fetch(`${API_BASE_URL}/admin/licenses/count/all`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }),
+            fetch(`${API_BASE_URL}/admin/vehicles/count`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }),
+            fetch(`${API_BASE_URL}/admin/licenses/count/pending`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }),
+            fetch(`${API_BASE_URL}/admin/licenses/count/approved`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }),
+            fetch(`${API_BASE_URL}/admin/licenses/count/rejected`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }),
+            fetch(`${API_BASE_URL}/admin/licenses/count/expired`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }),
+            fetch(`${API_BASE_URL}/admin/staff/count`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
         ]);
 
-        // Handle responses and update UI
+        // Process responses and get actual counts
         const stats = {
-            totalLicenses: licensesResponse.status === 'fulfilled' ? await licensesResponse.value.json() : 1234,
-            registeredVehicles: vehiclesResponse.status === 'fulfilled' ? await vehiclesResponse.value.json() : 856,
-            pendingRenewals: pendingResponse.status === 'fulfilled' ? await pendingResponse.value.json() : 45,
-            staffMembers: staffResponse.status === 'fulfilled' ? await staffResponse.value.json() : 12
+            totalLicenses: 0,
+            registeredVehicles: 0,
+            pendingRenewals: 0,
+            approvedLicenses: 0,
+            rejectedLicenses: 0,
+            expiredLicenses: 0,
+            staffMembers: 0
         };
 
+        // Handle total licenses
+        if (totalLicensesResponse.status === 'fulfilled' && totalLicensesResponse.value.ok) {
+            const data = await totalLicensesResponse.value.json();
+            stats.totalLicenses = data.count || data.total || 0;
+        }
+
+        // Handle vehicles
+        if (vehiclesResponse.status === 'fulfilled' && vehiclesResponse.value.ok) {
+            const data = await vehiclesResponse.value.json();
+            stats.registeredVehicles = data.count || data.total || 0;
+        }
+
+        // Handle pending
+        if (pendingResponse.status === 'fulfilled' && pendingResponse.value.ok) {
+            const data = await pendingResponse.value.json();
+            stats.pendingRenewals = data.count || data.total || 0;
+        }
+
+        // Handle approved
+        if (approvedResponse.status === 'fulfilled' && approvedResponse.value.ok) {
+            const data = await approvedResponse.value.json();
+            stats.approvedLicenses = data.count || data.total || 0;
+        }
+
+        // Handle rejected
+        if (rejectedResponse.status === 'fulfilled' && rejectedResponse.value.ok) {
+            const data = await rejectedResponse.value.json();
+            stats.rejectedLicenses = data.count || data.total || 0;
+        }
+
+        // Handle expired
+        if (expiredResponse.status === 'fulfilled' && expiredResponse.value.ok) {
+            const data = await expiredResponse.value.json();
+            stats.expiredLicenses = data.count || data.total || 0;
+        }
+
+        // Handle staff
+        if (staffResponse.status === 'fulfilled' && staffResponse.value.ok) {
+            const data = await staffResponse.value.json();
+            stats.staffMembers = data.count || data.total || 0;
+        }
+
+        // Update the UI with real statistics
         updateStatsCards(stats);
         
+        // Store stats globally for navigation
+        window.dashboardStats = stats;
+        
     } catch (error) {
-        console.error('Error loading stats:', error);
-        // Use default values if API fails
+        console.error('Error loading real stats:', error);
+        // Use fallback values if API fails
         updateStatsCards({
-            totalLicenses: 1234,
-            registeredVehicles: 856,
-            pendingRenewals: 45,
-            staffMembers: 12
+            totalLicenses: 0,
+            registeredVehicles: 0,
+            pendingRenewals: 0,
+            staffMembers: 0
         });
     }
 }
 
 function updateStatsCards(stats = {}) {
-    // Update stats with animation
+    // Update stats with animation - CORRECTED to show real database values
     const statsConfig = [
-        { selector: '.col-md-3:nth-child(1) h3', value: stats.totalLicenses || 1234 },
-        { selector: '.col-md-3:nth-child(2) h3', value: stats.registeredVehicles || 856 },
-        { selector: '.col-md-3:nth-child(3) h3', value: stats.pendingRenewals || 45 },
-        { selector: '.col-md-3:nth-child(4) h3', value: stats.staffMembers || 12 }
+        { 
+            selector: '.col-md-3:nth-child(1) h3', 
+            value: stats.totalLicenses || 0,
+            label: 'Total Licenses'
+        },
+        { 
+            selector: '.col-md-3:nth-child(2) h3', 
+            value: stats.registeredVehicles || 0,
+            label: 'Registered Vehicles'
+        },
+        { 
+            selector: '.col-md-3:nth-child(3) h3', 
+            value: stats.pendingRenewals || 0,
+            label: 'Pending Renewals'
+        },
+        { 
+            selector: '.col-md-3:nth-child(4) h3', 
+            value: stats.staffMembers || 0,
+            label: 'Staff Members'
+        }
     ];
 
     statsConfig.forEach(stat => {
         const element = document.querySelector(stat.selector);
         if (element) {
             animateCounter(element, stat.value);
+            
+            // Update the label if needed
+            const labelElement = element.nextElementSibling;
+            if (labelElement && labelElement.classList.contains('text-secondary')) {
+                labelElement.textContent = stat.label;
+            }
         }
     });
+
+    console.log('Stats updated with real database values:', stats);
 }
 
 function animateCounter(element, target) {
@@ -339,8 +494,12 @@ function animateCounter(element, target) {
 
 async function loadRecentActivity() {
     try {
+        const token = localStorage.getItem('smartreg_token') || sessionStorage.getItem('smartreg_token');
+        
         // Replace with actual API endpoint
-        const response = await fetch(`${API_BASE_URL}/admin/recent-activity`);
+        const response = await fetch(`${API_BASE_URL}/admin/recent-activity`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
         
         if (response.ok) {
             const activities = await response.json();
@@ -360,14 +519,14 @@ function getMockRecentActivity() {
         { 
             icon: 'fas fa-plus-circle', 
             color: 'success', 
-            text: 'New license created for John Doe', 
+            text: 'New license application received', 
             time: '2 hours ago',
             timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000)
         },
         { 
             icon: 'fas fa-sync', 
             color: 'warning', 
-            text: 'License renewed for Jane Smith', 
+            text: 'License renewal approved', 
             time: '5 hours ago',
             timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000)
         },
@@ -406,8 +565,12 @@ function updateRecentActivityUI(activities) {
 
 async function loadNotifications() {
     try {
+        const token = localStorage.getItem('smartreg_token') || sessionStorage.getItem('smartreg_token');
+        
         // Replace with actual API endpoint
-        const response = await fetch(`${API_BASE_URL}/admin/notifications`);
+        const response = await fetch(`${API_BASE_URL}/admin/notifications`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
         
         if (response.ok) {
             const notifications = await response.json();
@@ -423,11 +586,13 @@ async function loadNotifications() {
 }
 
 function getMockNotifications() {
+    const pendingCount = window.dashboardStats?.pendingRenewals || 0;
+    
     return [
         { 
             type: 'warning', 
             icon: 'fas fa-exclamation-triangle',
-            message: '5 licenses expiring this week',
+            message: `${pendingCount} licenses pending approval`,
             priority: 'high'
         },
         { 
@@ -446,13 +611,23 @@ function getMockNotifications() {
 }
 
 function updateNotificationsUI(notifications) {
-    const notificationContainer = document.querySelector('.col-md-4 .card-glass .alert');
+    const notificationContainer = document.querySelector('.col-md-4 .card-glass');
     if (!notificationContainer) return;
 
-    const notificationParent = notificationContainer.parentElement;
-    
-    // Clear existing notifications
-    notificationParent.querySelectorAll('.alert').forEach(alert => alert.remove());
+    // Find or create notifications area
+    let notificationArea = notificationContainer.querySelector('.notifications-area');
+    if (!notificationArea) {
+        // Clear existing content and create new structure
+        notificationContainer.innerHTML = `
+            <h5 class="fw-bold mb-3">
+                <i class="fas fa-bell text-warning me-2"></i>Notifications
+            </h5>
+            <div class="notifications-area"></div>
+        `;
+        notificationArea = notificationContainer.querySelector('.notifications-area');
+    } else {
+        notificationArea.innerHTML = '';
+    }
 
     notifications.forEach(notification => {
         const alertDiv = document.createElement('div');
@@ -461,14 +636,18 @@ function updateNotificationsUI(notifications) {
             <i class="${notification.icon} me-2"></i>
             ${notification.message}
         `;
-        notificationParent.appendChild(alertDiv);
+        notificationArea.appendChild(alertDiv);
     });
 }
 
 async function loadSystemStatus() {
     try {
+        const token = localStorage.getItem('smartreg_token') || sessionStorage.getItem('smartreg_token');
+        
         // Replace with actual API endpoint
-        const response = await fetch(`${API_BASE_URL}/admin/system-status`);
+        const response = await fetch(`${API_BASE_URL}/admin/system-status`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
         
         if (response.ok) {
             const status = await response.json();
@@ -526,13 +705,13 @@ function loadPageContent(page) {
                 loadDashboardData();
                 break;
             case 'licenses':
-                // Load license management content
+                navigateToDriverSearch('all');
                 break;
             case 'vehicles':
                 // Load vehicle management content
                 break;
             case 'staff':
-                // Load staff management content
+                window.location.href = 'staffManagement.html';
                 break;
             case 'reports':
                 // Load reports content
@@ -612,7 +791,7 @@ function startAutoRefresh() {
     // Refresh data every 5 minutes for admin dashboard
     refreshInterval = setInterval(() => {
         if (!document.hidden) {
-            loadStatsData();
+            loadRealStatsData();
             loadRecentActivity();
             loadNotifications();
         }
@@ -684,4 +863,4 @@ function formatDateTime(dateString) {
 // Start auto-refresh when page loads
 startAutoRefresh();
 
-console.log("Admin Dashboard initialized successfully");
+console.log("Admin Dashboard initialized successfully with real database integration");

@@ -1,0 +1,366 @@
+:root {
+    --primary: #4e73df;
+    --glass-bg: rgba(255, 255, 255, 0.08);
+    --glass-border: rgba(255, 255, 255, 0.15);
+    --text-light: #f5f5f5;
+    --text-muted: rgba(255, 255, 255, 0.65);
+}
+
+body {
+    background: linear-gradient(135deg, #141e30, #243b55);
+    color: var(--text-light);
+    font-family: "Segoe UI", Tahoma, sans-serif;
+    min-height: 100vh;
+}
+
+.glass-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(12px);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    animation: fadeIn 0.4s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.table-glass {
+    color: var(--text-light);
+    border-collapse: separate;
+    border-spacing: 0 8px;
+}
+
+.table-glass th {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+}
+
+.table-glass td {
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    vertical-align: middle;
+}
+
+.table-glass tr:hover td {
+    background: rgba(255, 255, 255, 0.12);
+    transition: background 0.3s;
+}
+
+.photo-thumbnail {
+    width: 45px;
+    height: 45px;
+    border-radius: 6px;
+    object-fit: cover;
+    cursor: pointer;
+    border: 1px solid var(--glass-border);
+    transition: transform 0.3s;
+}
+
+.photo-thumbnail:hover { transform: scale(1.08); }
+
+.pdf-icon {
+    color: #ff6b6b;
+    font-size: 1.4rem;
+    cursor: pointer;
+    transition: transform 0.3s;
+}
+
+.pdf-icon:hover { transform: scale(1.15); }
+
+.btn-approve {
+    background: rgba(46, 204, 113, 0.2);
+    border: 1px solid rgba(46, 204, 113, 0.4);
+    color: #2ecc71;
+    border-radius: 25px;
+    padding: 4px 12px;
+    transition: all 0.3s ease;
+}
+.btn-approve:hover {
+    background: rgba(46, 204, 113, 0.35);
+    color: white;
+}
+
+.btn-decline {
+    background: rgba(231, 76, 60, 0.2);
+    border: 1px solid rgba(231, 76, 60, 0.4);
+    color: #e74c3c;
+    border-radius: 25px;
+    padding: 4px 12px;
+    transition: all 0.3s ease;
+}
+.btn-decline:hover {
+    background: rgba(231, 76, 60, 0.35);
+    color: white;
+}
+
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.status-pending { background: rgba(241,196,15,0.2); color: #f1c40f; }
+.status-approved { background: rgba(46,204,113,0.2); color: #2ecc71; }
+.status-rejected { 
+    background: rgba(231,76,60,0.2); 
+    color: #e74c3c; 
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(231,76,60,0.3);
+}
+
+.status-rejected:hover {
+    background: rgba(231,76,60,0.3);
+    transform: scale(1.05);
+}
+
+.rejection-reason {
+    background: rgba(231, 76, 60, 0.1);
+    border: 1px solid rgba(231, 76, 60, 0.3);
+    border-radius: 8px;
+    padding: 10px 15px;
+    margin-top: 8px;
+    color: #ff6b6b;
+    font-size: 0.85rem;
+    display: none;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 100px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+}
+
+.rejection-reason.show {
+    display: block;
+}
+
+.rejection-reason i {
+    color: #e74c3c;
+    margin-right: 8px;
+}
+
+.modal-content {
+    background: rgba(30, 35, 50, 0.9);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(10px);
+    color: var(--text-light);
+}
+
+.collapse-row {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 10px;
+}
+
+.search-box {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--glass-border);
+    color: white;
+    border-radius: 25px;
+    padding: 8px 15px;
+    transition: all 0.3s;
+}
+
+.search-box:focus {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    box-shadow: none;
+    border-color: var(--primary);
+}
+
+.filter-dropdown .dropdown-menu {
+    background: rgba(30, 35, 50, 0.95);
+    border: 1px solid var(--glass-border);
+}
+
+.filter-dropdown .dropdown-item {
+    color: var(--text-light);
+}
+
+.filter-dropdown .dropdown-item:hover {
+    background: var(--primary);
+}
+
+.pagination .page-link {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    color: var(--text-light);
+}
+
+.pagination .page-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.pagination .active .page-link {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.rotate-icon {
+    transition: transform 0.3s;
+}
+
+.rotate-icon.rotated {
+    transform: rotate(180deg);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px 0;
+    color: var(--text-muted);
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.dropdown-toggle::after {
+    display: none;
+}
+
+.chevron-cell {
+    width: 40px;
+    cursor: pointer;
+}
+
+.action-cell {
+    white-space: nowrap;
+}
+
+.form-control {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--glass-border);
+    color: var(--text-light);
+}
+
+.form-control:focus {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--primary);
+    color: var(--text-light);
+    box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+}
+
+.form-select {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--glass-border);
+    color: var(--text-light);
+}
+
+.form-select:focus {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--primary);
+    color: var(--text-light);
+    box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+}
+
+.loading-spinner {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+}
+
+.spinner-border {
+    color: var(--primary);
+}
+
+.btn-back {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--glass-border);
+    color: var(--text-light);
+    border-radius: 25px;
+    padding: 6px 15px;
+    transition: all 0.3s ease;
+    margin-right: 15px;
+}
+
+.btn-back:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    transform: translateX(-3px);
+}
+
+.decline-reason-item {
+    padding: 8px 12px;
+    margin: 4px 0;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.decline-reason-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(5px);
+}
+
+.decline-reason-item i {
+    color: #e74c3c;
+    margin-right: 10px;
+}
+
+.vehicle-class-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    margin: 2px;
+    background: rgba(78, 115, 223, 0.2);
+    color: #4e73df;
+    border: 1px solid rgba(78, 115, 223, 0.3);
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* File display styles */
+.file-error {
+    color: #ff6b6b;
+    font-size: 0.8rem;
+    text-align: center;
+    padding: 10px;
+}
+
+.file-loading {
+    color: #4e73df;
+    font-size: 0.8rem;
+    text-align: center;
+    padding: 10px;
+}
+
+.photo-placeholder {
+    width: 45px;
+    height: 45px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px dashed var(--glass-border);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+}
+
+.pdf-placeholder {
+    color: #666;
+    font-size: 1.4rem;
+    opacity: 0.5;
+}
