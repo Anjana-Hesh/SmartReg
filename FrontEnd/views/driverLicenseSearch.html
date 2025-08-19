@@ -1,1260 +1,3 @@
-<!-- <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" href="../assets/images/titleIcon.png" type="image/x-icon">
-  <title> Manage License </title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="../css/license.css">
-    
-</head>
-<body>
-<div class="container">
-
-<div class="back-button-container mb-3">
-  <button class="btn btn-secondary" id="backButton">
-    <i class="fas fa-arrow-left"></i> Back
-  </button>
-</div>
-
-  <div class="header">
-    <h1><i class="fas fa-users-cog"></i> Manage Licence</h1>
-    <p>Comprehensive solution for managing driver licenses and vehicle information</p>
-  </div>
-
-  <div class="row">
-    <div class="">
-      <div class="management-section">
-        <h3 class="section-title">
-          <i class="fas fa-users"></i>
-          Driver Management
-        </h3>
-
-        <div class="row mb-4">
-          <div class="col-md-8">
-            <div class="input-group">
-              <span class="input-group-text"><i class="fas fa-search"></i></span>
-              <input type="text" id="searchDriver" class="form-control" placeholder="Search by name, NIC or license number...">
-              <button class="btn btn-outline-secondary" type="button" id="advancedFilterBtn">
-                <i class="fas fa-sliders-h"></i>
-              </button>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <select id="sortBy" class="form-select" onchange="sortDrivers()">
-              <option value="name_asc">Sort by: Name (A-Z)</option>
-              <option value="name_desc">Sort by: Name (Z-A)</option>
-              <option value="expiry_asc">Sort by: Expiry (Soonest)</option>
-              <option value="expiry_desc">Sort by: Expiry (Latest)</option>
-            </select>
-          </div>
-        </div>
-
-        <div id="advancedFilters" class="row mb-4 hidden">
-          <div class="col-md-4">
-            <label for="filterLicenseType" class="form-label">License Type</label>
-            <select id="filterLicenseType" class="form-select" onchange="applyFilters()">
-              <option value="">All Types</option>
-              <option value="A">Class A - Motorcycles (2-wheelers)</option>
-              <option value="A1">Class A1 - Light Motorcycles (up to 50cc)</option>
-              <option value="B">Class B - Motor Cars, Jeeps, Vans (up to 3500kg)</option>
-              <option value="B1">Class B1 - Light Vehicles (auto transmission only)</option>
-              <option value="C">Class C - Light Trucks (3500kg-17000kg)</option>
-              <option value="C1">Class C1 - Medium Trucks (17000kg-25000kg)</option>
-              <option value="D">Class D - Heavy Trucks (over 25000kg)</option>
-              <option value="E">Class E - Heavy Tractors/Trailers</option>
-              <option value="G">Class G - Road Rollers/Construction Equipment</option>
-              <option value="J">Class J - Agricultural Tractors</option>
-              <option value="M">Class M - Three-wheelers</option>
-              <option value="P">Class P - Passenger Transport Vehicles (Buses)</option>
-              <option value="P1">Class P1 - Light Passenger Vehicles (up to 12 seats)</option>
-              <option value="P2">Class P2 - Medium Passenger Vehicles (13-32 seats)</option>
-              <option value="P3">Class P3 - Heavy Passenger Vehicles (33+ seats)</option>
-              <option value="W">Class W - Special Purpose Vehicles</option>
-            </select>
-          </div>
-          <div class="col-md-4">
-            <label for="filterStatus" class="form-label">Status</label>
-            <select id="filterStatus" class="form-select" onchange="applyFilters()">
-              <option value="">All Statuses</option>
-              <option value="active">Active</option>
-              <option value="pending">Pending</option>
-              <option value="expired">Expired</option>
-            </select>
-          </div>
-          <div class="col-md-4">
-            <label for="filterExam" class="form-label">Exam Status</label>
-            <select id="filterExam" class="form-select" onchange="applyFilters()">
-              <option value="">All</option>
-              <option value="passed">Passed</option>
-              <option value="failed">Failed</option>
-              <option value="pending">Pending</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="row mb-4">
-          <div class="col-md-3">
-            <div class="stat-item">
-              <div class="stat-value" id="totalDrivers">0</div>
-              <div class="stat-label">Total Drivers</div>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div class="stat-item">
-              <div class="stat-value text-warning" id="expiringSoon">0</div>
-              <div class="stat-label">Expiring Soon</div>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div class="stat-item">
-              <div class="stat-value text-success" id="passedExams">0</div>
-              <div class="stat-label">Passed Exams</div>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div class="stat-item">
-              <div class="stat-value text-danger" id="expiredLicenses">0</div>
-              <div class="stat-label">Expired Licenses</div>
-            </div>
-          </div>
-        </div>
-
-        <div id="driversList" class="mb-4">
-
-        </div>
-
-        <nav aria-label="Driver pagination">
-          <ul class="pagination" id="pagination">
-
-          </ul>
-        </nav>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal fade" id="addDriverModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content" style="background: var(--card-bg); color: var(--text-primary);">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="fas fa-user-plus"></i> Add New Driver</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <form id="addDriverForm">
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label for="newDriverName" class="form-label">Full Name</label>
-              <input type="text" class="form-control" id="newDriverName" required>
-            </div>
-            <div class="col-md-6">
-              <label for="newDriverNIC" class="form-label">NIC Number</label>
-              <input type="text" class="form-control" id="newDriverNIC" required>
-            </div>
-            <div class="col-md-6">
-              <label for="newDriverDOB" class="form-label">Date of Birth</label>
-              <input type="date" class="form-control" id="newDriverDOB" required>
-            </div>
-            <div class="col-md-6">
-              <label for="newDriverLicenseType" class="form-label">License Type</label>
-              <select class="form-select" id="newDriverLicenseType" required>
-                <option value="">Select Type</option>
-                <option value="Learner">Learner's License</option>
-                <option value="Full">Full License</option>
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label for="newDriverVehicleClass" class="form-label">Vehicle Class</label>
-              <select class="form-select" id="newDriverVehicleClass" required>
-                <option value="">Select Class</option>
-                <option value="A">Class A - Motorcycles (2-wheelers)</option>
-                <option value="A1">Class A1 - Light Motorcycles (up to 50cc)</option>
-                <option value="B">Class B - Motor Cars, Jeeps, Vans (up to 3500kg)</option>
-                <option value="B1">Class B1 - Light Vehicles (auto transmission only)</option>
-                <option value="C">Class C - Light Trucks (3500kg-17000kg)</option>
-                <option value="C1">Class C1 - Medium Trucks (17000kg-25000kg)</option>
-                <option value="D">Class D - Heavy Trucks (over 25000kg)</option>
-                <option value="E">Class E - Heavy Tractors/Trailers</option>
-                <option value="G">Class G - Road Rollers/Construction Equipment</option>
-                <option value="J">Class J - Agricultural Tractors</option>
-                <option value="M">Class M - Three-wheelers</option>
-                <option value="P">Class P - Passenger Transport Vehicles (Buses)</option>
-                <option value="P1">Class P1 - Light Passenger Vehicles (up to 12 seats)</option>
-                <option value="P2">Class P2 - Medium Passenger Vehicles (13-32 seats)</option>
-                <option value="P3">Class P3 - Heavy Passenger Vehicles (33+ seats)</option>
-                <option value="W">Class W - Special Purpose Vehicles</option>
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label for="newDriverExamDate" class="form-label">Exam Date</label>
-              <input type="date" class="form-control" id="newDriverExamDate" required>
-            </div>
-            <div class="col-md-6">
-              <label for="newDriverPhoto" class="form-label">Passport Photo</label>
-              <input type="file" class="form-control" id="newDriverPhoto" accept="image/*" required>
-            </div>
-            <div class="col-md-6">
-              <label for="newDriverMedical" class="form-label">Medical Report</label>
-              <input type="file" class="form-control" id="newDriverMedical" accept="application/pdf" required>
-            </div>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-primary" onclick="addNewDriver()">Save Driver</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal fade" id="driverDetailsModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content" style="background: var(--card-bg); color: var(--text-primary);">
-      <div class="modal-header">
-        <h5 class="modal-title" id="driverModalTitle">Driver Details</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body" id="driverModalBody">
-
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary" id="saveDriverChanges">Save Changes</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-<script>
-  let drivers = [
-    {
-      id: 1,
-      nic: "199912345678",
-      name: "John Doe",
-      dob: "1999-05-15",
-      licenseNumber: "B1234567",
-      licenseType: "Full",
-      vehicleClass: "B",
-      issueDate: "2023-01-15",
-      expiryDate: "2028-01-15",
-      examStatus: "passed",
-      examDate: "2023-01-10",
-      trialDate: "2023-02-15",
-      notes: "Excellent driving skills",
-      status: "active",
-      image: "https://randomuser.me/api/portraits/men/1.jpg",
-      medicalReport: "medical_report_1.pdf"
-    },
-    {
-      id: 2,
-      nic: "199987654321",
-      name: "Jane Smith",
-      dob: "1999-08-20",
-      licenseNumber: "C2345678",
-      licenseType: "Full",
-      vehicleClass: "C",
-      issueDate: "2022-06-10",
-      expiryDate: "2027-06-10",
-      examStatus: "failed",
-      examDate: "2022-06-05",
-      nextExamDate: "2024-12-15",
-      notes: "Needs improvement in parallel parking",
-      status: "pending",
-      image: "https://randomuser.me/api/portraits/women/1.jpg",
-      medicalReport: null
-    },
-    {
-      id: 3,
-      nic: "198512345678",
-      name: "Mike Johnson",
-      dob: "1985-03-20",
-      licenseNumber: "A3456789",
-      licenseType: "Full",
-      vehicleClass: "A",
-      issueDate: "2021-03-20",
-      expiryDate: "2026-03-20",
-      examStatus: "passed",
-      examDate: "2021-03-15",
-      trialDate: "2021-04-20",
-      notes: "Motorcycle expert",
-      status: "active",
-      image: "https://randomuser.me/api/portraits/men/2.jpg",
-      medicalReport: "medical_report_3.pdf"
-    },
-    {
-      id: 4,
-      nic: "200012345678",
-      name: "Sarah Williams",
-      dob: "2000-11-05",
-      licenseNumber: "B4567890",
-      licenseType: "Learner",
-      vehicleClass: "B",
-      issueDate: "2023-05-01",
-      expiryDate: "2023-11-01",
-      examStatus: "pending",
-      examDate: "2024-01-15",
-      notes: "First-time applicant",
-      status: "active",
-      image: "https://randomuser.me/api/portraits/women/2.jpg",
-      medicalReport: "medical_report_4.pdf"
-    },
-    {
-      id: 5,
-      nic: "199512345678",
-      name: "David Brown",
-      dob: "1995-07-15",
-      licenseNumber: "D5678901",
-      licenseType: "Full",
-      vehicleClass: "D",
-      issueDate: "2020-01-10",
-      expiryDate: "2025-01-10",
-      examStatus: "failed",
-      examDate: "2019-12-15",
-      nextExamDate: "2024-02-20",
-      notes: "Issues with heavy vehicle maneuvering",
-      status: "expired",
-      image: "https://randomuser.me/api/portraits/men/3.jpg",
-      medicalReport: "medical_report_5.pdf"
-    }
-  ];
-
-  let currentPage = 1;
-  const driversPerPage = 5;
-  let filteredDrivers = [];
-
-  $(document).ready(function() {
-    renderDriversList();
-    setupEventListeners();
-    setupBackButton();
-    updateStats();
-  });
-
-  function setupEventListeners() {
-    $('#searchDriver').on('input', function() {
-      currentPage = 1;
-      applyFilters();
-    });
-
-    $('#advancedFilterBtn').click(function() {
-      $('#advancedFilters').toggleClass('hidden');
-    });
-
-    $('#addDriverModal').on('hidden.bs.modal', function() {
-      $('#addDriverForm')[0].reset();
-    });
-  }
-
-  function renderDriversList(driversToRender = drivers) {
-    filteredDrivers = driversToRender;
-    updateStats();
-
-    const container = $('#driversList');
-    container.empty();
-
-    const totalPages = Math.ceil(filteredDrivers.length / driversPerPage);
-    const startIndex = (currentPage - 1) * driversPerPage;
-    const endIndex = Math.min(startIndex + driversPerPage, filteredDrivers.length);
-    const paginatedDrivers = filteredDrivers.slice(startIndex, endIndex);
-
-    if (paginatedDrivers.length === 0) {
-      container.append(`
-        <div class="alert alert-info">
-          <i class="fas fa-info-circle"></i> No drivers found matching your criteria
-        </div>
-      `);
-    } else {
-      paginatedDrivers.forEach(driver => {
-        const card = createDriverCard(driver);
-        container.append(card);
-      });
-    }
-
-    renderPagination(totalPages);
-  }
-
-  function createDriverCard(driver) {
-    const licenseTypeMap = {
-      'A': 'Motorcycle',
-      'B': 'Car',
-      'C': 'Truck',
-      'D': 'Bus',
-      'CE': 'Heavy Vehicle'
-    };
-
-    const statusClass = driver.status === 'active' ? 'status-active' :
-            driver.status === 'pending' ? 'status-pending' : 'status-expired';
-
-    const expiryDate = new Date(driver.expiryDate);
-    const today = new Date();
-    const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
-    const expiryWarning = daysUntilExpiry <= 30 ? `<span class="badge bg-warning">Expires in ${daysUntilExpiry} days</span>` : '';
-
-    let examStatusBadge = '';
-    switch(driver.examStatus) {
-      case 'passed':
-        examStatusBadge = '<span class="badge bg-success">Passed</span>';
-        break;
-      case 'failed':
-        examStatusBadge = '<span class="badge bg-danger">Failed</span>';
-        break;
-      case 'pending':
-      default:
-        examStatusBadge = '<span class="badge bg-secondary">Pending</span>';
-        break;
-    }
-
-    return `
-      <div class="driver-card mb-3" data-id="${driver.id}">
-        <div class="driver-info">
-          <div>
-            <div class="driver-name">${driver.name} <small class="text-muted">${driver.nic}</small></div>
-            <div class="driver-license">${driver.licenseNumber} • ${licenseTypeMap[driver.vehicleClass] || driver.vehicleClass}</div>
-          </div>
-          <div>
-            <span class="status-badge ${statusClass}">${driver.status}</span>
-            ${expiryWarning}
-          </div>
-        </div>
-
-        <div class="driver-stats">
-          <div class="stat-item">
-            <div class="stat-value">${driver.licenseType}</div>
-            <div class="stat-label">License Type</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-value">${driver.issueDate}</div>
-            <div class="stat-label">Issued</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-value">${driver.examStatus === 'passed' ? 'N/A' : driver.expiryDate}</div>
-            <div class="stat-label">${driver.examStatus === 'passed' ? 'No Expiry' : 'Expires'}</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-value">${examStatusBadge}</div>
-            <div class="stat-label">Exam Status</div>
-          </div>
-        </div>
-
-        <div class="actions">
-          <button class="btn btn-sm btn-primary" onclick="viewDriverDetails(${driver.id})">
-            <i class="fas fa-eye"></i> View
-          </button>
-          <button class="btn btn-sm btn-warning" onclick="editDriver(${driver.id})">
-            <i class="fas fa-edit"></i> Edit
-          </button>
-          <button class="btn btn-sm btn-danger" onclick="confirmDeleteDriver(${driver.id})">
-            <i class="fas fa-trash"></i> Delete
-          </button>
-          ${(driver.status === 'expired' || daysUntilExpiry <= 90) ? `
-            <button class="btn btn-sm btn-secondary" onclick="renewLicense(${driver.id})">
-                <i class="fas fa-sync-alt"></i> Renew License
-            </button>
-          ` : ''}
-        </div>
-      </div>
-    `;
-  }
-
-  function renewLicense(driverId) {
-    const driver = drivers.find(d => d.id === driverId);
-    if (!driver) return;
-
-    const modalTitle = $('#driverModalTitle');
-    const modalBody = $('#driverModalBody');
-
-    modalTitle.html(`<i class="fas fa-sync-alt"></i> Renew License: ${driver.name}`);
-
-    const today = new Date();
-    const newExpiryDate = new Date(today);
-    newExpiryDate.setFullYear(today.getFullYear() + 5);
-    const formattedExpiryDate = newExpiryDate.toISOString().split('T')[0];
-    const formattedTodayDate = today.toISOString().split('T')[0];
-
-    modalBody.html(`
-    <div class="alert alert-info">
-      <i class="fas fa-info-circle"></i>
-      <strong>License Renewal Process</strong><br>
-      Current License: ${driver.licenseNumber} (Expires: ${driver.expiryDate})<br>
-      New Expiry Date: ${formattedExpiryDate}
-    </div>
-
-    <form id="renewLicenseForm">
-      <input type="hidden" id="renewDriverId" value="${driver.id}">
-      <input type="hidden" id="renewNewExpiryDate" value="${formattedExpiryDate}">
-      <input type="hidden" id="renewNewIssueDate" value="${formattedTodayDate}">
-
-      <div class="row g-3">
-        <div class="col-md-6">
-          <label for="renewDriverName" class="form-label">Full Name</label>
-          <input type="text" class="form-control" id="renewDriverName" value="${driver.name}" readonly>
-        </div>
-        <div class="col-md-6">
-          <label for="renewDriverNIC" class="form-label">NIC Number</label>
-          <input type="text" class="form-control" id="renewDriverNIC" value="${driver.nic}" readonly>
-        </div>
-
-        <div class="col-md-6">
-          <label for="renewLicenseNumber" class="form-label">License Number</label>
-          <input type="text" class="form-control" id="renewLicenseNumber" value="${driver.licenseNumber}" readonly>
-        </div>
-        <div class="col-md-6">
-          <label for="renewVehicleClass" class="form-label">Vehicle Class</label>
-          <input type="text" class="form-control" id="renewVehicleClass" value="${driver.vehicleClass}" readonly>
-        </div>
-
-        <div class="col-md-6">
-          <label for="renewIssueDate" class="form-label">New Issue Date</label>
-          <input type="date" class="form-control" id="renewIssueDate" value="${formattedTodayDate}" readonly>
-        </div>
-        <div class="col-md-6">
-          <label for="renewExpiryDate" class="form-label">New Expiry Date</label>
-          <input type="date" class="form-control" id="renewExpiryDate" value="${formattedExpiryDate}" readonly>
-        </div>
-
-        <div class="col-12">
-          <div class="card border-primary">
-            <div class="card-header bg-primary text-white">
-              <h6 class="mb-0"><i class="fas fa-file-medical"></i> Medical Report Required</h6>
-            </div>
-            <div class="card-body">
-              <div class="row">
-                <div class="col-md-8">
-                  <label for="renewMedicalReport" class="form-label">
-                    <strong>Upload New Medical Report *</strong>
-                  </label>
-                  <input type="file" class="form-control form-control-lg" id="renewMedicalReport"
-                         accept="application/pdf,.pdf" required>
-                  <div class="form-text">
-                    <i class="fas fa-exclamation-triangle text-warning"></i>
-                    A valid medical report is required for license renewal
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label">Current Medical Report</label>
-                  <div class="p-2 bg-light rounded">
-                    ${driver.medicalReport ?
-            `<small><i class="fas fa-file-pdf text-danger"></i> ${driver.medicalReport}</small>` :
-            '<small class="text-muted">No previous report</small>'
-    }
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-12">
-          <label for="renewNotes" class="form-label">Renewal Notes (Optional)</label>
-          <textarea class="form-control" id="renewNotes" rows="3"
-                    placeholder="Any additional notes for this renewal..."></textarea>
-        </div>
-      </div>
-    </form>
-  `);
-
-    $('#saveDriverChanges').off('click').on('click', function() {
-      processLicenseRenewal(driverId);
-    });
-
-    $('#driverDetailsModal').on('shown.bs.modal', function() {
-      $('#renewMedicalReport').focus();
-    });
-
-    const modal = new bootstrap.Modal(document.getElementById('driverDetailsModal'));
-    modal.show();
-  }
-
-  function processLicenseRenewal(driverId) {
-    const form = $('#renewLicenseForm')[0];
-    const medicalFile = $('#renewMedicalReport')[0].files[0];
-
-    if (!form.checkValidity()) {
-      form.reportValidity();
-      return;
-    }
-
-    if (!medicalFile) {
-      Swal.fire({
-        title: 'Medical Report Required!',
-        text: 'Please upload a valid medical report to proceed with the renewal.',
-        icon: 'error',
-        confirmButtonText: 'OK'
-      });
-      $('#renewMedicalReport').focus();
-      return;
-    }
-
-    if (!medicalFile.type.includes('pdf')) {
-      Swal.fire({
-        title: 'Invalid File Type!',
-        text: 'Please upload a PDF file for the medical report.',
-        icon: 'error',
-        confirmButtonText: 'OK'
-      });
-      return;
-    }
-
-    const driverIndex = drivers.findIndex(d => d.id === driverId);
-    if (driverIndex === -1) return;
-
-    const renewalDate = $('#renewNewIssueDate').val();
-    const newExpiryDate = $('#renewNewExpiryDate').val();
-    const notes = $('#renewNotes').val();
-
-    drivers[driverIndex] = {
-      ...drivers[driverIndex],
-      issueDate: renewalDate,
-      expiryDate: newExpiryDate,
-      status: 'active',
-      medicalReport: medicalFile.name,
-      renewalNotes: notes,
-      lastRenewalDate: renewalDate
-    };
-
-    Swal.fire({
-      title: 'License Renewed Successfully!',
-      html: `
-      <div class="text-start">
-        <p><strong>Driver:</strong> ${drivers[driverIndex].name}</p>
-        <p><strong>License:</strong> ${drivers[driverIndex].licenseNumber}</p>
-        <p><strong>New Issue Date:</strong> ${renewalDate}</p>
-        <p><strong>New Expiry Date:</strong> ${newExpiryDate}</p>
-        <p><strong>Medical Report:</strong> ${medicalFile.name}</p>
-        <p class="text-success"><i class="fas fa-check-circle"></i> Valid for 5 years</p>
-      </div>
-    `,
-      icon: 'success',
-      confirmButtonText: 'OK',
-      confirmButtonColor: '#28a745'
-    }).then(() => {
-      $('#driverDetailsModal').modal('hide');
-      renderDriversList();
-      updateStats();
-
-      showNotification('License renewed successfully!', 'success');
-    });
-  }
-
-  function showNotification(message, type = 'info') {
-    const toast = `
-    <div class="toast align-items-center text-white bg-${type === 'success' ? 'success' : 'info'} border-0"
-         role="alert" aria-live="assertive" aria-atomic="true"
-         style="position: fixed; top: 20px; right: 20px; z-index: 9999;">
-      <div class="d-flex">
-        <div class="toast-body">
-          <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i> ${message}
-        </div>
-        <button type="button" class="btn-close btn-close-white me-2 m-auto"
-                data-bs-dismiss="toast" aria-label="Close"></button>
-      </div>
-    </div>
-  `;
-
-    $('body').append(toast);
-    const toastElement = $('.toast').last();
-    const bsToast = new bootstrap.Toast(toastElement[0]);
-    bsToast.show();
-
-    toastElement.on('hidden.bs.toast', function() {
-      $(this).remove();
-    });
-  }
-
-  function renderPagination(totalPages) {
-    const pagination = $('#pagination');
-    pagination.empty();
-
-    if (totalPages <= 1) return;
-
-    pagination.append(`
-      <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-        <a class="page-link" href="#" onclick="changePage(${currentPage - 1})">
-          <i class="fas fa-chevron-left"></i>
-        </a>
-      </li>
-    `);
-
-    for (let i = 1; i <= totalPages; i++) {
-      pagination.append(`
-        <li class="page-item ${i === currentPage ? 'active' : ''}">
-          <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
-        </li>
-      `);
-    }
-
-    pagination.append(`
-      <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
-        <a class="page-link" href="#" onclick="changePage(${currentPage + 1})">
-          <i class="fas fa-chevron-right"></i>
-        </a>
-      </li>
-    `);
-  }
-
-  function changePage(page) {
-    if (page < 1 || page > Math.ceil(filteredDrivers.length / driversPerPage)) return;
-    currentPage = page;
-    renderDriversList(filteredDrivers);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  function applyFilters() {
-    const searchTerm = $('#searchDriver').val().toLowerCase();
-    const licenseType = $('#filterLicenseType').val();
-    const status = $('#filterStatus').val();
-    const examStatus = $('#filterExam').val();
-
-    let filtered = drivers;
-
-    if (searchTerm) {
-      filtered = filtered.filter(driver =>
-              driver.name.toLowerCase().includes(searchTerm) ||
-              driver.nic.includes(searchTerm) ||
-              driver.licenseNumber.toLowerCase().includes(searchTerm)
-      );
-    }
-
-    if (licenseType) {
-      filtered = filtered.filter(driver => driver.vehicleClass === licenseType);
-    }
-
-    if (status) {
-      filtered = filtered.filter(driver => driver.status === status);
-    }
-
-    if (examStatus) {
-      filtered = filtered.filter(driver => driver.examStatus === examStatus);
-    }
-
-    renderDriversList(filtered);
-  }
-
-  function sortDrivers() {
-    const sortBy = $('#sortBy').val();
-    let sorted = [...filteredDrivers];
-
-    switch (sortBy) {
-      case 'name_asc':
-        sorted.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      case 'name_desc':
-        sorted.sort((a, b) => b.name.localeCompare(a.name));
-        break;
-      case 'expiry_asc':
-        sorted.sort((a, b) => new Date(a.expiryDate) - new Date(b.expiryDate));
-        break;
-      case 'expiry_desc':
-        sorted.sort((a, b) => new Date(b.expiryDate) - new Date(a.expiryDate));
-        break;
-    }
-
-    renderDriversList(sorted);
-  }
-
-  function filterDrivers(status) {
-    $('#filterStatus').val(status);
-    applyFilters();
-  }
-
-  function updateStats() {
-    const today = new Date();
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(today.getDate() + 30);
-
-    $('#totalDrivers').text(filteredDrivers.length);
-
-    const activeCount = filteredDrivers.filter(d => d.status === 'active').length;
-    $('#activeCount').text(activeCount);
-
-    const pendingCount = filteredDrivers.filter(d => d.status === 'pending').length;
-    $('#pendingCount').text(pendingCount);
-
-    const expiredCount = filteredDrivers.filter(d => d.status === 'expired').length;
-    $('#expiredCount').text(expiredCount);
-
-    const expiringSoon = filteredDrivers.filter(d => {
-      if (d.status !== 'active' || d.examStatus === 'passed') return false;
-      const expiryDate = new Date(d.expiryDate);
-      return expiryDate > today && expiryDate <= thirtyDaysFromNow;
-    }).length;
-    $('#expiringSoon').text(expiringSoon);
-
-    const passedExams = filteredDrivers.filter(d => d.examStatus === 'passed').length;
-    $('#passedExams').text(passedExams);
-
-    const expiredLicenses = filteredDrivers.filter(d => {
-      if (d.status === 'expired') return true;
-      if (d.examStatus === 'passed') return false;
-      const expiryDate = new Date(d.expiryDate);
-      return d.status === 'active' && expiryDate < today;
-    }).length;
-    $('#expiredLicenses').text(expiredLicenses);
-  }
-
-  function addNewDriver() {
-    const form = $('#addDriverForm')[0];
-    if (!form.checkValidity()) {
-      form.reportValidity();
-      return;
-    }
-
-    const newDriver = {
-      id: drivers.length > 0 ? Math.max(...drivers.map(d => d.id)) + 1 : 1,
-      nic: $('#newDriverNIC').val(),
-      name: $('#newDriverName').val(),
-      dob: $('#newDriverDOB').val(),
-      licenseNumber: generateLicenseNumber(),
-      licenseType: $('#newDriverLicenseType').val(),
-      vehicleClass: $('#newDriverVehicleClass').val(),
-      issueDate: new Date().toISOString().split('T')[0],
-      expiryDate: calculateExpiryDate($('#newDriverLicenseType').val()),
-      examStatus: 'pending',
-      examDate: $('#newDriverExamDate').val(),
-      notes: '',
-      status: 'pending',
-      image: null,
-      medicalReport: $('#newDriverMedical').val().split('\\').pop()
-    };
-
-    drivers.push(newDriver);
-
-    Swal.fire({
-      title: 'Success!',
-      text: 'Driver added successfully',
-      icon: 'success',
-      confirmButtonText: 'OK'
-    }).then(() => {
-      $('#addDriverModal').modal('hide');
-      renderDriversList();
-    });
-  }
-
-  function generateLicenseNumber() {
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const numbers = '0123456789';
-    let result = letters.charAt(Math.floor(Math.random() * letters.length));
-
-    for (let i = 0; i < 7; i++) {
-      result += numbers.charAt(Math.floor(Math.random() * numbers.length));
-    }
-
-    return result;
-  }
-
-  function calculateExpiryDate(licenseType) {
-    const today = new Date();
-    const expiryDate = new Date(today);
-
-    if (licenseType === 'Learner') {
-      expiryDate.setMonth(today.getMonth() + 6);
-    } else {
-      expiryDate.setFullYear(today.getFullYear() + 5);
-    }
-
-    return expiryDate.toISOString().split('T')[0];
-  }
-
-  function viewDriverDetails(driverId) {
-    const driver = drivers.find(d => d.id === driverId);
-    if (!driver) return;
-
-    const modalTitle = $('#driverModalTitle');
-    const modalBody = $('#driverModalBody');
-
-    modalTitle.html(`<i class="fas fa-user"></i> ${driver.name} (${driver.licenseNumber})`);
-
-    const today = new Date();
-    const expiryDate = new Date(driver.expiryDate);
-    const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
-    const expiryStatus = driver.examStatus === 'passed' ? 
-      '<span class="text-success">No Expiry (Passed Exam)</span>' :
-      daysUntilExpiry > 0 ?
-        `<span class="text-success">Expires in ${daysUntilExpiry} days</span>` :
-        `<span class="text-danger">Expired ${Math.abs(daysUntilExpiry)} days ago</span>`;
-
-    let examStatusBadge = '';
-    let examDetails = '';
-    
-    switch(driver.examStatus) {
-      case 'passed':
-        examStatusBadge = '<span class="badge bg-success">Passed</span>';
-        examDetails = `
-          <p><strong>Exam Date:</strong> ${driver.examDate}</p>
-          ${driver.trialDate ? `<p><strong>Trial Date:</strong> ${driver.trialDate}</p>` : ''}
-          <p><strong>Status:</strong> ${examStatusBadge}</p>
-        `;
-        break;
-      case 'failed':
-        examStatusBadge = '<span class="badge bg-danger">Failed</span>';
-        examDetails = `
-          <p><strong>Exam Date:</strong> ${driver.examDate}</p>
-          ${driver.nextExamDate ? `<p><strong>Next Exam Date:</strong> ${driver.nextExamDate}</p>` : ''}
-          <p><strong>Status:</strong> ${examStatusBadge}</p>
-        `;
-        break;
-      case 'pending':
-      default:
-        examStatusBadge = '<span class="badge bg-secondary">Pending</span>';
-        examDetails = `
-          <p><strong>Scheduled Exam Date:</strong> ${driver.examDate || 'Not scheduled'}</p>
-          <p><strong>Status:</strong> ${examStatusBadge}</p>
-        `;
-        break;
-    }
-
-    modalBody.html(`
-      <div class="row">
-        <div class="col-md-4 text-center">
-          <img src="${driver.image || 'https://via.placeholder.com/150'}"
-               class="img-fluid rounded-circle mb-3" alt="Driver Photo">
-          <h4>${driver.name}</h4>
-          <p class="text-muted">NIC: ${driver.nic}</p>
-          <p>Date of Birth: ${driver.dob}</p>
-        </div>
-        <div class="col-md-8">
-          <div class="card mb-3" style="background:whitesmoke;">
-            <div class="card-header">
-              <h5><i class="fas fa-id-card"></i> License Information</h5>
-            </div>
-            <div class="card-body">
-              <div class="row">
-                <div class="col-md-6">
-                  <p><strong>License Number:</strong> ${driver.licenseNumber}</p>
-                  <p><strong>License Type:</strong> ${driver.licenseType}</p>
-                  <p><strong>Vehicle Class:</strong> ${driver.vehicleClass}</p>
-                </div>
-                <div class="col-md-6">
-                  <p><strong>Issue Date:</strong> ${driver.issueDate}</p>
-                  <p><strong>Expiry Date:</strong> ${driver.examStatus === 'passed' ? 'No Expiry' : driver.expiryDate} (${expiryStatus})</p>
-                  <p><strong>Status:</strong> <span class="status-badge ${driver.status === 'active' ? 'status-active' :
-            driver.status === 'pending' ? 'status-pending' : 'status-expired'}">${driver.status}</span></p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="card" style="background: white;">
-            <div class="card-header">
-              <h5><i class="fas fa-clipboard-check"></i> Exam Information</h5>
-            </div>
-            <div class="card-body">
-              ${examDetails}
-              ${driver.notes ? `<p><strong>Notes:</strong> ${driver.notes}</p>` : ''}
-            </div>
-          </div>
-        </div>
-      </div>
-    `);
-
-    $('#saveDriverChanges').hide();
-
-    const modal = new bootstrap.Modal(document.getElementById('driverDetailsModal'));
-    modal.show();
-  }
-
-  function editDriver(driverId) {
-    const driver = drivers.find(d => d.id === driverId);
-    if (!driver) return;
-
-    const modalTitle = $('#driverModalTitle');
-    const modalBody = $('#driverModalBody');
-
-    modalTitle.html(`<i class="fas fa-edit"></i> Edit Driver: ${driver.name}`);
-
-    modalBody.html(`
-      <form id="editDriverForm">
-        <input type="hidden" id="editDriverId" value="${driver.id}">
-        <div class="row g-3">
-          <div class="col-md-6">
-            <label for="editDriverName" class="form-label">Full Name</label>
-            <input type="text" class="form-control" id="editDriverName" value="${driver.name}" required>
-          </div>
-          <div class="col-md-6">
-            <label for="editDriverNIC" class="form-label">NIC Number</label>
-            <input type="text" class="form-control" id="editDriverNIC" value="${driver.nic}" required>
-          </div>
-          <div class="col-md-6">
-            <label for="editDriverLicenseType" class="form-label">License Type</label>
-            <select class="form-select" id="editDriverLicenseType" required>
-              <option value="Learner" ${driver.licenseType === 'Learner' ? 'selected' : ''}>Learner's License</option>
-              <option value="Full" ${driver.licenseType === 'Full' ? 'selected' : ''}>Full License</option>
-            </select>
-          </div>
-          <div class="col-md-6">
-            <label for="editDriverVehicleClass" class="form-label">Vehicle Class</label>
-            <select class="form-select" id="editDriverVehicleClass" required>
-              <option value="A" ${driver.vehicleClass === 'A' ? 'selected' : ''}>Class A - Motorcycles</option>
-              <option value="B" ${driver.vehicleClass === 'B' ? 'selected' : ''}>Class B - Cars</option>
-              <option value="C" ${driver.vehicleClass === 'C' ? 'selected' : ''}>Class C - Trucks</option>
-              <option value="D" ${driver.vehicleClass === 'D' ? 'selected' : ''}>Class D - Buses</option>
-            </select>
-          </div>
-          <div class="col-md-6">
-            <label for="editDriverIssueDate" class="form-label">Issue Date</label>
-            <input type="date" class="form-control" id="editDriverIssueDate" value="${driver.issueDate}" required>
-          </div>
-          <div class="col-md-6">
-            <label for="editDriverStatus" class="form-label">Status</label>
-            <select class="form-select" id="editDriverStatus" required>
-              <option value="active" ${driver.status === 'active' ? 'selected' : ''}>Active</option>
-              <option value="pending" ${driver.status === 'pending' ? 'selected' : ''}>Pending</option>
-              <option value="expired" ${driver.status === 'expired' ? 'selected' : ''}>Expired</option>
-            </select>
-          </div>
-
-          <div class="col-12">
-            <label for="editExamStatus" class="form-label"><strong>Exam Status</strong></label>
-            <select class="form-select" id="editExamStatus" required onchange="toggleExamFields(this.value)">
-              <option value="pending" ${driver.examStatus === 'pending' ? 'selected' : ''}>Pending</option>
-              <option value="passed" ${driver.examStatus === 'passed' ? 'selected' : ''}>Passed</option>
-              <option value="failed" ${driver.examStatus === 'failed' ? 'selected' : ''}>Failed</option>
-            </select>
-          </div>
-
-          <div class="col-md-6">
-            <label for="editDriverExamDate" class="form-label">Exam Date</label>
-            <input type="date" class="form-control" id="editDriverExamDate" value="${driver.examDate || ''}" required>
-          </div>
-
-          <div id="examFields"></div>
-
-        </div>
-      </form>
-    `);
-
-    toggleExamFields(driver.examStatus || 'pending');
-
-    $('#saveDriverChanges').show().off('click').on('click', function() {
-      saveDriverChanges(driverId);
-    });
-
-    const modal = new bootstrap.Modal(document.getElementById('driverDetailsModal'));
-    modal.show();
-  }
-
-  function toggleExamFields(examStatus) {
-    const driver = drivers.find(d => d.id === parseInt($('#editDriverId').val()));
-    const examFieldsContainer = $('#examFields');
-
-    examFieldsContainer.empty();
-
-    switch(examStatus) {
-      case 'passed':
-        examFieldsContainer.html(`
-          <div class="col-12">
-            <div class="field-group passed">
-              <h6 class="text-success"><i class="fas fa-check-circle"></i> Passed Exam Fields</h6>
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <label for="editTrialDate" class="form-label">Trial Date (if applicable)</label>
-                  <input type="date" class="form-control" id="editTrialDate" value="${driver?.trialDate || ''}">
-                </div>
-                <div class="col-12">
-                  <label for="editNotes" class="form-label">Notes</label>
-                  <textarea class="form-control" id="editNotes" rows="3" 
-                    placeholder="Add any notes about the exam or driver performance...">${driver?.notes || ''}</textarea>
-                </div>
-              </div>
-              <div class="alert alert-success mt-2 mb-0">
-                <small><i class="fas fa-info-circle"></i> Passed licenses do not have expiry dates</small>
-              </div>
-            </div>
-          </div>
-        `);
-
-        $('#editDriverExpiryDate').closest('.col-md-6').hide();
-        break;
-
-      case 'failed':
-        examFieldsContainer.html(`
-          <div class="col-12">
-            <div class="field-group failed">
-              <h6 class="text-danger"><i class="fas fa-times-circle"></i> Failed Exam Fields</h6>
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <label for="editNextExamDate" class="form-label">Next Exam Date *</label>
-                  <input type="date" class="form-control" id="editNextExamDate" value="${driver?.nextExamDate || ''}" required>
-                </div>
-                <div class="col-12">
-                  <label for="editNotes" class="form-label">Notes</label>
-                  <textarea class="form-control" id="editNotes" rows="3" 
-                    placeholder="Add notes about what needs improvement, reasons for failure, etc...">${driver?.notes || ''}</textarea>
-                </div>
-              </div>
-              <div class="alert alert-warning mt-2 mb-0">
-                <small><i class="fas fa-exclamation-triangle"></i> Next exam date is required for failed exams</small>
-              </div>
-            </div>
-          </div>
-        `);
-
-        if ($('#editDriverExpiryDate').length === 0) {
-          $('#editDriverStatus').closest('.col-md-6').after(`
-            <div class="col-md-6">
-              <label for="editDriverExpiryDate" class="form-label">Expiry Date</label>
-              <input type="date" class="form-control" id="editDriverExpiryDate" value="${driver?.expiryDate || ''}" required>
-            </div>
-          `);
-        } else {
-          $('#editDriverExpiryDate').closest('.col-md-6').show();
-        }
-        break;
-
-      case 'pending':
-      default:
-        examFieldsContainer.html(`
-          <div class="col-12">
-            <div class="field-group pending">
-              <h6 class="text-warning"><i class="fas fa-clock"></i> Pending Exam Fields</h6>
-              <div class="row g-3">
-                <div class="col-12">
-                  <label for="editNotes" class="form-label">Notes</label>
-                  <textarea class="form-control" id="editNotes" rows="3" 
-                    placeholder="Add any notes about exam preparation, requirements, etc...">${driver?.notes || ''}</textarea>
-                </div>
-              </div>
-              <div class="alert alert-info mt-2 mb-0">
-                <small><i class="fas fa-info-circle"></i> Exam date above is the scheduled exam date</small>
-              </div>
-            </div>
-          </div>
-        `);
-
-        if ($('#editDriverExpiryDate').length === 0) {
-          $('#editDriverStatus').closest('.col-md-6').after(`
-            <div class="col-md-6">
-              <label for="editDriverExpiryDate" class="form-label">Expiry Date</label>
-              <input type="date" class="form-control" id="editDriverExpiryDate" value="${driver?.expiryDate || ''}" required>
-            </div>
-          `);
-        } else {
-          $('#editDriverExpiryDate').closest('.col-md-6').show();
-        }
-        break;
-    }
-  }
-
-  function saveDriverChanges(driverId) {
-    const driverIndex = drivers.findIndex(d => d.id === driverId);
-    if (driverIndex === -1) return;
-
-    const form = $('#editDriverForm')[0];
-    if (!form.checkValidity()) {
-      form.reportValidity();
-      return;
-    }
-
-    const examStatus = $('#editExamStatus').val();
-
-    let updatedDriver = {
-      ...drivers[driverIndex],
-      name: $('#editDriverName').val(),
-      nic: $('#editDriverNIC').val(),
-      licenseType: $('#editDriverLicenseType').val(),
-      vehicleClass: $('#editDriverVehicleClass').val(),
-      issueDate: $('#editDriverIssueDate').val(),
-      examStatus: examStatus,
-      examDate: $('#editDriverExamDate').val(),
-      notes: $('#editNotes').val(),
-      status: $('#editDriverStatus').val()
-    };
-
-    switch(examStatus) {
-      case 'passed':
-        updatedDriver.trialDate = $('#editTrialDate').val() || null;
-        updatedDriver.nextExamDate = null;
-        updatedDriver.expiryDate = null;
-        break;
-      case 'failed':
-        updatedDriver.nextExamDate = $('#editNextExamDate').val();
-        updatedDriver.trialDate = null;
-        updatedDriver.expiryDate = $('#editDriverExpiryDate').val();
-        break;
-      case 'pending':
-      default:
-        updatedDriver.nextExamDate = null;
-        updatedDriver.trialDate = null;
-        updatedDriver.expiryDate = $('#editDriverExpiryDate').val();
-        break;
-    }
-
-    if (examStatus === 'failed' && !updatedDriver.nextExamDate) {
-      Swal.fire({
-        title: 'Missing Information!',
-        text: 'Next exam date is required for failed exams.',
-        icon: 'error',
-        confirmButtonText: 'OK'
-      });
-      $('#editNextExamDate').focus();
-      return;
-    }
-
-    drivers[driverIndex] = updatedDriver;
-
-    Swal.fire({
-      title: 'Success!',
-      text: 'Driver information updated successfully',
-      icon: 'success',
-      confirmButtonText: 'OK'
-    }).then(() => {
-      $('#driverDetailsModal').modal('hide');
-      renderDriversList();
-      updateStats();
-    });
-  }
-
-  function confirmDeleteDriver(driverId) {
-    const driver = drivers.find(d => d.id === driverId);
-    if (!driver) return;
-
-    Swal.fire({
-      title: 'Confirm Deletion',
-      html: `Are you sure you want to delete <strong>${driver.name}</strong> (${driver.licenseNumber})?`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Yes, delete',
-      cancelButtonText: 'Cancel',
-      confirmButtonColor: '#dc3545'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        deleteDriver(driverId);
-      }
-    });
-  }
-
-  function deleteDriver(driverId) {
-    drivers = drivers.filter(d => d.id !== driverId);
-
-    Swal.fire({
-      title: 'Deleted!',
-      text: 'Driver has been deleted',
-      icon: 'success',
-      confirmButtonText: 'OK'
-    }).then(() => {
-      renderDriversList();
-      updateStats();
-    });
-  }
-
-function setupBackButton() {
-  $('#backButton').click(function() {
-    window.history.back();
-  });
-}
-
-</script>
-</body>
-</html> -->
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1266,7 +9,7 @@ function setupBackButton() {
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="../css/license.css">
-
+  
 </head>
 <body>
 <div class="container">
@@ -1437,6 +180,10 @@ function setupBackButton() {
               <option value="ABSENT">Absent</option>
             </select>
           </div>
+          <div class="mb-3" id="trialDateContainer" style="display: none;">
+            <label for="trialDate" class="form-label">Trial Date</label>
+            <input type="date" class="form-control" id="trialDate">
+          </div>
           <div class="mb-3" id="nextExamDateContainer" style="display: none;">
             <label for="nextExamDate" class="form-label">Next Exam Date</label>
             <input type="date" class="form-control" id="nextExamDate">
@@ -1464,12 +211,21 @@ $(document).ready(function () {
   // =================== CONFIGURATION ===================
   const API_BASE_URL = "http://localhost:8080/api/v1";
 
-  // Authentication data
-  const authToken = localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token");
-  const userData = JSON.parse(localStorage.getItem("smartreg_user") || sessionStorage.getItem("smartreg_user") || "{}");
-  const currentUserId = userData.id;
-  const currentUserName = userData.fullName || userData.name;
-  const currentUserRole = userData.role;
+  // Authentication data - check both localStorage and sessionStorage
+  let authToken = localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token");
+  let userData = null;
+  
+  try {
+    const userDataString = localStorage.getItem("smartreg_user") || sessionStorage.getItem("smartreg_user");
+    userData = userDataString ? JSON.parse(userDataString) : null;
+  } catch (e) {
+    console.error("Error parsing user data:", e);
+    userData = null;
+  }
+
+  const currentUserId = userData?.id;
+  const currentUserName = userData?.fullName || userData?.name;
+  const currentUserRole = userData?.role;
 
   // Global variables
   let currentApplications = [];
@@ -1477,17 +233,28 @@ $(document).ready(function () {
   let currentPage = 1;
   const applicationsPerPage = 10;
 
+  console.log("Auth check:", { authToken: !!authToken, userId: currentUserId, role: currentUserRole });
+
   // =================== AUTHENTICATION CHECK ===================
-  if (!authToken || !currentUserId) {
-    Swal.fire({
-      title: "Authentication Required",
-      text: "Please login to continue",
-      icon: "error",
-      confirmButtonText: "Login Now",
-      allowOutsideClick: false,
-    }).then(() => {
-      window.location.href = "../index.html";
-    });
+  function checkAuthentication() {
+    if (!authToken || !currentUserId) {
+      console.log("Authentication failed - redirecting to login");
+      Swal.fire({
+        title: "Authentication Required",
+        text: "Please login to continue",
+        icon: "error",
+        confirmButtonText: "Login Now",
+        allowOutsideClick: false,
+      }).then(() => {
+        window.location.href = "../index.html";
+      });
+      return false;
+    }
+    return true;
+  }
+
+  // Only proceed if authenticated
+  if (!checkAuthentication()) {
     return;
   }
 
@@ -1499,29 +266,37 @@ $(document).ready(function () {
       }
     },
     error: function (xhr, status, error) {
+      // Only handle auth errors, not all errors
       if (xhr.status === 401) {
+        console.log("Unauthorized request - handling session expiry");
         handleUnauthorized();
       } else if (xhr.status === 403) {
         showAlert("Access Denied", "You don't have permission to perform this action", "error");
       }
+      // Let individual requests handle other errors
     },
   });
 
   function handleUnauthorized() {
+    console.log("Session expired - clearing storage and redirecting");
+    // Clear both localStorage and sessionStorage
     localStorage.removeItem("smartreg_token");
     localStorage.removeItem("smartreg_user");
     sessionStorage.removeItem("smartreg_token");
     sessionStorage.removeItem("smartreg_user");
     
-    Swal.fire({
-      title: "Session Expired",
-      text: "Please login again",
-      icon: "warning",
-      confirmButtonText: "Login",
-      allowOutsideClick: false,
-    }).then(() => {
-      window.location.href = "../index.html";
-    });
+    // Only show alert if not already redirecting
+    if (!window.location.href.includes('index.html')) {
+      Swal.fire({
+        title: "Session Expired",
+        text: "Please login again",
+        icon: "warning",
+        confirmButtonText: "Login",
+        allowOutsideClick: false,
+      }).then(() => {
+        window.location.href = "../index.html";
+      });
+    }
   }
 
   // =================== INITIALIZATION ===================
@@ -1548,11 +323,20 @@ $(document).ready(function () {
     // Exam result change handler
     $('#examResult').on('change', function() {
       const result = $(this).val();
-      if (result === 'FAIL' || result === 'ABSENT') {
+      if (result === 'PASS') {
+        $('#trialDateContainer').show();
+        $('#nextExamDateContainer').hide();
+        $('#trialDate').prop('required', true);
+        $('#nextExamDate').prop('required', false);
+      } else if (result === 'FAIL' || result === 'ABSENT') {
+        $('#trialDateContainer').hide();
         $('#nextExamDateContainer').show();
+        $('#trialDate').prop('required', false);
         $('#nextExamDate').prop('required', true);
       } else {
+        $('#trialDateContainer').hide();
         $('#nextExamDateContainer').hide();
+        $('#trialDate').prop('required', false);
         $('#nextExamDate').prop('required', false);
       }
     });
@@ -1566,6 +350,8 @@ $(document).ready(function () {
 
   // =================== API CALLS ===================
   function loadApplications() {
+    console.log("Loading applications for user:", currentUserId, "Role:", currentUserRole);
+    
     const loadingHtml = `
       <div class="loading-spinner">
         <div class="spinner-border" role="status">
@@ -1580,23 +366,32 @@ $(document).ready(function () {
       `${API_BASE_URL}/applications/getall` : 
       `${API_BASE_URL}/applications/driver/${currentUserId}`;
 
+    console.log("Making API call to:", endpoint);
+
     $.ajax({
       url: endpoint,
       method: 'GET',
+      timeout: 10000, // 10 second timeout
       success: function(data) {
+        console.log("Applications loaded successfully:", data?.length || 0);
         currentApplications = data || [];
         
         // Load exam data for each application
         loadExamDataForApplications();
       },
       error: function(xhr, status, error) {
-        console.error('Error loading applications:', error);
-        $('#applicationsList').html(`
-          <div class="alert alert-danger">
-            <i class="fas fa-exclamation-triangle"></i>
-            Failed to load applications. Please try again.
-          </div>
-        `);
+        console.error('Error loading applications:', { status: xhr.status, error, responseText: xhr.responseText });
+        
+        // Don't show auth error here as it's handled globally
+        if (xhr.status !== 401 && xhr.status !== 403) {
+          $('#applicationsList').html(`
+            <div class="alert alert-danger">
+              <i class="fas fa-exclamation-triangle"></i>
+              Failed to load applications. Please try again.
+              <br><small>Error: ${error} (Status: ${xhr.status})</small>
+            </div>
+          `);
+        }
       }
     });
   }
@@ -1688,12 +483,17 @@ $(document).ready(function () {
     const examStatus = application.examData ? application.examData.writtenExamResult : 'PENDING';
     const examStatusBadge = getExamStatusBadge(examStatus);
 
+    // Fix the property names to match your ApplicationDTO
+    const fullName = application.driver || application.fullName || 'N/A';
+    const nicNumber = application.nicNumber || application.nic || 'N/A';
+    const submittedDate = application.submittedDate || application.applicationDate;
+
     return `
       <div class="driver-card mb-3" data-id="${application.id}">
         <div class="driver-info">
           <div>
-            <div class="driver-name">${application.fullName} 
-              <small class="text-muted">${application.nic}</small>
+            <div class="driver-name">${fullName}
+              <span class="nic-display">${nicNumber}</span>
             </div>
             <div class="driver-license">Application #${application.id} • ${application.licenseType}</div>
           </div>
@@ -1704,7 +504,7 @@ $(document).ready(function () {
 
         <div class="driver-stats">
           <div class="stat-item">
-            <div class="stat-value">${formatDate(application.applicationDate)}</div>
+            <div class="stat-value">${formatDate(submittedDate)}</div>
             <div class="stat-label">Applied Date</div>
           </div>
           <div class="stat-item">
@@ -1712,7 +512,7 @@ $(document).ready(function () {
             <div class="stat-label">License Type</div>
           </div>
           <div class="stat-item">
-            <div class="stat-value">${application.vehicleClasses.join(', ')}</div>
+            <div class="stat-value">${application.vehicleClasses ? application.vehicleClasses.join(', ') : 'N/A'}</div>
             <div class="stat-label">Vehicle Classes</div>
           </div>
           <div class="stat-item">
@@ -1787,7 +587,8 @@ $(document).ready(function () {
     const modalTitle = $('#applicationModalTitle');
     const modalBody = $('#applicationModalBody');
 
-    modalTitle.html(`<i class="fas fa-file-alt"></i> Application Details - ${application.fullName}`);
+    const fullName = application.driver || application.fullName || 'N/A';
+    modalTitle.html(`<i class="fas fa-file-alt"></i> Application Details - ${fullName}`);
 
     const examInfo = application.examData ? `
       <div class="card mb-3">
@@ -1821,16 +622,16 @@ $(document).ready(function () {
             <div class="card-body">
               <div class="row">
                 <div class="col-md-6">
-                  <p><strong>Full Name:</strong> ${application.fullName}</p>
-                  <p><strong>NIC:</strong> ${application.nic}</p>
+                  <p><strong>Full Name:</strong> ${fullName}</p>
+                  <p><strong>NIC:</strong> ${application.nicNumber || application.nic || 'N/A'}</p>
                   <p><strong>Date of Birth:</strong> ${formatDate(application.dateOfBirth)}</p>
-                  <p><strong>Address:</strong> ${application.address}</p>
+                  <p><strong>Address:</strong> ${application.address || 'N/A'}</p>
                 </div>
                 <div class="col-md-6">
-                  <p><strong>Phone:</strong> ${application.phoneNumber}</p>
-                  <p><strong>Email:</strong> ${application.email}</p>
-                  <p><strong>Blood Group:</strong> ${application.bloodGroup}</p>
-                  <p><strong>Application Date:</strong> ${formatDate(application.applicationDate)}</p>
+                  <p><strong>Phone:</strong> ${application.phoneNumber || 'N/A'}</p>
+                  <p><strong>Email:</strong> ${application.email || 'N/A'}</p>
+                  <p><strong>Blood Group:</strong> ${application.bloodGroup || 'N/A'}</p>
+                  <p><strong>Application Date:</strong> ${formatDate(application.submittedDate || application.applicationDate)}</p>
                 </div>
               </div>
             </div>
@@ -1844,7 +645,7 @@ $(document).ready(function () {
               <div class="row">
                 <div class="col-md-6">
                   <p><strong>License Type:</strong> ${application.licenseType}</p>
-                  <p><strong>Vehicle Classes:</strong> ${application.vehicleClasses.join(', ')}</p>
+                  <p><strong>Vehicle Classes:</strong> ${application.vehicleClasses ? application.vehicleClasses.join(', ') : 'N/A'}</p>
                 </div>
                 <div class="col-md-6">
                   <p><strong>Status:</strong> <span class="status-badge ${getStatusClass(application.status)}">${application.status}</span></p>
@@ -1866,8 +667,10 @@ $(document).ready(function () {
   function updateExamResultModal(examId) {
     $('#examId').val(examId);
     $('#examResult').val('');
+    $('#trialDate').val('');
     $('#nextExamDate').val('');
     $('#examNote').val('');
+    $('#trialDateContainer').hide();
     $('#nextExamDateContainer').hide();
     
     const modal = new bootstrap.Modal(document.getElementById('examResultModal'));
@@ -1878,10 +681,16 @@ $(document).ready(function () {
     const examId = $('#examId').val();
     const result = $('#examResult').val();
     const note = $('#examNote').val();
+    const trialDate = $('#trialDate').val();
     const nextExamDate = $('#nextExamDate').val();
 
     if (!result) {
       showAlert('Error', 'Please select an exam result', 'error');
+      return;
+    }
+
+    if (result === 'PASS' && !trialDate) {
+      showAlert('Error', 'Trial date is required for passed results', 'error');
       return;
     }
 
@@ -1899,7 +708,8 @@ $(document).ready(function () {
       }
     });
 
-    updateExamResult(examId, result, note, nextExamDate)
+    const dateToUse = result === 'PASS' ? trialDate : nextExamDate;
+    updateExamResult(examId, result, note, dateToUse)
       .then(response => {
         Swal.fire({
           title: 'Success!',
@@ -2091,8 +901,10 @@ $(document).ready(function () {
     const params = new URLSearchParams({ status });
     
     const promise = $.ajax({
-      url: `${API_BASE_URL}/applications/${applicationId}/status?${params.toString()}`,
-      method: 'PUT'
+      url: `${API_BASE_URL}/applications/${applicationId}/status`,
+      method: 'PUT',
+      data: params.toString(),
+      contentType: 'application/x-www-form-urlencoded'
     });
 
     // If declining, also create decline record
@@ -2104,8 +916,9 @@ $(document).ready(function () {
           contentType: 'application/json',
           data: JSON.stringify({
             applicationId: applicationId,
-            reason: declineReason,
-            declinedDate: new Date().toISOString().split('T')[0]
+            declineReason: declineReason,
+            declineNotes: declineReason,
+            declinedBy: currentUserName || 'Admin'
           })
         });
       });
@@ -2156,16 +969,20 @@ $(document).ready(function () {
     let filtered = currentApplications;
 
     if (searchTerm) {
-      filtered = filtered.filter(app =>
-        app.fullName.toLowerCase().includes(searchTerm) ||
-        app.nic.includes(searchTerm) ||
-        app.id.toString().includes(searchTerm)
-      );
+      filtered = filtered.filter(app => {
+        const fullName = (app.driver || app.fullName || '').toLowerCase();
+        const nicNumber = (app.nicNumber || app.nic || '').toLowerCase();
+        const appId = app.id.toString();
+        
+        return fullName.includes(searchTerm) ||
+               nicNumber.includes(searchTerm) ||
+               appId.includes(searchTerm);
+      });
     }
 
     if (licenseType) {
       filtered = filtered.filter(app => 
-        app.vehicleClasses.includes(licenseType)
+        app.vehicleClasses && app.vehicleClasses.includes(licenseType)
       );
     }
 
@@ -2190,16 +1007,32 @@ $(document).ready(function () {
 
     switch (sortBy) {
       case 'name_asc':
-        sorted.sort((a, b) => a.fullName.localeCompare(b.fullName));
+        sorted.sort((a, b) => {
+          const nameA = a.driver || a.fullName || '';
+          const nameB = b.driver || b.fullName || '';
+          return nameA.localeCompare(nameB);
+        });
         break;
       case 'name_desc':
-        sorted.sort((a, b) => b.fullName.localeCompare(a.fullName));
+        sorted.sort((a, b) => {
+          const nameA = a.driver || a.fullName || '';
+          const nameB = b.driver || b.fullName || '';
+          return nameB.localeCompare(nameA);
+        });
         break;
       case 'date_asc':
-        sorted.sort((a, b) => new Date(a.applicationDate) - new Date(b.applicationDate));
+        sorted.sort((a, b) => {
+          const dateA = new Date(a.submittedDate || a.applicationDate || 0);
+          const dateB = new Date(b.submittedDate || b.applicationDate || 0);
+          return dateA - dateB;
+        });
         break;
       case 'date_desc':
-        sorted.sort((a, b) => new Date(b.applicationDate) - new Date(a.applicationDate));
+        sorted.sort((a, b) => {
+          const dateA = new Date(a.submittedDate || a.applicationDate || 0);
+          const dateB = new Date(b.submittedDate || b.applicationDate || 0);
+          return dateB - dateA;
+        });
         break;
       case 'status_asc':
         sorted.sort((a, b) => a.status.localeCompare(b.status));
@@ -2210,7 +1043,13 @@ $(document).ready(function () {
   }
 
   function updateStats() {
-    if (!filteredApplications.length) return;
+    if (!filteredApplications.length) {
+      $('#totalApplications').text(0);
+      $('#pendingApplications').text(0);
+      $('#approvedApplications').text(0);
+      $('#declinedApplications').text(0);
+      return;
+    }
 
     $('#totalApplications').text(filteredApplications.length);
 
