@@ -115,27 +115,15 @@ public class WrittenExamController {
     }
 
     @PatchMapping("/{examId}/result")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<WrittenExamDto> updateExamResult(
+    public ResponseEntity<String> updateExamResult(
             @PathVariable Long examId,
             @RequestParam String result,
             @RequestParam(required = false) String note) {
         try {
-            log.info("Updating exam result for written exam ID: {} with result: {}", examId, result);
-
-            // Validate result
-            if (!isValidResult(result)) {
-                return ResponseEntity.badRequest().build();
-            }
-
-            WrittenExamDto updatedExam = writtenExamService.updateExamResult(examId, result, note);
-            return ResponseEntity.ok(updatedExam);
-        } catch (RuntimeException e) {
-            log.error("Error updating exam result for ID: {}: {}", examId, e.getMessage());
-            return ResponseEntity.badRequest().build();
+            writtenExamService.updateExamResult(examId, result, note);
+            return ResponseEntity.ok("Exam result updated successfully");
         } catch (Exception e) {
-            log.error("Unexpected error updating exam result for ID: {}", examId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.badRequest().body("Error updating exam result: " + e.getMessage());
         }
     }
 

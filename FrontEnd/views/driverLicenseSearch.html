@@ -417,20 +417,36 @@ $(document).ready(function () {
     });
   }
 
-  function updateExamResult(examId, result, note, nextExamDate = null) {
+  function updateExamResult(examId, result, note) {
     const params = new URLSearchParams({
-      result: result
+        result: result
     });
     
-    if (note) {
-      params.append('note', note);
+    if (note && note.trim()) {
+        params.append('note', note);
     }
 
+    console.log('Updating exam result:', { examId, result, note });
+
     return $.ajax({
-      url: `${API_BASE_URL}/written-exams/${examId}/result?${params.toString()}`,
-      method: 'PATCH',
+        url: `${API_BASE_URL}/written-exams/${examId}/result?${params.toString()}`,
+        method: 'PATCH',
+        beforeSend: function (xhr) {
+            if (authToken) {
+                xhr.setRequestHeader("Authorization", "Bearer " + authToken);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error updating exam result:', {
+                status: xhr.status,
+                statusText: xhr.statusText,
+                responseText: xhr.responseText,
+                error: error
+            });
+            throw xhr;
+        }
     });
-  }
+}
 
   function scheduleWrittenExam(applicationId, examDate, examTime, location, language = 'ENGLISH') {
     const examData = {
@@ -678,7 +694,60 @@ $(document).ready(function () {
     modal.show();
   }
 
-  function saveExamResult() {
+  // function saveExamResult() {
+  //   const examId = $('#examId').val();
+  //   const result = $('#examResult').val();
+  //   const note = $('#examNote').val();
+  //   const trialDate = $('#trialDate').val();
+  //   const nextExamDate = $('#nextExamDate').val();
+
+  //   if (!result) {
+  //     showAlert('Error', 'Please select an exam result', 'error');
+  //     return;
+  //   }
+
+  //   if (result === 'PASS' && !trialDate) {
+  //     showAlert('Error', 'Trial date is required for passed results', 'error');
+  //     return;
+  //   }
+
+  //   if ((result === 'FAIL' || result === 'ABSENT') && !nextExamDate) {
+  //     showAlert('Error', 'Next exam date is required for failed or absent results', 'error');
+  //     return;
+  //   }
+
+  //   // Show loading
+  //   Swal.fire({
+  //     title: 'Updating Result...',
+  //     allowOutsideClick: false,
+  //     didOpen: () => {
+  //       Swal.showLoading();
+  //     }
+  //   });
+
+  //   const dateToUse = result === 'PASS' ? trialDate : nextExamDate;
+  //   updateExamResult(examId, result, note, dateToUse)
+  //     .then(response => {
+  //       Swal.fire({
+  //         title: 'Success!',
+  //         text: 'Exam result updated successfully',
+  //         icon: 'success'
+  //       }).then(() => {
+  //         $('#examResultModal').modal('hide');
+  //         loadApplications(); // Reload to get updated data
+  //       });
+  //     })
+  //     .catch(error => {
+  //       console.error('Error updating exam result:', error);
+  //       Swal.fire({
+  //         title: 'Error!',
+  //         text: 'Failed to update exam result. Please try again.',
+  //         icon: 'error'
+  //       });
+  //     });
+  // }
+
+function saveExamResult() {
     const examId = $('#examId').val();
     const result = $('#examResult').val();
     const note = $('#examNote').val();
@@ -686,50 +755,166 @@ $(document).ready(function () {
     const nextExamDate = $('#nextExamDate').val();
 
     if (!result) {
-      showAlert('Error', 'Please select an exam result', 'error');
-      return;
+        showAlert('Error', 'Please select an exam result', 'error');
+        return;
     }
 
     if (result === 'PASS' && !trialDate) {
-      showAlert('Error', 'Trial date is required for passed results', 'error');
-      return;
+        showAlert('Error', 'Trial date is required for passed results', 'error');
+        return;
     }
 
     if ((result === 'FAIL' || result === 'ABSENT') && !nextExamDate) {
-      showAlert('Error', 'Next exam date is required for failed or absent results', 'error');
-      return;
+        showAlert('Error', 'Next exam date is required for failed or absent results', 'error');
+        return;
     }
 
     // Show loading
     Swal.fire({
-      title: 'Updating Result...',
-      allowOutsideClick: false,
-      didOpen: () => {
-        Swal.showLoading();
-      }
+        title: 'Updating Result...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
     });
 
-    const dateToUse = result === 'PASS' ? trialDate : nextExamDate;
-    updateExamResult(examId, result, note, dateToUse)
-      .then(response => {
-        Swal.fire({
-          title: 'Success!',
-          text: 'Exam result updated successfully',
-          icon: 'success'
-        }).then(() => {
-          $('#examResultModal').modal('hide');
-          loadApplications(); // Reload to get updated data
+    // First update the exam result
+    updateExamResult(examId, result, note)
+        .then(response => {
+            console.log('Exam result updated successfully');
+            
+            // If result is PASS, create trial exam record
+            if (result === 'PASS' && trialDate) {
+                return createTrialExamRecord(examId, trialDate, result, note);
+            } else {
+                // For FAIL/ABSENT, save the exam schedule
+                return saveExamSchedule(examId, result, null, nextExamDate);
+            }
+        })
+        .then(response => {
+            Swal.fire({
+                title: 'Success!',
+                text: 'Exam result and schedule updated successfully',
+                icon: 'success'
+            }).then(() => {
+                $('#examResultModal').modal('hide');
+                loadApplications(); // Reload to get updated data
+            });
+        })
+        .catch(error => {
+            console.error('Error updating exam result:', error);
+            let errorMessage = 'Failed to update exam result. Please try again.';
+            
+            if (error.responseJSON && error.responseJSON.message) {
+                errorMessage = error.responseJSON.message;
+            } else if (error.responseText) {
+                try {
+                    const errorObj = JSON.parse(error.responseText);
+                    errorMessage = errorObj.message || errorMessage;
+                } catch (e) {
+                    errorMessage = error.responseText;
+                }
+            }
+            
+            Swal.fire({
+                title: 'Error!',
+                text: errorMessage,
+                icon: 'error'
+            });
         });
-      })
-      .catch(error => {
-        console.error('Error updating exam result:', error);
-        Swal.fire({
-          title: 'Error!',
-          text: 'Failed to update exam result. Please try again.',
-          icon: 'error'
+}
+
+function createTrialExamRecord(writtenExamId, trialDate, result, notes) {
+    const trialExamData = {
+        writtenExamId: writtenExamId,
+        trialDate: trialDate,
+        trialTime: "09:00", // Default time or get from UI
+        trialLocation: "Colombo DMT", // Default location or get from UI
+        trialResult: result,
+        examinerNotes: notes
+    };
+
+    console.log('Creating trial exam record:', trialExamData);
+
+    return $.ajax({
+        url: `${API_BASE_URL}/trial-exams`,
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(trialExamData),
+        beforeSend: function (xhr) {
+            if (authToken) {
+                xhr.setRequestHeader("Authorization", "Bearer " + authToken);
+            }
+        }
+    });
+}
+
+
+
+function saveExamSchedule(examId, result, trialDate, nextExamDate) {
+    // Prepare exam schedule data
+    const examScheduleData = {
+        writtenExamId: examId,
+        trialDate: result === 'PASS' ? trialDate : null,
+        nextExamDate: (result === 'FAIL' || result === 'ABSENT') ? nextExamDate : null
+    };
+
+    console.log('Saving exam schedule:', examScheduleData);
+
+    // Check if exam schedule already exists
+    return $.ajax({
+        url: `${API_BASE_URL}/exam-schedules/written-exam/${examId}`,
+        method: 'GET',
+        beforeSend: function (xhr) {
+            if (authToken) {
+                xhr.setRequestHeader("Authorization", "Bearer " + authToken);
+            }
+        }
+    }).then(function(existingSchedule) {
+        if (existingSchedule && existingSchedule.id) {
+            // Update existing schedule
+            examScheduleData.id = existingSchedule.id;
+            return $.ajax({
+                url: `${API_BASE_URL}/exam-schedules/${existingSchedule.id}`,
+                method: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(examScheduleData),
+                beforeSend: function (xhr) {
+                    if (authToken) {
+                        xhr.setRequestHeader("Authorization", "Bearer " + authToken);
+                    }
+                }
+            });
+        } else {
+            // Create new schedule
+            return $.ajax({
+                url: `${API_BASE_URL}/exam-schedules`,
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(examScheduleData),
+                beforeSend: function (xhr) {
+                    if (authToken) {
+                        xhr.setRequestHeader("Authorization", "Bearer " + authToken);
+                    }
+                }
+            });
+        }
+    }).catch(function(error) {
+        console.error('Error checking existing schedule, trying to create new:', error);
+        // If check fails, try to create new schedule
+        return $.ajax({
+            url: `${API_BASE_URL}/exam-schedules`,
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(examScheduleData),
+            beforeSend: function (xhr) {
+                if (authToken) {
+                    xhr.setRequestHeader("Authorization", "Bearer " + authToken);
+                }
+            }
         });
-      });
-  }
+    });
+}
 
   function scheduleExamModal(applicationId) {
     Swal.fire({

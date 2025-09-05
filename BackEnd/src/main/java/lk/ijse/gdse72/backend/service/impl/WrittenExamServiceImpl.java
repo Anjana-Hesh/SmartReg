@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -128,22 +129,14 @@ public class WrittenExamServiceImpl implements WrittenExamService {
     }
 
     @Override
-    public WrittenExamDto updateExamResult(Long examId, String result, String note) {
-        log.info("Updating exam result for written exam ID: {} with result: {}", examId, result);
+    public void updateExamResult(Long examId, String result, String note) {
+        WrittenExam writtenExam = writtenExamRepository.findById(examId)
+                .orElseThrow(() -> new RuntimeException("Written exam not found"));
 
-        WrittenExam existingExam = writtenExamRepository.findByIdWithApplication(examId)
-                .orElseThrow(() -> new RuntimeException("Written exam not found with ID: " + examId));
+        writtenExam.setWrittenExamResult(result);
+        writtenExam.setNote(note);
 
-        existingExam.setWrittenExamResult(result);
-        if (note != null && !note.trim().isEmpty()) {
-            existingExam.setNote(existingExam.getNote() != null ?
-                    existingExam.getNote() + "\n" + note : note);
-        }
-
-        WrittenExam updatedExam = writtenExamRepository.save(existingExam);
-        log.info("Exam result updated successfully for ID: {}", updatedExam.getId());
-
-        return convertToDto(updatedExam);
+        writtenExamRepository.save(writtenExam);
     }
 
     @Override
@@ -172,6 +165,25 @@ public class WrittenExamServiceImpl implements WrittenExamService {
     @Transactional(readOnly = true)
     public boolean existsByApplicationId(Long applicationId) {
         return writtenExamRepository.existsByApplicationId(applicationId);
+    }
+
+    @Override
+    public WrittenExam updateWrittenExamResult(Long examId, String result, String note, LocalDate trialDate, LocalDate nextExamDate) {
+        WrittenExam writtenExam = writtenExamRepository.findById(examId)
+                .orElseThrow(() -> new RuntimeException("Written exam not found"));
+
+        writtenExam.setWrittenExamResult(result);
+        if (note != null) {
+            writtenExam.setNote(note);
+        }
+        if (trialDate != null) {
+            writtenExam.setTrialDate(trialDate);
+        }
+        if (nextExamDate != null) {
+            writtenExam.setNextExamDate(nextExamDate);
+        }
+
+        return writtenExamRepository.save(writtenExam);
     }
 
     private WrittenExamDto convertToDto(WrittenExam writtenExam) {
