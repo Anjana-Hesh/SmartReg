@@ -10,6 +10,8 @@ import java.util.Optional;
 
 public interface WrittenExamService {
 
+    void updateExamResultWithDates(Long examId, String result, String note,
+                                   LocalDate trialDate, LocalDate nextExamDate);
     WrittenExamDto scheduleWrittenExam(WrittenExamRequestDto requestDto);
     Optional<WrittenExamDto> getWrittenExamById(Long examId);
     Optional<WrittenExamDto> getWrittenExamByApplicationId(Long applicationId);

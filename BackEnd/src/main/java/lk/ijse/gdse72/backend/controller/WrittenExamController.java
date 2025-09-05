@@ -3,6 +3,7 @@ package lk.ijse.gdse72.backend.controller;
 import jakarta.validation.Valid;
 import lk.ijse.gdse72.backend.dto.WrittenExamDto;
 import lk.ijse.gdse72.backend.dto.WrittenExamRequestDto;
+import lk.ijse.gdse72.backend.dto.WrittenExamResultUpdateDTO;
 import lk.ijse.gdse72.backend.service.WrittenExamService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -115,6 +116,7 @@ public class WrittenExamController {
     }
 
     @PatchMapping("/{examId}/result")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> updateExamResult(
             @PathVariable Long examId,
             @RequestParam String result,
@@ -171,6 +173,25 @@ public class WrittenExamController {
         } catch (Exception e) {
             log.error("Error checking exam existence for application ID: {}", applicationId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PatchMapping("/{examId}/result-with-dates")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> updateExamResultWithDates(
+            @PathVariable Long examId,
+            @RequestBody WrittenExamResultUpdateDTO updateDTO) {
+        try {
+            writtenExamService.updateExamResultWithDates(
+                    examId,
+                    updateDTO.getResult(),
+                    updateDTO.getNote(),
+                    updateDTO.getTrialDate(),
+                    updateDTO.getNextExamDate()
+            );
+            return ResponseEntity.ok("Exam result updated successfully with dates");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error updating exam result: " + e.getMessage());
         }
     }
 

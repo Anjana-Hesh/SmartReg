@@ -693,60 +693,6 @@ $(document).ready(function () {
     const modal = new bootstrap.Modal(document.getElementById('examResultModal'));
     modal.show();
   }
-
-  // function saveExamResult() {
-  //   const examId = $('#examId').val();
-  //   const result = $('#examResult').val();
-  //   const note = $('#examNote').val();
-  //   const trialDate = $('#trialDate').val();
-  //   const nextExamDate = $('#nextExamDate').val();
-
-  //   if (!result) {
-  //     showAlert('Error', 'Please select an exam result', 'error');
-  //     return;
-  //   }
-
-  //   if (result === 'PASS' && !trialDate) {
-  //     showAlert('Error', 'Trial date is required for passed results', 'error');
-  //     return;
-  //   }
-
-  //   if ((result === 'FAIL' || result === 'ABSENT') && !nextExamDate) {
-  //     showAlert('Error', 'Next exam date is required for failed or absent results', 'error');
-  //     return;
-  //   }
-
-  //   // Show loading
-  //   Swal.fire({
-  //     title: 'Updating Result...',
-  //     allowOutsideClick: false,
-  //     didOpen: () => {
-  //       Swal.showLoading();
-  //     }
-  //   });
-
-  //   const dateToUse = result === 'PASS' ? trialDate : nextExamDate;
-  //   updateExamResult(examId, result, note, dateToUse)
-  //     .then(response => {
-  //       Swal.fire({
-  //         title: 'Success!',
-  //         text: 'Exam result updated successfully',
-  //         icon: 'success'
-  //       }).then(() => {
-  //         $('#examResultModal').modal('hide');
-  //         loadApplications(); // Reload to get updated data
-  //       });
-  //     })
-  //     .catch(error => {
-  //       console.error('Error updating exam result:', error);
-  //       Swal.fire({
-  //         title: 'Error!',
-  //         text: 'Failed to update exam result. Please try again.',
-  //         icon: 'error'
-  //       });
-  //     });
-  // }
-
 function saveExamResult() {
     const examId = $('#examId').val();
     const result = $('#examResult').val();
@@ -778,63 +724,174 @@ function saveExamResult() {
         }
     });
 
-    // First update the exam result
-    updateExamResult(examId, result, note)
+    // Use the result-with-dates endpoint which includes PreAuthorize
+    updateExamResultWithDates(examId, result, note, trialDate, nextExamDate)
         .then(response => {
             console.log('Exam result updated successfully');
             
             // If result is PASS, create trial exam record
             if (result === 'PASS' && trialDate) {
                 return createTrialExamRecord(examId, trialDate, result, note);
-            } else {
-                // For FAIL/ABSENT, save the exam schedule
-                return saveExamSchedule(examId, result, null, nextExamDate);
             }
+            return Promise.resolve();
         })
         .then(response => {
             Swal.fire({
                 title: 'Success!',
-                text: 'Exam result and schedule updated successfully',
+                text: 'Exam result updated successfully',
                 icon: 'success'
             }).then(() => {
                 $('#examResultModal').modal('hide');
-                loadApplications(); // Reload to get updated data
+                loadApplications();
             });
         })
         .catch(error => {
             console.error('Error updating exam result:', error);
-            let errorMessage = 'Failed to update exam result. Please try again.';
             
-            if (error.responseJSON && error.responseJSON.message) {
-                errorMessage = error.responseJSON.message;
-            } else if (error.responseText) {
-                try {
-                    const errorObj = JSON.parse(error.responseText);
-                    errorMessage = errorObj.message || errorMessage;
-                } catch (e) {
-                    errorMessage = error.responseText;
-                }
+            // If the result-with-dates endpoint fails, try the basic result endpoint
+            if (error.status === 403 || error.status === 404) {
+                console.log('Trying basic result endpoint...');
+                updateBasicExamResult(examId, result, note)
+                    .then(response => {
+                        // If result is PASS, create trial exam record
+                        if (result === 'PASS' && trialDate) {
+                            return createTrialExamRecord(examId, trialDate, result, note);
+                        } else if ((result === 'FAIL' || result === 'ABSENT') && nextExamDate) {
+                            return updateNextExamDate(examId, nextExamDate);
+                        }
+                        return Promise.resolve();
+                    })
+                    .then(response => {
+                        Swal.fire({
+                            title: 'Success!',
+                            text: 'Exam result updated successfully',
+                            icon: 'success'
+                        }).then(() => {
+                            $('#examResultModal').modal('hide');
+                            loadApplications();
+                        });
+                    })
+                    .catch(secondError => {
+                        handleExamResultError(secondError);
+                    });
+            } else {
+                handleExamResultError(error);
             }
+        });
+}
+function updateBasicExamResult(examId, result, note) {
+    // Use query parameters instead of request body for the basic endpoint
+    let url = `${API_BASE_URL}/written-exams/${examId}/result?result=${encodeURIComponent(result)}`;
+    
+    if (note) {
+        url += `&note=${encodeURIComponent(note)}`;
+    }
+
+    return $.ajax({
+        url: url,
+        method: 'PATCH',
+        beforeSend: function (xhr) {
+            const token = authToken || localStorage.getItem('authToken');
+            if (token) {
+                xhr.setRequestHeader("Authorization", "Bearer " + token);
+            }
+        }
+    });
+}
+function updateExamResultWithDates(examId, result, note, trialDate, nextExamDate) {
+    const data = {
+        result: result,
+        note: note || '',
+        trialDate: result === 'PASS' ? trialDate : null,
+        nextExamDate: (result === 'FAIL' || result === 'ABSENT') ? nextExamDate : null
+    };
+
+    return $.ajax({
+        url: `${API_BASE_URL}/written-exams/${examId}/result-with-dates`,
+        method: 'PATCH',
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        beforeSend: function (xhr) {
+            const token = authToken || localStorage.getItem('authToken');
+            if (token) {
+                xhr.setRequestHeader("Authorization", "Bearer " + token);
+            }
+        }
+    });
+}
+function getWrittenExam(examId) {
+    return $.ajax({
+        url: `${API_BASE_URL}/written-exams/${examId}`,
+        method: 'GET',
+        beforeSend: function (xhr) {
+            const token = authToken || localStorage.getItem('authToken');
+            if (token) {
+                xhr.setRequestHeader("Authorization", "Bearer " + token);
+            }
+        }
+    });
+}
+function handleExamResultError(error) {
+    let errorMessage = 'Failed to update exam result. Please try again.';
+    
+    if (error.responseJSON && error.responseJSON.message) {
+        errorMessage = error.responseJSON.message;
+    } else if (error.status === 403) {
+        errorMessage = 'Access denied. You do not have permission to perform this action.';
+    } else if (error.status === 404) {
+        errorMessage = 'Endpoint not found. Please contact administrator.';
+    } else if (error.responseText) {
+        try {
+            const errorObj = JSON.parse(error.responseText);
+            errorMessage = errorObj.message || errorMessage;
+        } catch (e) {
+            errorMessage = error.responseText;
+        }
+    }
+    
+    Swal.fire({
+        title: 'Error!',
+        text: errorMessage,
+        icon: 'error'
+    });
+}
+function updateNextExamDate(examId, nextExamDate) {
+    // Try to update using the full exam update endpoint
+    return getWrittenExam(examId)
+        .then(examData => {
+            const updateData = {
+                writtenExamDate: examData.writtenExamDate,
+                writtenExamTime: examData.writtenExamTime,
+                writtenExamLocation: examData.writtenExamLocation,
+                note: examData.note,
+                writtenExamResult: examData.writtenExamResult,
+                nextExamDate: nextExamDate,
+                applicationId: examData.applicationId
+            };
             
-            Swal.fire({
-                title: 'Error!',
-                text: errorMessage,
-                icon: 'error'
+            return $.ajax({
+                url: `${API_BASE_URL}/written-exams/${examId}`,
+                method: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(updateData),
+                beforeSend: function (xhr) {
+                    const token = authToken || localStorage.getItem('authToken');
+                    if (token) {
+                        xhr.setRequestHeader("Authorization", "Bearer " + token);
+                    }
+                }
             });
         });
 }
-
 function createTrialExamRecord(writtenExamId, trialDate, result, notes) {
     const trialExamData = {
         writtenExamId: writtenExamId,
         trialDate: trialDate,
-        trialTime: "09:00", // Default time or get from UI
-        trialLocation: "Colombo DMT", // Default location or get from UI
+        trialTime: "09:00",
+        trialLocation: "Colombo DMT",
         trialResult: result,
         examinerNotes: notes
     };
-
-    console.log('Creating trial exam record:', trialExamData);
 
     return $.ajax({
         url: `${API_BASE_URL}/trial-exams`,
@@ -842,12 +899,14 @@ function createTrialExamRecord(writtenExamId, trialDate, result, notes) {
         contentType: 'application/json',
         data: JSON.stringify(trialExamData),
         beforeSend: function (xhr) {
-            if (authToken) {
-                xhr.setRequestHeader("Authorization", "Bearer " + authToken);
+            const token = authToken || localStorage.getItem('authToken');
+            if (token) {
+                xhr.setRequestHeader("Authorization", "Bearer " + token);
             }
         }
     });
 }
+
 
 
 

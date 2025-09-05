@@ -186,6 +186,26 @@ public class WrittenExamServiceImpl implements WrittenExamService {
         return writtenExamRepository.save(writtenExam);
     }
 
+    @Override
+    @Transactional
+    public void updateExamResultWithDates(Long examId, String result, String note,
+                                          LocalDate trialDate, LocalDate nextExamDate) {
+        WrittenExam writtenExam = writtenExamRepository.findById(examId)
+                .orElseThrow(() -> new RuntimeException("Written exam not found"));
+
+        writtenExam.setWrittenExamResult(result);
+
+        if (note != null) {
+            writtenExam.setNote(note);
+        }
+
+        // Update the dates in WrittenExam entity
+        writtenExam.setTrialDate(trialDate);
+        writtenExam.setNextExamDate(nextExamDate);
+
+        writtenExamRepository.save(writtenExam);
+    }
+
     private WrittenExamDto convertToDto(WrittenExam writtenExam) {
         Objects.requireNonNull(writtenExam, "WrittenExam cannot be null");
         Objects.requireNonNull(writtenExam.getApplication(), "Application cannot be null");
