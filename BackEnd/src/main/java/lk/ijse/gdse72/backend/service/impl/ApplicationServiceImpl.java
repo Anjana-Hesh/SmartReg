@@ -80,7 +80,7 @@ public class ApplicationServiceImpl implements ApplicationService {
 
     @Override
     public List<ApplicationDTO> getApplicationsByDriver(Long driverId) {
-        return applicationRepository.findByDriverId(driverId).stream()
+        return applicationRepository.findByDriverIdOrderBySubmittedDateDesc(driverId).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }

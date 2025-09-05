@@ -15,6 +15,8 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
 
     @Query("SELECT a FROM Application a LEFT JOIN FETCH a.driver")
     List<Application> findAll();
+    
+    List<Application> findByDriverIdOrderBySubmittedDateDesc(Long driverId);
 
     List<Application> findByDriverIdAndStatus(Long driverId, String status);
     int countByDriverIdAndStatus(Long driverId, String status);

@@ -17,13 +17,19 @@ body {
   color: var(--dark);
 }
 
+.summary-details {
+  color: white;
+  background: #142a3f;
+  padding: 10px;
+  border-radius: 6px;
+}
+
 .dashboard-container {
   max-width: 1400px;
   margin: 0 auto;
   padding: 20px;
 }
 
-/* Glass effect for cards */
 .glass-effect {
   background: rgba(255, 255, 255, 0.25);
   backdrop-filter: blur(10px);
@@ -31,7 +37,6 @@ body {
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
 }
 
-/* Navbar */
 .navbar {
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(10px);
@@ -72,7 +77,6 @@ body {
   transform: translateY(-2px);
 }
 
-/* Dashboard Header */
 .dashboard-header {
   background: white;
   border-radius: 10px;
@@ -113,7 +117,6 @@ body {
   color: #721c24;
 }
 
-/* Dashboard Cards */
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -161,7 +164,7 @@ body {
 }
 
 .card-content {
-  color: var(--secondary);
+  color: var(white);
   line-height: 1.6;
   margin-bottom: 15px;
 }
@@ -208,7 +211,6 @@ body {
   background: rgba(255, 255, 255, 0.9);
 }
 
-/* Notifications */
 .notification-list {
   list-style: none;
   padding: 0;
@@ -233,7 +235,6 @@ body {
   font-weight: 500;
 }
 
-/* Modal */
 .modal {
   display: none;
   position: fixed;

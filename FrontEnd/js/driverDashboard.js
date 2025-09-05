@@ -1,5 +1,5 @@
 $(document).ready(function () {
-  // =================== CONFIGURATION ===================
+
   const API_BASE_URL = "http://localhost:8080/api/v1";
 
   // Authentication data
@@ -12,9 +12,8 @@ $(document).ready(function () {
       "{}"
   );
   const currentDriverId = userData.id;
-  const currentDriverName = userData.fullName || userData.name;
+  const currentDriverName = userData.fullName;
 
-  // Global variables
   let selectedVehicleClasses = [];
   let currentApplications = [];
   let currentNotifications = [];
@@ -127,6 +126,7 @@ $(document).ready(function () {
       { value: "S", text: "Class S - School Transport" },
     ],
   };
+  
 
   // =================== API FUNCTIONS ===================
 
@@ -2370,7 +2370,7 @@ Support: support@licensepro.lk
                     <h6>Latest Application: #${latestApplication.id}</h6>
                     <span class="badge bg-${statusBadgeClass}">${latestApplication.status}</span>
                 </div>
-                <div class="summary-details">
+                <div class="summary-details" id="summary">
                     <p><strong>License Type:</strong> ${latestApplication.licenseType.toUpperCase()}</p>
                     <p><strong>Vehicle Classes:</strong> ${vehicleClasses}</p>
                     <p><strong>Submitted:</strong> ${formatDate(
@@ -2496,6 +2496,7 @@ Support: support@licensepro.lk
   };
 
   function showDetailedApplicationModal(application, additionalInfo = {}) {
+    
     const statusBadgeClass = getStatusBadgeClass(application.status);
     const vehicleClasses = Array.isArray(application.vehicleClasses)
       ? application.vehicleClasses.join(", ")
@@ -2658,6 +2659,303 @@ Support: support@licensepro.lk
       confirmButtonColor: "#6c757d",
     });
   }
+
+
+
+// Function to check if exam date is expired
+function isExamDateExpired(examDate) {
+    if (!examDate) return false;
+    const today = new Date();
+    const exam = new Date(examDate);
+    return exam < today;
+}
+
+// Function to get exam change request button HTML
+async function getExamChangeButtonHTML(application) {
+    // Check if application has an exam date and if it's expired
+    if (!application.examDate || !isExamDateExpired(application.examDate)) {
+        return '';
+    }
+    
+    try {
+        // Check if there's already a pending request
+        const hasPending = await ExamChangeRequestAPI.hasPendingRequest(application.id);
+        
+        if (hasPending) {
+            return `
+                <div class="exam-change-section">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        You have a pending exam date change request.
+                    </div>
+                </div>
+            `;
+        }
+        
+        return `
+            <div class="exam-change-section">
+                <div class="alert alert-warning mb-3">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Your exam date (${formatDate(application.examDate)}) has expired.
+                </div>
+                <button class="btn btn-primary" onclick="showExamChangeRequestModal(${application.id}, '${application.examDate}')">
+                    <i class="fas fa-calendar-alt me-2"></i>Request Exam Date Change
+                </button>
+            </div>
+        `;
+    } catch (error) {
+        console.error('Error checking pending request:', error);
+        return `
+            <div class="exam-change-section">
+                <div class="alert alert-warning mb-3">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Your exam date (${formatDate(application.examDate)}) has expired.
+                </div>
+                <button class="btn btn-primary" onclick="showExamChangeRequestModal(${application.id}, '${application.examDate}')">
+                    <i class="fas fa-calendar-alt me-2"></i>Request Exam Date Change
+                </button>
+            </div>
+        `;
+    }
+}
+
+// Function to show exam change request modal
+function showExamChangeRequestModal(applicationId, currentExamDate) {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const minDate = tomorrow.toISOString().split('T')[0];
+    
+    Swal.fire({
+        title: '📅 Request Exam Date Change',
+        html: `
+            <div class="exam-change-form">
+                <div class="form-group mb-3">
+                    <label class="form-label">Current Exam Date:</label>
+                    <input type="date" class="form-control" value="${currentExamDate}" disabled>
+                </div>
+                
+                <div class="form-group mb-3">
+                    <label class="form-label">New Requested Exam Date: <span class="text-danger">*</span></label>
+                    <input type="date" id="newExamDate" class="form-control" min="${minDate}" required>
+                </div>
+                
+                <div class="form-group mb-3">
+                    <label class="form-label">Reason for Change: <span class="text-danger">*</span></label>
+                    <textarea id="changeReason" class="form-control" rows="4" 
+                              placeholder="Please provide a reason for requesting the exam date change..." 
+                              maxlength="500" required></textarea>
+                    <small class="form-text text-muted">Maximum 500 characters</small>
+                </div>
+            </div>
+            
+            <style>
+                .exam-change-form { text-align: left; }
+                .form-label { 
+                    font-weight: 600; 
+                    color: #495057; 
+                    margin-bottom: 8px; 
+                    display: block; 
+                }
+                .form-control {
+                    border-radius: 8px;
+                    border: 2px solid #e9ecef;
+                    padding: 12px;
+                    font-size: 0.95rem;
+                }
+                .form-control:focus {
+                    border-color: #007bff;
+                    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+                }
+                .text-danger { color: #dc3545 !important; }
+                .form-text { font-size: 0.875rem; }
+            </style>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '<i class="fas fa-paper-plane me-2"></i>Submit Request',
+        cancelButtonText: '<i class="fas fa-times me-2"></i>Cancel',
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d',
+        width: '600px',
+        preConfirm: () => {
+            const newExamDate = document.getElementById('newExamDate').value;
+            const changeReason = document.getElementById('changeReason').value.trim();
+            
+            if (!newExamDate) {
+                Swal.showValidationMessage('Please select a new exam date');
+                return false;
+            }
+            
+            if (!changeReason) {
+                Swal.showValidationMessage('Please provide a reason for the change');
+                return false;
+            }
+            
+            if (changeReason.length > 500) {
+                Swal.showValidationMessage('Reason must be less than 500 characters');
+                return false;
+            }
+            
+            // Check if new date is in the future
+            const selectedDate = new Date(newExamDate);
+            const today = new Date();
+            if (selectedDate <= today) {
+                Swal.showValidationMessage('New exam date must be in the future');
+                return false;
+            }
+            
+            return {
+                applicationId: applicationId,
+                currentExamDate: currentExamDate,
+                requestedExamDate: newExamDate,
+                reason: changeReason
+            };
+        }
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            await submitExamChangeRequest(result.value);
+        }
+    });
+}
+
+// Function to submit exam change request
+async function submitExamChangeRequest(requestData) {
+    try {
+        // Show loading
+        Swal.fire({
+            title: 'Submitting Request...',
+            html: 'Please wait while we process your exam date change request.',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+        
+        // Submit the request
+        const response = await ExamChangeRequestAPI.createRequest(requestData);
+        
+        // Show success message
+        Swal.fire({
+            icon: 'success',
+            title: '✅ Request Submitted Successfully!',
+            html: `
+                <div class="success-message">
+                    <p><strong>Your exam date change request has been submitted.</strong></p>
+                    <div class="request-details">
+                        <p><strong>Request ID:</strong> #${response.id}</p>
+                        <p><strong>Current Date:</strong> ${formatDate(response.currentExamDate)}</p>
+                        <p><strong>Requested Date:</strong> ${formatDate(response.requestedExamDate)}</p>
+                        <p><strong>Status:</strong> <span class="badge bg-warning">PENDING</span></p>
+                    </div>
+                    <p class="mt-3 text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        You will be notified once your request is reviewed by an administrator.
+                    </p>
+                </div>
+                
+                <style>
+                    .success-message { text-align: left; }
+                    .request-details { 
+                        background: #f8f9fa; 
+                        padding: 15px; 
+                        border-radius: 8px; 
+                        margin: 15px 0; 
+                    }
+                    .request-details p { margin-bottom: 8px; }
+                    .badge { 
+                        padding: 6px 12px; 
+                        border-radius: 15px; 
+                        font-size: 0.8rem; 
+                    }
+                </style>
+            `,
+            confirmButtonText: '<i class="fas fa-check me-2"></i>OK',
+            confirmButtonColor: '#28a745',
+            width: '500px'
+        });
+        
+    } catch (error) {
+        console.error('Error submitting exam change request:', error);
+        
+        Swal.fire({
+            icon: 'error',
+            title: '❌ Request Failed',
+            html: `
+                <div class="error-message">
+                    <p>Sorry, we couldn't submit your exam date change request.</p>
+                    <div class="error-details">
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                    <p class="mt-3 text-muted">
+                        Please try again or contact support if the problem persists.
+                    </p>
+                </div>
+                
+                <style>
+                    .error-message { text-align: left; }
+                    .error-details { 
+                        background: #f8d7da; 
+                        color: #721c24; 
+                        padding: 10px; 
+                        border-radius: 5px; 
+                        margin: 10px 0; 
+                        font-size: 0.9rem;
+                    }
+                </style>
+            `,
+            confirmButtonText: '<i class="fas fa-retry me-2"></i>OK',
+            confirmButtonColor: '#dc3545',
+            width: '500px'
+        });
+    }
+}
+
+// Modified function to update your existing getStatusSpecificContent function
+// Add this to your existing getStatusSpecificContent function or create a new one
+async function getExamChangeSpecificContent(application, additionalInfo) {
+    const examChangeButtonHTML = await getExamChangeButtonHTML(application);
+    
+    if (examChangeButtonHTML) {
+        return `
+            <div class="status-specific-section">
+                <h6><i class="fas fa-calendar-check me-2"></i>Exam Schedule</h6>
+                ${examChangeButtonHTML}
+            </div>
+        `;
+    }
+    
+    return '';
+}
+
+// Integration function to add exam change button to your existing modal
+// You can call this function in your existing showDetailedApplicationModal function
+async function addExamChangeButtonToModal(application) {
+    const examChangeContent = await getExamChangeSpecificContent(application);
+    return examChangeContent;
+}
+
+// Utility function to format dates (if not already exists)
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+}
+
+function formatDateTime(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
 
   function getStatusSpecificContent(application, additionalInfo) {
     const { declineReason, examDetails } = additionalInfo;
@@ -3231,6 +3529,8 @@ Support: support@licensepro.lk
     `
     )
     .appendTo("head");
+
+    
 
   // =================== INITIALIZATION ===================
 

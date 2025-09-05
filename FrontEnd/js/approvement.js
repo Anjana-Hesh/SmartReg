@@ -255,6 +255,186 @@ function handleLoadError(error) {
     $('#emptyState').hide();
 }
 
+ function updateDashboardWithApplications(applications) {
+    const licenseCard = $(".license-info-card .card-content");
+
+    if (applications.length === 0) {
+      licenseCard.html(`
+                <p>Complete your license registration to get started with your driving journey.</p>
+                <button class="btn-card" onclick="showLicenseForm()">
+                    <i class="fas fa-edit me-1"></i> Register License
+                </button>
+            `);
+      updateLicenseStatus("none");
+      return;
+    }
+
+    const latestApplication = applications[0];
+    const statusBadgeClass = getStatusBadgeClass(latestApplication.status);
+    const vehicleClasses = Array.isArray(latestApplication.vehicleClasses)
+      ? latestApplication.vehicleClasses.join(", ")
+      : "N/A";
+
+    // Check if there are previous applications
+    const hasPreviousApplications = applications.length > 1;
+
+    licenseCard.html(`
+            <div class="application-summary">
+                <div class="summary-header">
+                    <h6>Latest Application: #${latestApplication.id}</h6>
+                    <span class="badge bg-${statusBadgeClass}">${latestApplication.status}</span>
+                </div>
+                <div class="summary-details" id="summary">
+                    <p><strong>License Type:</strong> ${latestApplication.licenseType.toUpperCase()}</p>
+                    <p><strong>Vehicle Classes:</strong> ${vehicleClasses}</p>
+                    <p><strong>Submitted:</strong> ${formatDate(
+                      latestApplication.submittedDate
+                    )}</p>
+                </div>
+                
+                <div class="summary-actions">
+                    <button class="btn-card me-2" onclick="viewApplicationDetails('${
+                      latestApplication.id
+                    }')">
+                        <i class="fas fa-eye me-1"></i> View Details
+                    </button>
+                    ${
+                      hasPreviousApplications
+                        ? `
+                        <button class="btn-card btn-info" onclick="showApplicationHistory()">
+                            <i class="fas fa-history me-1"></i> View History
+                        </button>
+                    `
+                        : ""
+                    }
+                    ${
+                      latestApplication.status === "REJECTED"
+                        ? `
+                        <button class="btn-card btn-warning" onclick="showLicenseForm()">
+                            <i class="fas fa-redo me-1"></i> Reapply
+                        </button>
+                    `
+                        : latestApplication.status === "APPROVED"
+                        ? `
+                        <button class="btn-card btn-success" onclick="showPaymentForm()">
+                            <i class="fas fa-credit-card me-1"></i> Make Payment
+                        </button>
+                    `
+                        : applications.filter((app) => app.status === "PENDING")
+                            .length === 0
+                        ? `
+                        <button class="btn-card btn-secondary" onclick="showLicenseForm()">
+                            <i class="fas fa-plus me-1"></i> New Application
+                        </button>
+                    `
+                        : ""
+                    }
+                </div>
+            </div>
+        `);
+
+    updateLicenseStatus(latestApplication.status, latestApplication);
+  }
+
+  // =================== APPLICATION HISTORY MODAL ===================
+
+  window.showApplicationHistory = function () {
+    if (currentApplications.length <= 1) {
+      showAlert("Info", "You don't have any previous applications.", "info");
+      return;
+    }
+
+    // Sort applications by date (newest first)
+    const sortedApplications = [...currentApplications].sort((a, b) => 
+      new Date(b.submittedDate) - new Date(a.submittedDate)
+    );
+
+    const historyItems = sortedApplications.map((app, index) => {
+      const statusBadgeClass = getStatusBadgeClass(app.status);
+      const vehicleClasses = Array.isArray(app.vehicleClasses)
+        ? app.vehicleClasses.join(", ")
+        : "N/A";
+      
+      const isCurrent = index === 0;
+      
+      return `
+        <div class="history-application-card ${isCurrent ? 'current-application' : ''}" data-id="${app.id}">
+          <div class="history-app-header">
+            <div class="history-app-title">
+              <h6>Application #${app.id}</h6>
+              ${isCurrent ? '<span class="badge bg-info">CURRENT</span>' : ''}
+            </div>
+            <span class="badge bg-${statusBadgeClass}">${app.status}</span>
+          </div>
+          <div class="history-app-details">
+            <div class="detail-row">
+              <i class="fas fa-certificate me-2"></i>
+              <span>${app.licenseType.toUpperCase()} License</span>
+            </div>
+            <div class="detail-row">
+              <i class="fas fa-car me-2"></i>
+              <span>Classes: ${vehicleClasses}</span>
+            </div>
+            <div class="detail-row">
+              <i class="fas fa-calendar me-2"></i>
+              <span>Submitted: ${formatDate(app.submittedDate)}</span>
+            </div>
+          </div>
+          <div class="history-app-actions">
+            <button class="btn btn-sm btn-outline-primary" onclick="viewApplicationDetails('${app.id}')">
+              <i class="fas fa-eye me-1"></i> View Details
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    Swal.fire({
+      title: '<i class="fas fa-history me-2"></i>Application History',
+      html: `
+        <div class="application-history-modal">
+          <div class="history-intro">
+            <p>You have ${currentApplications.length} application(s) in total. Here's your application history:</p>
+          </div>
+          <div class="history-applications-list">
+            ${historyItems}
+          </div>
+        </div>
+        
+        <style>
+          .application-history-modal { text-align: left; max-height: 70vh; overflow-y: auto; }
+          .history-intro { margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; }
+          .history-applications-list { }
+          .history-application-card {
+            border: 1px solid #e9ecef; border-radius: 10px; padding: 20px; margin-bottom: 15px;
+            transition: all 0.3s ease;
+          }
+          .history-application-card:hover {
+            border-color: #007bff; box-shadow: 0 4px 12px rgba(0,123,255,0.15);
+          }
+          .history-application-card.current-application {
+            border-left: 4px solid #007bff; background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+          }
+          .history-app-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
+          }
+          .history-app-title {
+            display: flex; align-items: center; gap: 10px;
+          }
+          .history-app-details { margin-bottom: 15px; }
+          .detail-row {
+            display: flex; align-items: center; margin-bottom: 8px; color: #6c757d; font-size: 0.9rem;
+          }
+          .history-app-actions { text-align: right; }
+        </style>
+      `,
+      width: '800px',
+      confirmButtonText: '<i class="fas fa-times me-2"></i>Close',
+      confirmButtonColor: '#6c757d',
+    });
+  };
+
+
 function renderApplications() {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
@@ -542,6 +722,7 @@ function handleDeclineClick(e) {
     const declineModal = new bootstrap.Modal(document.getElementById('declineModal'));
     declineModal.show();
 }
+
 // Updated handleApproveConfirm function in your frontend
 async function handleApproveConfirm() {
     const examDate = $('#examDate').val();
