@@ -572,23 +572,23 @@ $(document).ready(function () {
             }
 
             // Exam result notification if available
-            if (examDetails.examResult) {
+            if (examDetails.writtenExamResult) {
               const resultIcon =
-                examDetails.examResult === "PASS"
+                examDetails.writtenExamResult === "PASS"
                   ? "fas fa-trophy"
-                  : examDetails.examResult === "FAIL"
+                  : examDetails.writtenExamResult === "FAIL"
                   ? "fas fa-times-circle"
                   : "fas fa-clock";
               const resultColor =
-                examDetails.examResult === "PASS"
+                examDetails.writtenExamResult === "PASS"
                   ? "#28a745"
-                  : examDetails.examResult === "FAIL"
+                  : examDetails.writtenExamResult === "FAIL"
                   ? "#dc3545"
                   : "#ffc107";
               const resultMessage =
-                examDetails.examResult === "PASS"
+                examDetails.writtenExamResult === "PASS"
                   ? `🏆 Congratulations! You PASSED your written exam!`
-                  : examDetails.examResult === "FAIL"
+                  : examDetails.writtenExamResult === "FAIL"
                   ? `😔 You didn't pass this time, but don't give up!`
                   : `⏳ Your exam result is being processed`;
 
@@ -597,9 +597,9 @@ $(document).ready(function () {
                 message: resultMessage,
                 details: examDetails.note
                   ? `Examiner's note: ${examDetails.note}`
-                  : examDetails.examResult === "PASS"
+                  : examDetails.writtenExamResult === "PASS"
                   ? "Great job! Next step: Practical driving test scheduling."
-                  : examDetails.examResult === "FAIL"
+                  : examDetails.writtenExamResult === "FAIL"
                   ? "You can retake the exam. Keep studying and try again!"
                   : "Results will be available soon.",
                 type: "EXAM_RESULT",
@@ -973,22 +973,22 @@ $(document).ready(function () {
                         </div>
                         
                         ${
-                          examDetails.examResult
+                          examDetails.writtenExamResult
                             ? `
                             <div class="exam-info-card full-width result-card">
-                                <div class="exam-info-icon result-icon ${examDetails.examResult.toLowerCase()}">
+                                <div class="exam-info-icon result-icon ${examDetails.writtenExamResult.toLowerCase()}">
                                     <i class="fas fa-${
-                                      examDetails.examResult === "PASS"
+                                      examDetails.writtenExamResult === "PASS"
                                         ? "trophy"
-                                        : examDetails.examResult === "FAIL"
+                                        : examDetails.writtenExamResult === "FAIL"
                                         ? "times"
                                         : "clock"
                                     }"></i>
                                 </div>
                                 <div class="exam-info-content">
                                     <label>Result</label>
-                                    <strong class="result-text ${examDetails.examResult.toLowerCase()}">${
-                                examDetails.examResult
+                                    <strong class="result-text ${examDetails.writtenExamResult.toLowerCase()}">${
+                                examDetails.writtenExamResult
                               }</strong>
                                     ${
                                       examDetails.note
@@ -1046,14 +1046,14 @@ $(document).ready(function () {
                     }
                     
                     ${
-                      examDetails.examResult === "PASS"
+                      examDetails.writtenExamResult === "PASS"
                         ? `
                         <div class="success-message">
                             <i class="fas fa-trophy text-warning me-2"></i>
                             <span>Congratulations on passing your written exam! Next step: Practical driving test.</span>
                         </div>
                     `
-                        : examDetails.examResult === "FAIL"
+                        : examDetails.writtenExamResult === "FAIL" || "ABSANT"
                         ? `
                         <div class="retry-message">
                             <i class="fas fa-redo text-info me-2"></i>
