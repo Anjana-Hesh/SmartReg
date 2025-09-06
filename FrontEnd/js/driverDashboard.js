@@ -207,6 +207,7 @@ $(document).ready(function () {
           driverName: examDetails.driverName || null,
           licenseType: examDetails.licenseType || null,
           examLanguage: examDetails.examLanguage || null,
+          trialDate:examDetails.trialDate || null,
           isScheduled: isRealExam,
         };
 
@@ -232,6 +233,7 @@ $(document).ready(function () {
           driverName: null,
           licenseType: null,
           examLanguage: null,
+          trialDate:null,
           isScheduled: false,
           error: true,
         };
@@ -268,6 +270,7 @@ $(document).ready(function () {
             driverName: null,
             licenseType: null,
             examLanguage: null,
+            trialDate:null,
             isScheduled: false,
           };
         }
@@ -312,6 +315,8 @@ $(document).ready(function () {
   function loadSmartNotifications() {
     const notifications = [];
 
+    console.log("Notification load function wada ..!");
+    
     if (currentApplications.length === 0) {
       // Welcome notifications for new users
       notifications.push({
@@ -372,7 +377,7 @@ $(document).ready(function () {
     const daysSinceSubmission = Math.floor(
       (new Date() - submittedDate) / (1000 * 60 * 60 * 24)
     );
-    console.log("appId: " + appId);
+    console.log("appId of processApplicationNotifications: " + appId);
 
     switch (status) {
       case "PENDING":
@@ -2979,6 +2984,13 @@ function formatDateTime(dateString) {
                                   "No specific reason provided. Please contact support for details."
                                 }</p>
                             </div>
+                            <div class="reason-display">
+                                <h7><strong>Note For You:</strong></h7>
+                                <p class="reason-text">${
+                                  declineReason.declineNotes ||
+                                  "No specific Note provided. Please contact support for details."
+                                }</p>
+                            </div>
                             <div class="rejection-actions">
                                 <button class="btn btn-success me-2" onclick="Swal.close(); showLicenseForm();">
                                     <i class="fas fa-plus me-2"></i>Submit New Application
@@ -3039,6 +3051,18 @@ function formatDateTime(dateString) {
                                         }</strong>
                                     </div>
                                 </div>
+                                <div class="exam-detail-card full-width">
+                                    <div class="detail-icon location-icon">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                    </div>
+                                    <div class="detail-content">
+                                        <label>Our Vission For You</label>
+                                        <strong>${
+                                          examDetails.note ||
+                                          "Will be announced soon"
+                                        }</strong>
+                                    </div>
+                                </div>
                                 ${
                                   examDetails.writtenExamResult
                                     ? `
@@ -3047,10 +3071,10 @@ function formatDateTime(dateString) {
                                             <i class="fas fa-${
                                               examDetails.writtenExamResult ===
                                               "PASS"
-                                                ? "trophy"
+                                                ? "trophy" + examDetails.trialDate
                                                 : examDetails.writtenExamResult ===
                                                   "FAIL"
-                                                ? "times"
+                                                ? "times" + examDetails.newExamDate 
                                                 : "clock"
                                             }"></i>
                                         </div>
