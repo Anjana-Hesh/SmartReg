@@ -112,15 +112,20 @@ function updateUserDisplay(user) {
 }
 
 function initializeDashboard() {
-    // Add smooth scrolling
+    // FIXED: Add smooth scrolling with proper selector validation
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                target.scrollIntoView({
-                    behavior: 'smooth'
-                });
+            const href = this.getAttribute('href');
+            
+            // Only handle if it's a valid selector (not just "#")
+            if (href !== '#' && document.querySelector(href)) {
+                e.preventDefault();
+                const target = document.querySelector(href);
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
             }
         });
     });

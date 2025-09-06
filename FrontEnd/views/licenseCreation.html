@@ -8,102 +8,1378 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="../css/licenseCreation.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f4c75 100%);
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            color: #fff;
+        }
 
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            margin: 2rem 0;
+        }
+
+        .form-label {
+            color: #fff;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .form-control, .form-select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: #fff;
+            padding: 0.75rem 1rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #4ade80;
+            box-shadow: 0 0 0 0.2rem rgba(74, 222, 128, 0.25);
+            color: #fff;
+        }
+
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .form-select option {
+            background: #1a1a2e;
+            color: #fff;
+        }
+
+        .btn {
+            border-radius: 10px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #4ade80, #22c55e);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(45deg, #22c55e, #16a34a);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(74, 222, 128, 0.4);
+        }
+
+        .btn-submit {
+            background: linear-gradient(45deg, #4ade80, #22c55e);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            width: 100%;
+            font-size: 1.1rem;
+        }
+
+        .btn-submit:hover {
+            background: linear-gradient(45deg, #22c55e, #16a34a);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(74, 222, 128, 0.4);
+        }
+
+        .btn-warning {
+            background: linear-gradient(45deg, #f59e0b, #d97706);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: linear-gradient(45deg, #d97706, #b45309);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
+        }
+
+        .help-box {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .help-box h6 {
+            color: #60a5fa;
+            margin-bottom: 0.5rem;
+        }
+
+        .help-box p {
+            color: rgba(255, 255, 255, 0.8);
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        .vehicle-classes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 0.5rem;
+            max-height: 250px;
+            overflow-y: auto;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .vehicle-class-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+        }
+
+        .vehicle-class-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .vehicle-class-item input[type="checkbox"] {
+            margin-right: 0.75rem;
+            transform: scale(1.2);
+        }
+
+        .vehicle-class-item label {
+            margin: 0;
+            font-size: 0.9rem;
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .selected-items {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+            min-height: 40px;
+        }
+
+        .selected-item {
+            display: inline-block;
+            background: rgba(74, 222, 128, 0.2);
+            color: #4ade80;
+            padding: 0.25rem 0.75rem;
+            margin: 0.25rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            border: 1px solid rgba(74, 222, 128, 0.3);
+        }
+
+        .selected-item .remove {
+            margin-left: 0.5rem;
+            cursor: pointer;
+            color: #f87171;
+        }
+
+        .photo-preview {
+            max-width: 150px;
+            max-height: 150px;
+            border-radius: 10px;
+            margin-top: 1rem;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            display: none;
+        }
+
+        .file-preview {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-top: 0.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .file-preview i {
+            color: #ef4444;
+            font-size: 1.2rem;
+        }
+
+        .page-header {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .page-header h2 {
+            margin: 0;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .page-header p {
+            margin: 0.5rem 0 0 0;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .scrollable::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .scrollable::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .scrollable::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .glass-card {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            display: none;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #4ade80;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .readonly-field {
+            background: rgba(255, 255, 255, 0.05) !important;
+            cursor: not-allowed;
+        }
+    </style>
 </head>
 <body>
 
-<div class="container mt-5">
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+</div>
+
+<div class="container mt-4">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h2><i class="fas fa-id-card me-3"></i>License Registration</h2>
+        <p>Complete the form below to register for a new driving license. All fields marked with * are required.</p>
+    </div>
+
     <div class="glass-card">
-        <h3 class="mb-4" style="color: #fff;">🚘 License Registration</h3>
+        <!-- Help Box -->
+        <div class="help-box">
+            <h6><i class="fas fa-info-circle me-2"></i>License Registration Guide</h6>
+            <p>Select your license type first, then choose the vehicle classes you want to be certified for. You can select multiple vehicle classes for comprehensive licensing.</p>
+        </div>
 
-        <form id="searchForm" class="row g-3 mb-4">
-            <div class="col-md-6">
-                <label for="nicInput" class="form-label">Enter NIC</label>
-                <input type="text" class="form-control" id="nicInput" placeholder="199812345678" required>
-            </div>
-            <div class="col-md-6 align-self-end">
-                <button type="submit" class="btn btn-primary w-100">Search</button>
-            </div>
-        </form>
+        <!-- Search Form for existing driver -->
+        <div class="glass-card mb-4" style="background: rgba(255, 255, 255, 0.05);">
+            <h5 class="mb-3"><i class="fas fa-search me-2"></i>Search Existing Driver</h5>
+            <form id="searchForm" class="row g-3">
+                <div class="col-md-8">
+                    <label for="nicInput" class="form-label">Enter NIC Number</label>
+                    <input type="text" class="form-control" id="nicInput" placeholder="199812345678 or 991234567V" maxlength="12">
+                </div>
+                <div class="col-md-4 align-self-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-2"></i>Search
+                    </button>
+                </div>
+            </form>
+        </div>
 
-        <form id="licenseForm" class="row g-3">
-            <div class="col-md-6">
-                <label for="name" class="form-label">Full Name</label>
-                <input type="text" class="form-control" id="name" placeholder="Enter full name">
-            </div>
-            <div class="col-md-6">
-                <label for="type" class="form-label">License Type</label>
-                <select class="form-select" id="type">
-                    <option value="">Select Type</option>
-                    <option value="Full License">Full License</option>
-                    <option value="Learner's License">Learner's License</option>
-                </select>
-            </div>
-            <div class="col-md-6">
-                <label for="vehicleClass" class="form-label">Vehicle Class</label>
-                <input type="text" class="form-control" id="vehicleClass" placeholder="A / B / C / D">
-            </div>
-
-            <div class="col-md-6">
-                <label for="photoUpload" class="form-label">Passport Size Photo:</label>
-                <input type="file" class="form-control" id="photoUpload" accept="image/*">
-                <img id="photoPreview" src="#" alt="Preview" style="display:none;">
-            </div>
-
-            <div class="col-md-6">
-                <label for="medicalUpload" class="form-label">Medical Certificate (PDF):</label>
-                <input type="file" class="form-control" id="medicalUpload" accept="application/pdf">
-                <div class="file-preview" id="medicalPreview" style="display:none;">
-                    <i class="fas fa-file-pdf fa-2x"></i>
-                    <span id="pdfName"></span>
+        <!-- Main License Form -->
+        <form id="licenseForm">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label" for="licenseType">
+                            <i class="fas fa-certificate me-2"></i>License Type *
+                        </label>
+                        <select class="form-select" id="licenseType" required>
+                            <option value="">Select License Type</option>
+                            <option value="learner">Learner's License</option>
+                            <option value="restricted">Restricted License</option>
+                            <option value="full">Full License</option>
+                            <option value="heavy">Heavy Vehicle License</option>
+                            <option value="commercial">Commercial License</option>
+                            <option value="international">International Driving Permit</option>
+                            <option value="motorcycle">Motorcycle License</option>
+                            <option value="special">Special Vehicle License</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label" for="examLanguage">
+                            <i class="fas fa-language me-2"></i>Exam Language *
+                        </label>
+                        <select class="form-select" id="examLanguage" required>
+                            <option value="">Select Language</option>
+                            <option value="sinhala">Sinhala (සිංහල)</option>
+                            <option value="english">English</option>
+                            <option value="tamil">Tamil (தமிழ்)</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
-            <div class="col-md-6">
-                <label for="examMarks" class="form-label">Exam Marks</label>
-                <input type="text" class="form-control" id="examMarks" placeholder="A / A1 / B / C / D">
+            <div class="mb-3">
+                <label class="form-label">
+                    <i class="fas fa-car me-2"></i>Vehicle Classes *
+                </label>
+                <div class="vehicle-classes-grid scrollable" id="vehicleClassesGrid">
+                    <p class="text-muted">Please select a license type first</p>
+                </div>
+                <div class="selected-items" id="selectedVehicleClasses">
+                    <span style="color: #6c757d; font-size: 0.9rem;">No vehicle classes selected</span>
+                </div>
             </div>
 
-            <div class="col-md-6" id="trialDateGroup" style="display: none;">
-                <label for="trialDate" class="form-label">Trial Date</label>
-                <input type="date" class="form-control" id="trialDate">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label" for="fullName">
+                            <i class="fas fa-user me-2"></i>Full Name *
+                        </label>
+                        <input type="text" class="form-control" id="fullName" placeholder="Enter full name as per NIC" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label" for="nicNumber">
+                            <i class="fas fa-id-card me-2"></i>NIC Number *
+                        </label>
+                        <input type="text" class="form-control" id="nicNumber" placeholder="Enter your NIC number" required maxlength="12">
+                    </div>
+                </div>
             </div>
 
-            <div class="col-md-6" id="retakeDateGroup" style="display: none;">
-                <label for="retakeDate" class="form-label">New Exam Date</label>
-                <input type="date" class="form-control" id="retakeDate">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label" for="dateOfBirth">
+                            <i class="fas fa-birthday-cake me-2"></i>Date of Birth *
+                        </label>
+                        <input type="date" class="form-control" id="dateOfBirth" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label" for="bloodGroup">
+                            <i class="fas fa-tint me-2"></i>Blood Group *
+                        </label>
+                        <select class="form-select" id="bloodGroup" required>
+                            <option value="">Select Blood Group</option>
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                        </select>
+                    </div>
+                </div>
             </div>
 
-            <div class="col-md-6">
-                <label for="examDate" class="form-label">Exam Date</label>
-                <input type="date" class="form-control" id="examDate">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label" for="phoneNumber">
+                            <i class="fas fa-phone me-2"></i>Phone Number *
+                        </label>
+                        <input type="tel" class="form-control" id="phoneNumber" placeholder="+94 XX XXX XXXX" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label" for="email">
+                            <i class="fas fa-envelope me-2"></i>Email Address
+                        </label>
+                        <input type="email" class="form-control" id="email" placeholder="your.email@example.com">
+                    </div>
+                </div>
             </div>
 
-            <div class="col-md-6">
-                <label for="expiry" class="form-label">Expiry Date</label>
-                <input type="date" class="form-control" id="expiry">
+            <div class="mb-3">
+                <label class="form-label" for="address">
+                    <i class="fas fa-map-marker-alt me-2"></i>Address *
+                </label>
+                <textarea class="form-control" id="address" rows="3" placeholder="Enter your complete address" required></textarea>
             </div>
 
-            <div class="col-md-6">
-                <label for="status" class="form-label">Status</label>
-                <select class="form-select" id="status">
-                    <option value="">Select Status</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Active">Active</option>
-                    <option value="Expired">Expired</option>
-                </select>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label" for="issueDate">
+                            <i class="fas fa-calendar-check me-2"></i>Issue Date
+                        </label>
+                        <input type="date" class="form-control" id="issueDate">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label" for="expiryDate">
+                            <i class="fas fa-calendar-times me-2"></i>Expiry Date
+                        </label>
+                        <input type="date" class="form-control readonly-field" id="expiryDate" readonly>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label" for="status">
+                            <i class="fas fa-info-circle me-2"></i>Status
+                        </label>
+                        <select class="form-select" id="status">
+                            <option value="PENDING">Pending</option>
+                            <option value="APPROVED">Approved</option>
+                            <option value="REJECTED">Rejected</option>
+                            <option value="UNDER_REVIEW">Under Review</option>
+                        </select>
+                    </div>
+                </div>
             </div>
 
-            <div class="col-12 mt-3">
-                <button type="submit" class="btn btn-success">Submit License</button>
-                <button type="button" class="btn btn-yellow-glass ms-2">Edit Details</button>
+            <!-- File Upload Section -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label" for="photoUpload">
+                            <i class="fas fa-camera me-2"></i>Passport Size Photo *
+                        </label>
+                        <input type="file" class="form-control" id="photoUpload" accept="image/*" required>
+                        <img id="photoPreview" class="photo-preview" src="#" alt="Photo Preview">
+                        <div class="mt-2 text-muted" style="font-size: 0.85rem;">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Upload a clear passport-size photo (JPG, PNG, max 2MB)
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label" for="medicalUpload">
+                            <i class="fas fa-file-medical me-2"></i>Medical Certificate *
+                        </label>
+                        <input type="file" class="form-control" id="medicalUpload" accept="application/pdf" required>
+                        <div class="file-preview" id="medicalPreview" style="display: none;">
+                            <i class="fas fa-file-pdf me-2"></i>
+                            <span id="pdfName"></span>
+                        </div>
+                        <div class="mt-2 text-muted" style="font-size: 0.85rem;">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Upload medical certificate (PDF only, max 5MB)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="row mt-4">
+                <div class="col-md-8">
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-paper-plane me-2"></i>Submit License Application
+                    </button>
+                </div>
+                <div class="col-md-4">
+                    <button type="button" class="btn btn-warning w-100" id="resetBtn">
+                        <i class="fas fa-undo me-2"></i>Reset Form
+                    </button>
+                </div>
             </div>
         </form>
     </div>
 </div>
 
-<script src="../js/license.js"></script>
+<script>
+// Vehicle classes data
+const vehicleClassesByLicense = {
+    learner: [
+      { value: "A1", text: "Class A1 - Light Motorcycles (up to 125cc)" },
+      { value: "B1", text: "Class B1 - Light Motor Cars (up to 1000cc)" },
+      { value: "G1", text: "Class G1 - Agricultural Tractors" },
+    ],
+    restricted: [
+      { value: "A1", text: "Class A1 - Light Motorcycles (up to 125cc)" },
+      { value: "A", text: "Class A - Heavy Motorcycles (above 125cc)" },
+      { value: "B1", text: "Class B1 - Light Motor Cars (up to 1000cc)" },
+      { value: "B", text: "Class B - Motor Cars (above 1000cc)" },
+      { value: "G1", text: "Class G1 - Agricultural Tractors" },
+    ],
+    full: [
+      { value: "A1", text: "Class A1 - Light Motorcycles (up to 125cc)" },
+      { value: "A", text: "Class A - Heavy Motorcycles (above 125cc)" },
+      { value: "B1", text: "Class B1 - Light Motor Cars (up to 1000cc)" },
+      { value: "B", text: "Class B - Motor Cars (above 1000cc)" },
+      { value: "C1", text: "Class C1 - Light Goods Vehicles (3.5t - 7.5t)" },
+      { value: "C", text: "Class C - Heavy Goods Vehicles (above 7.5t)" },
+      { value: "D1", text: "Class D1 - Minibuses (9-16 seats)" },
+      { value: "D", text: "Class D - Large Buses (above 16 seats)" },
+      { value: "G1", text: "Class G1 - Agricultural Tractors" },
+      { value: "G", text: "Class G - Heavy Agricultural Vehicles" },
+    ],
+    heavy: [
+      { value: "C1", text: "Class C1 - Light Goods Vehicles (3.5t - 7.5t)" },
+      { value: "C", text: "Class C - Heavy Goods Vehicles (above 7.5t)" },
+      { value: "CE", text: "Class CE - Articulated Heavy Goods Vehicles" },
+      { value: "D1", text: "Class D1 - Minibuses (9-16 seats)" },
+      { value: "D", text: "Class D - Large Buses (above 16 seats)" },
+      { value: "DE", text: "Class DE - Articulated Buses" },
+      { value: "G", text: "Class G - Heavy Agricultural Vehicles" },
+      { value: "H", text: "Class H - Construction Vehicles" },
+    ],
+    commercial: [
+      { value: "J1", text: "Class J1 - Three Wheeler (Commercial)" },
+      { value: "J2", text: "Class J2 - Taxi/Hire Cars" },
+      { value: "J3", text: "Class J3 - Tourist Transport Vehicles" },
+      { value: "C", text: "Class C - Heavy Goods Vehicles (above 7.5t)" },
+      { value: "CE", text: "Class CE - Articulated Heavy Goods Vehicles" },
+      { value: "D", text: "Class D - Large Buses (above 16 seats)" },
+      { value: "DE", text: "Class DE - Articulated Buses" },
+    ],
+    international: [
+      { value: "A1", text: "Class A1 - Light Motorcycles (up to 125cc)" },
+      { value: "A", text: "Class A - Heavy Motorcycles (above 125cc)" },
+      { value: "B1", text: "Class B1 - Light Motor Cars (up to 1000cc)" },
+      { value: "B", text: "Class B - Motor Cars (above 1000cc)" },
+      { value: "C1", text: "Class C1 - Light Goods Vehicles (3.5t - 7.5t)" },
+      { value: "C", text: "Class C - Heavy Goods Vehicles (above 7.5t)" },
+      { value: "D1", text: "Class D1 - Minibuses (9-16 seats)" },
+      { value: "D", text: "Class D - Large Buses (above 16 seats)" },
+    ],
+    motorcycle: [
+      { value: "A1", text: "Class A1 - Light Motorcycles (up to 125cc)" },
+      { value: "A2", text: "Class A2 - Medium Motorcycles (125cc - 400cc)" },
+      { value: "A", text: "Class A - Heavy Motorcycles (above 400cc)" },
+      { value: "AM", text: "Class AM - Mopeds (up to 50cc)" },
+      { value: "Q", text: "Class Q - Three Wheelers (Private)" },
+    ],
+    special: [
+      { value: "F", text: "Class F - Emergency Vehicles (Ambulance, Fire)" },
+      { value: "K", text: "Class K - Military Vehicles" },
+      { value: "L", text: "Class L - Special Construction Vehicles" },
+      { value: "M", text: "Class M - Cranes and Mobile Equipment" },
+      { value: "N", text: "Class N - Road Maintenance Vehicles" },
+      { value: "P", text: "Class P - Police Vehicles" },
+      { value: "R", text: "Class R - Racing Vehicles" },
+      { value: "S", text: "Class S - School Transport" },
+    ],
+};
+
+// Global variables
+const API_BASE_URL = "/api"; // Replace with your actual API base URL
+let currentDriverId = null;
+let selectedVehicleClasses = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // License type change handler
+    document.getElementById('licenseType').addEventListener('change', function() {
+        const licenseType = this.value;
+        updateVehicleClasses(licenseType);
+        updateIssueDateAndExpiry();
+    });
+
+    // Update vehicle classes based on license type
+    function updateVehicleClasses(licenseType) {
+        const vehicleClassesGrid = document.getElementById('vehicleClassesGrid');
+        const classes = vehicleClassesByLicense[licenseType] || [];
+        
+        if (classes.length === 0) {
+            vehicleClassesGrid.innerHTML = '<p class="text-muted">Please select a license type first</p>';
+            return;
+        }
+
+        vehicleClassesGrid.innerHTML = classes.map(cls => `
+            <div class="vehicle-class-item">
+                <input type="checkbox" id="class_${cls.value}" value="${cls.value}" onchange="updateSelectedClasses()">
+                <label for="class_${cls.value}">${cls.text}</label>
+            </div>
+        `).join('');
+        
+        // Reset selected classes
+        selectedVehicleClasses = [];
+        updateSelectedClassesDisplay();
+    }
+
+    // Update selected classes display
+    window.updateSelectedClasses = function() {
+        const checkboxes = document.querySelectorAll('#vehicleClassesGrid input[type="checkbox"]:checked');
+        selectedVehicleClasses = Array.from(checkboxes).map(cb => ({
+            value: cb.value,
+            text: cb.nextElementSibling.textContent
+        }));
+        updateSelectedClassesDisplay();
+    };
+
+    function updateSelectedClassesDisplay() {
+        const selectedDiv = document.getElementById('selectedVehicleClasses');
+        
+        if (selectedVehicleClasses.length === 0) {
+            selectedDiv.innerHTML = '<span style="color: #6c757d; font-size: 0.9rem;">No vehicle classes selected</span>';
+        } else {
+            selectedDiv.innerHTML = selectedVehicleClasses.map(cls => 
+                `<span class="selected-item">
+                    ${cls.text}
+                    <span class="remove" onclick="removeSelectedClass('${cls.value}')">×</span>
+                </span>`
+            ).join('');
+        }
+    }
+
+    // Remove selected class
+    window.removeSelectedClass = function(value) {
+        const checkbox = document.getElementById(`class_${value}`);
+        if (checkbox) {
+            checkbox.checked = false;
+            updateSelectedClasses();
+        }
+    };
+
+    // Age validation based on license type
+    function validateAge(dateOfBirth, licenseType) {
+        const today = new Date();
+        const dob = new Date(dateOfBirth);
+        const age = Math.floor((today - dob) / (365.25 * 24 * 60 * 60 * 1000));
+
+        const ageRequirements = {
+            learner: 16,
+            restricted: 17,
+            full: 18,
+            heavy: 21,
+            commercial: 21,
+            international: 18,
+            motorcycle: 16,
+            special: 21
+        };
+
+        const requiredAge = ageRequirements[licenseType] || 18;
+        
+        if (age < requiredAge) {
+            Swal.fire({
+                title: 'Age Requirement Not Met',
+                text: `You must be at least ${requiredAge} years old for a ${licenseType} license. Your current age is ${age}.`,
+                icon: 'warning',
+                background: '#1a1a2e',
+                color: '#fff'
+            });
+            return false;
+        }
+        return true;
+    }
+
+    // Auto-calculate expiry date based on license type
+    function calculateExpiryDate(licenseType, issueDate) {
+        const issue = new Date(issueDate);
+        const expiryYears = {
+            learner: 1,
+            restricted: 2,
+            full: 5,
+            heavy: 5,
+            commercial: 3,
+            international: 1,
+            motorcycle: 5,
+            special: 3
+        };
+
+        const years = expiryYears[licenseType] || 5;
+        const expiry = new Date(issue);
+        expiry.setFullYear(expiry.getFullYear() + years);
+        
+        return expiry.toISOString().split('T')[0];
+    }
+
+    // Update issue date and calculate expiry
+    function updateIssueDateAndExpiry() {
+        const today = new Date().toISOString().split('T')[0];
+        const issueField = document.getElementById('issueDate');
+        const expiryField = document.getElementById('expiryDate');
+        const licenseType = document.getElementById('licenseType').value;
+        
+        if (!issueField.value) {
+            issueField.value = today;
+        }
+        
+        if (licenseType && issueField.value) {
+            expiryField.value = calculateExpiryDate(licenseType, issueField.value);
+        }
+    }
+
+    // Update expiry when issue date changes
+    document.getElementById('issueDate').addEventListener('change', function() {
+        const licenseType = document.getElementById('licenseType').value;
+        const expiryField = document.getElementById('expiryDate');
+        
+        if (licenseType && this.value) {
+            expiryField.value = calculateExpiryDate(licenseType, this.value);
+        }
+    });
+
+    // Photo preview
+    document.getElementById('photoUpload').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        const preview = document.getElementById('photoPreview');
+        
+        if (file) {
+            if (file.size > 2 * 1024 * 1024) {
+                Swal.fire({
+                    title: 'File Too Large',
+                    text: 'Photo size should be less than 2MB',
+                    icon: 'warning',
+                    background: '#1a1a2e',
+                    color: '#fff'
+                });
+                this.value = '';
+                preview.style.display = 'none';
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Medical certificate preview
+    document.getElementById('medicalUpload').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        const preview = document.getElementById('medicalPreview');
+        const pdfName = document.getElementById('pdfName');
+        
+        if (file) {
+            if (file.size > 5 * 1024 * 1024) {
+                Swal.fire({
+                    title: 'File Too Large',
+                    text: 'Medical certificate should be less than 5MB',
+                    icon: 'warning',
+                    background: '#1a1a2e',
+                    color: '#fff'
+                });
+                this.value = '';
+                preview.style.display = 'none';
+                return;
+            }
+            
+            pdfName.textContent = file.name;
+            preview.style.display = 'block';
+        }
+    });
+
+    // NIC-based date of birth auto-fill
+    document.getElementById('nicNumber').addEventListener('blur', function() {
+        const nic = this.value.trim();
+        const dobField = document.getElementById('dateOfBirth');
+        
+        if (nic.length === 10 && nic.endsWith('V')) {
+            // Old NIC format
+            const year = parseInt(nic.substring(0, 2));
+            const days = parseInt(nic.substring(2, 5));
+            
+            const actualYear = year > 50 ? 1900 + year : 2000 + year;
+            const date = new Date(actualYear, 0, 1);
+            date.setDate(days > 500 ? days - 500 : days);
+            
+            dobField.value = date.toISOString().split('T')[0];
+        } else if (nic.length === 12) {
+            // New NIC format
+            const year = parseInt(nic.substring(0, 4));
+            const days = parseInt(nic.substring(4, 7));
+            
+            const date = new Date(year, 0, 1);
+            date.setDate(days > 500 ? days - 500 : days);
+            
+            dobField.value = date.toISOString().split('T')[0];
+        }
+    });
+
+    // Form validation
+    function validateForm() {
+        const requiredFields = [
+            'licenseType', 'examLanguage', 'fullName', 'nicNumber', 
+            'dateOfBirth', 'bloodGroup', 'phoneNumber', 'address'
+        ];
+        
+        for (let fieldId of requiredFields) {
+            const field = document.getElementById(fieldId);
+            if (!field.value.trim()) {
+                field.focus();
+                Swal.fire({
+                    title: 'Missing Information',
+                    text: `Please fill in the ${field.previousElementSibling.textContent.replace('*', '').trim()} field.`,
+                    icon: 'warning',
+                    background: '#1a1a2e',
+                    color: '#fff'
+                });
+                return false;
+            }
+        }
+
+        if (selectedVehicleClasses.length === 0) {
+            Swal.fire({
+                title: 'Missing Information',
+                text: 'Please select at least one vehicle class.',
+                icon: 'warning',
+                background: '#1a1a2e',
+                color: '#fff'
+            });
+            return false;
+        }
+
+        const photoFile = document.getElementById('photoUpload').files[0];
+        const medicalFile = document.getElementById('medicalUpload').files[0];
+
+        if (!photoFile) {
+            Swal.fire({
+                title: 'Missing Information',
+                text: 'Please upload a passport size photo.',
+                icon: 'warning',
+                background: '#1a1a2e',
+                color: '#fff'
+            });
+            return false;
+        }
+
+        if (!medicalFile) {
+            Swal.fire({
+                title: 'Missing Information',
+                text: 'Please upload a medical certificate.',
+                icon: 'warning',
+                background: '#1a1a2e',
+                color: '#fff'
+            });
+            return false;
+        }
+
+        return true;
+    }
+
+    // Enhanced form validation with age check
+    function validateFormWithAge() {
+        if (!validateForm()) return false;
+
+        const dateOfBirth = document.getElementById('dateOfBirth').value;
+        const licenseType = document.getElementById('licenseType').value;
+
+        if (!validateAge(dateOfBirth, licenseType)) {
+            return false;
+        }
+
+        // Email validation if provided
+        const email = document.getElementById('email').value.trim();
+        if (email && !isValidEmail(email)) {
+            Swal.fire({
+                title: 'Invalid Email',
+                text: 'Please enter a valid email address.',
+                icon: 'warning',
+                background: '#1a1a2e',
+                color: '#fff'
+            });
+            document.getElementById('email').focus();
+            return false;
+        }
+
+        return true;
+    }
+
+    // Email validation helper
+    function isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+
+    // NIC validation helper
+    function isValidNIC(nic) {
+        if (!nic) return false;
+        
+        const oldFormat = /^[0-9]{9}[Vv]$/;
+        const newFormat = /^[0-9]{12}$/;
+        
+        return oldFormat.test(nic) || newFormat.test(nic);
+    }
+
+    // Search existing driver function
+    function searchExistingDriver(nic) {
+        showLoading();
+        
+        // Validate NIC format before search
+        if (!isValidNIC(nic)) {
+            hideLoading();
+            Swal.fire({
+                title: 'Invalid NIC Format',
+                text: 'Please enter a valid NIC number (10 digits + V or 12 digits).',
+                icon: 'warning',
+                background: '#1a1a2e',
+                color: '#fff'
+            });
+            return;
+        }
+
+        $.ajax({
+            url: `${API_BASE_URL}/drivers/search/${nic}`,
+            method: 'GET',
+            timeout: 10000,
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .done(function(response) {
+            hideLoading();
+            if (response && response.success && response.data) {
+                const driver = response.data;
+                currentDriverId = driver.id;
+                
+                // Pre-fill form with existing driver data
+                populateDriverData(driver);
+                
+                Swal.fire({
+                    title: 'Driver Found!',
+                    html: `
+                        <div class="text-left">
+                            <p><strong>Name:</strong> ${driver.fullName}</p>
+                            <p><strong>NIC:</strong> ${driver.nicNumber}</p>
+                            <p><strong>Phone:</strong> ${driver.phoneNumber}</p>
+                        </div>
+                        <hr>
+                        <p>Form has been pre-filled with your information.</p>
+                    `,
+                    icon: 'success',
+                    background: '#1a1a2e',
+                    color: '#fff',
+                    confirmButtonColor: '#4ade80'
+                });
+            } else {
+                Swal.fire({
+                    title: 'Driver Not Found',
+                    text: 'No existing driver record found for this NIC. Please fill in all required information to create a new record.',
+                    icon: 'info',
+                    background: '#1a1a2e',
+                    color: '#fff',
+                    confirmButtonColor: '#4ade80'
+                });
+            }
+        })
+        .fail(function(xhr) {
+            hideLoading();
+            let errorMessage = 'Failed to search for driver. Please try again.';
+            
+            if (xhr.status === 404) {
+                errorMessage = 'Driver not found. Please fill in the form to create a new record.';
+            } else if (xhr.status === 400) {
+                errorMessage = xhr.responseJSON?.message || 'Invalid request. Please check the NIC format.';
+            } else if (xhr.status === 500) {
+                errorMessage = 'Server error. Please try again later.';
+            }
+            
+            Swal.fire({
+                title: 'Search Error',
+                text: errorMessage,
+                icon: 'error',
+                background: '#1a1a2e',
+                color: '#fff'
+            });
+        });
+    }
+
+    // Populate form with driver data
+    function populateDriverData(driver) {
+        const fields = {
+            'nicNumber': driver.nicNumber,
+            'fullName': driver.fullName,
+            'dateOfBirth': driver.dateOfBirth,
+            'bloodGroup': driver.bloodGroup,
+            'phoneNumber': driver.phoneNumber,
+            'email': driver.email,
+            'address': driver.address
+        };
+
+        Object.entries(fields).forEach(([fieldId, value]) => {
+            const field = document.getElementById(fieldId);
+            if (field && value) {
+                field.value = value;
+            }
+        });
+    }
+
+    // Gather all form data
+    function gatherFormData() {
+        return {
+            licenseType: document.getElementById('licenseType').value,
+            examLanguage: document.getElementById('examLanguage').value,
+            fullName: document.getElementById('fullName').value.trim(),
+            nicNumber: document.getElementById('nicNumber').value.trim(),
+            dateOfBirth: document.getElementById('dateOfBirth').value,
+            bloodGroup: document.getElementById('bloodGroup').value,
+            phoneNumber: document.getElementById('phoneNumber').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            address: document.getElementById('address').value.trim(),
+            issueDate: document.getElementById('issueDate').value,
+            expiryDate: document.getElementById('expiryDate').value,
+            status: document.getElementById('status').value || 'PENDING'
+        };
+    }
+
+    // Submit license application function
+    function submitLicenseApplication(applicationData, photoFile, medicalFile) {
+        const formData = new FormData();
+
+        const applicationJson = {
+            driverId: currentDriverId,
+            licenseType: applicationData.licenseType,
+            examLanguage: applicationData.examLanguage,
+            vehicleClasses: selectedVehicleClasses.map((vc) => vc.value),
+            nicNumber: applicationData.nicNumber,
+            bloodGroup: applicationData.bloodGroup,
+            dateOfBirth: applicationData.dateOfBirth,
+            phoneNumber: applicationData.phoneNumber,
+            address: applicationData.address,
+            fullName: applicationData.fullName,
+            email: applicationData.email,
+            issueDate: applicationData.issueDate,
+            expiryDate: applicationData.expiryDate,
+            status: applicationData.status
+        };
+
+        formData.append("application", JSON.stringify(applicationJson));
+        formData.append("photo", photoFile);
+        formData.append("medical", medicalFile);
+
+        return $.ajax({
+            url: `${API_BASE_URL}/applications/create-application`,
+            method: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            timeout: 30000
+        });
+    }
+
+    // Show detailed confirmation dialog
+    function showSubmissionConfirmation(applicationData, photoFile, medicalFile) {
+        const selectedClassesList = selectedVehicleClasses.map(c => c.text).join('<br>');
+        
+        Swal.fire({
+            title: 'Confirm License Application',
+            html: `
+                <div style="text-align: left; max-height: 400px; overflow-y: auto;">
+                    <h6 style="color: #4ade80; margin-bottom: 10px;">Application Details:</h6>
+                    <p><strong>License Type:</strong> ${applicationData.licenseType}</p>
+                    <p><strong>Exam Language:</strong> ${applicationData.examLanguage}</p>
+                    <p><strong>Full Name:</strong> ${applicationData.fullName}</p>
+                    <p><strong>NIC:</strong> ${applicationData.nicNumber}</p>
+                    <p><strong>Phone:</strong> ${applicationData.phoneNumber}</p>
+                    <hr>
+                    <h6 style="color: #4ade80; margin-bottom: 10px;">Vehicle Classes:</h6>
+                    <div style="font-size: 0.9em;">${selectedClassesList}</div>
+                    <hr>
+                    <h6 style="color: #4ade80; margin-bottom: 10px;">Files:</h6>
+                    <p>📷 Photo: ${photoFile.name}</p>
+                    <p>📄 Medical: ${medicalFile.name}</p>
+                </div>
+            `,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#4ade80',
+            cancelButtonColor: '#ef4444',
+            confirmButtonText: '<i class="fas fa-paper-plane me-2"></i>Submit Application',
+            cancelButtonText: '<i class="fas fa-times me-2"></i>Cancel',
+            background: '#1a1a2e',
+            color: '#fff',
+            width: '600px'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                processSubmission(applicationData, photoFile, medicalFile);
+            }
+        });
+    }
+
+    // Process the actual submission
+    function processSubmission(applicationData, photoFile, medicalFile) {
+        showLoading();
+        
+        submitLicenseApplication(applicationData, photoFile, medicalFile)
+            .done(function(response) {
+                hideLoading();
+                
+                const applicationId = response.data?.applicationId || 'N/A';
+                
+                Swal.fire({
+                    title: 'Application Submitted Successfully!',
+                    html: `
+                        <div style="text-align: center;">
+                            <i class="fas fa-check-circle" style="font-size: 4rem; color: #4ade80; margin-bottom: 1rem;"></i>
+                            <p>Your license application has been submitted and is being processed.</p>
+                            <hr>
+                            <p><strong>Application ID:</strong> ${applicationId}</p>
+                            <p><strong>Status:</strong> Pending Review</p>
+                            <hr>
+                            <p style="font-size: 0.9em; color: #6c757d;">
+                                You will receive email notifications about your application status. 
+                                Please keep your application ID for future reference.
+                            </p>
+                        </div>
+                    `,
+                    icon: 'success',
+                    background: '#1a1a2e',
+                    color: '#fff',
+                    confirmButtonColor: '#4ade80',
+                    confirmButtonText: 'Continue'
+                }).then(() => {
+                    // Reset form after successful submission
+                    resetFormCompletely();
+                });
+            })
+            .fail(function(xhr) {
+                hideLoading();
+                handleSubmissionError(xhr);
+            });
+    }
+
+    // Handle submission errors
+    function handleSubmissionError(xhr) {
+        let errorTitle = 'Submission Failed';
+        let errorMessage = 'Failed to submit application. Please try again.';
+        
+        if (xhr.responseJSON) {
+            errorMessage = xhr.responseJSON.message || errorMessage;
+            
+            if (xhr.responseJSON.errors) {
+                const errors = Object.values(xhr.responseJSON.errors).flat();
+                errorMessage += '<br><br><strong>Errors:</strong><br>' + errors.join('<br>');
+            }
+        }
+        
+        switch (xhr.status) {
+            case 400:
+                errorTitle = 'Invalid Application Data';
+                break;
+            case 401:
+                errorTitle = 'Authentication Required';
+                errorMessage = 'Please log in and try again.';
+                break;
+            case 413:
+                errorTitle = 'Files Too Large';
+                errorMessage = 'One or more uploaded files exceed the size limit.';
+                break;
+            case 500:
+                errorTitle = 'Server Error';
+                errorMessage = 'Internal server error. Please try again later.';
+                break;
+        }
+        
+        Swal.fire({
+            title: errorTitle,
+            html: errorMessage,
+            icon: 'error',
+            background: '#1a1a2e',
+            color: '#fff',
+            confirmButtonColor: '#ef4444'
+        });
+    }
+
+    // Complete form reset
+    function resetFormCompletely() {
+        document.getElementById('licenseForm').reset();
+        document.getElementById('nicInput').value = '';
+        selectedVehicleClasses = [];
+        currentDriverId = null;
+        updateSelectedClassesDisplay();
+        document.getElementById('photoPreview').style.display = 'none';
+        document.getElementById('medicalPreview').style.display = 'none';
+        document.getElementById('vehicleClassesGrid').innerHTML = '<p class="text-muted">Please select a license type first</p>';
+        
+        // Reset custom validations
+        document.getElementById('nicNumber').setCustomValidity('');
+    }
+
+    // Form submission handler
+    document.getElementById('licenseForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!validateFormWithAge()) {
+            return;
+        }
+
+        const applicationData = gatherFormData();
+        const photoFile = document.getElementById('photoUpload').files[0];
+        const medicalFile = document.getElementById('medicalUpload').files[0];
+
+        // Show detailed confirmation dialog
+        showSubmissionConfirmation(applicationData, photoFile, medicalFile);
+    });
+
+    // Search form handler
+    document.getElementById('searchForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const nic = document.getElementById('nicInput').value.trim();
+        
+        if (!nic) {
+            Swal.fire({
+                title: 'Missing Information',
+                text: 'Please enter a NIC number to search.',
+                icon: 'warning',
+                background: '#1a1a2e',
+                color: '#fff'
+            });
+            return;
+        }
+
+        searchExistingDriver(nic);
+    });
+
+    // Reset form handler
+    document.getElementById('resetBtn').addEventListener('click', function() {
+        Swal.fire({
+            title: 'Reset Form',
+            text: 'Are you sure you want to reset the form? All data will be lost.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, Reset',
+            cancelButtonText: 'Cancel',
+            background: '#1a1a2e',
+            color: '#fff'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                resetFormCompletely();
+                
+                Swal.fire({
+                    title: 'Form Reset',
+                    text: 'The form has been reset successfully.',
+                    icon: 'success',
+                    background: '#1a1a2e',
+                    color: '#fff',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            }
+        });
+    });
+
+    // Phone number formatting
+    document.getElementById('phoneNumber').addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length > 0 && !value.startsWith('94')) {
+            if (value.startsWith('0')) {
+                value = '94' + value.substring(1);
+            } else if (value.length === 9) {
+                value = '94' + value;
+            }
+        }
+        if (value.length > 11) {
+            value = value.substring(0, 11);
+        }
+        e.target.value = value ? '+' + value : '';
+    });
+
+    // NIC validation
+    document.getElementById('nicNumber').addEventListener('input', function(e) {
+        let value = e.target.value.toUpperCase();
+        if (value.length === 10) {
+            // Old format: 9 digits + V
+            const pattern = /^[0-9]{9}[V]$/;
+            if (!pattern.test(value)) {
+                this.setCustomValidity('Invalid NIC format. Use: 991234567V');
+            } else {
+                this.setCustomValidity('');
+            }
+        } else if (value.length === 12) {
+            // New format: 12 digits
+            const pattern = /^[0-9]{12}$/;
+            if (!pattern.test(value)) {
+                this.setCustomValidity('Invalid NIC format. Use: 199912345678');
+            } else {
+                this.setCustomValidity('');
+            }
+        } else {
+            this.setCustomValidity('NIC must be 10 characters (old format) or 12 digits (new format)');
+        }
+    });
+
+    // Loading functions
+    function showLoading() {
+        document.getElementById('loadingOverlay').style.display = 'flex';
+    }
+
+    function hideLoading() {
+        document.getElementById('loadingOverlay').style.display = 'none';
+    }
+
+    // Add keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl + S to save/submit
+        if (e.ctrlKey && e.key === 's') {
+            e.preventDefault();
+            document.getElementById('licenseForm').dispatchEvent(new Event('submit'));
+        }
+        
+        // Ctrl + R to reset (with confirmation)
+        if (e.ctrlKey && e.key === 'r') {
+            e.preventDefault();
+            document.getElementById('resetBtn').click();
+        }
+    });
+
+    // Initialize form with default values
+    function initializeForm() {
+        // Set today's date for issue date
+        const today = new Date().toISOString().split('T')[0];
+        const issueField = document.getElementById('issueDate');
+        if (!issueField.value) {
+            issueField.value = today;
+        }
+
+        // Set default status
+        document.getElementById('status').value = 'PENDING';
+
+        // Initialize vehicle classes
+        updateVehicleClasses('');
+    }
+
+    // Call initialization
+    initializeForm();
+});
+
+</script>
 
 </body>
 </html>
