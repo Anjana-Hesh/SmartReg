@@ -110,6 +110,7 @@
         function initializeApp() {
           loadApplications();
         }
+
         window.changePage = function (page) {
           if (
             page < 1 ||
@@ -137,6 +138,7 @@
         setInterval(() => {
           loadApplications();
         }, 5 * 60 * 1000);
+
         function setupEventListeners() {
           // Search functionality
           $("#searchDriver").on(
@@ -282,6 +284,7 @@
             updateStats();
           });
         }
+
         function updateExamResult(examId, result, note) {
           const params = new URLSearchParams({
             result: result,
@@ -526,6 +529,7 @@
 
           return actions;
         }
+
         function getTrialExam(trialExamId) {
           return $.ajax({
             url: `${API_BASE_URL}/trial-exams/${trialExamId}`,
@@ -538,6 +542,7 @@
             },
           });
         }
+
         function updateTrialResultModal(applicationId, trialExamId) {
           // Store the application and trial exam IDs
           $("#trialApplicationId").val(applicationId);
@@ -628,6 +633,7 @@
               });
           }
         }
+
         function createTrialExamRecordFromApplication(
           applicationId,
           result,
@@ -667,6 +673,7 @@
             });
           });
         }
+
         function updateTrialExam(trialExamId, result, notes) {
           const updateData = {
             trialResult: result,
@@ -686,6 +693,7 @@
             },
           });
         }
+
         // =================== MODAL FUNCTIONS ===================
         function viewApplicationDetails(applicationId) {
           const application = currentApplications.find(
@@ -936,6 +944,7 @@
               }
             });
         }
+
         function updateBasicExamResult(examId, result, note) {
           // Use query parameters instead of request body for the basic endpoint
           let url = `${API_BASE_URL}/written-exams/${examId}/result?result=${encodeURIComponent(
@@ -957,6 +966,7 @@
             },
           });
         }
+
         function updateExamResultWithDates(
           examId,
           result,
@@ -985,6 +995,7 @@
             },
           });
         }
+
         function getWrittenExam(examId) {
           return $.ajax({
             url: `${API_BASE_URL}/written-exams/${examId}`,
@@ -997,6 +1008,7 @@
             },
           });
         }
+
         function handleExamResultError(error) {
           let errorMessage = "Failed to update exam result. Please try again.";
 
@@ -1022,6 +1034,7 @@
             icon: "error",
           });
         }
+
         function updateNextExamDate(examId, nextExamDate) {
           // Try to update using the full exam update endpoint
           return getWrittenExam(examId).then((examData) => {
@@ -1049,6 +1062,7 @@
             });
           });
         }
+
         function createTrialExamRecord(
           writtenExamId,
           trialDate,
@@ -1060,7 +1074,7 @@
             trialDate: trialDate,
             trialTime: "09:00",
             trialLocation: "Colombo DMT",
-            trialResult: result,
+            trialResult: null,
             examinerNotes: notes,
           };
 
@@ -1632,16 +1646,4 @@
           window.scrollTo({ top: 0, behavior: "smooth" });
         };
 
-        window.viewApplicationDetails = viewApplicationDetails;
-        window.editApplication = editApplication;
-        window.updateExamResultModal = updateExamResultModal;
-        window.scheduleExamModal = scheduleExamModal;
-        window.saveExamResult = saveExamResult;
-        window.sortApplications = sortApplications;
-        window.applyFilters = applyFilters;
-
-        // Auto-refresh data every 5 minutes
-        setInterval(() => {
-          loadApplications();
-        }, 5 * 60 * 1000);
       });

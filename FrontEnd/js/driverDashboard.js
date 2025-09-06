@@ -3052,8 +3052,8 @@ function formatDateTime(dateString) {
                                     </div>
                                 </div>
                                 <div class="exam-detail-card full-width">
-                                    <div class="detail-icon location-icon">
-                                        <i class="fas fa-map-marker-alt"></i>
+                                    <div class="detail-icon notebook-icon">
+                                        <i class="fas fa-sticky-note" style="color: #facc15;"></i>
                                     </div>
                                     <div class="detail-content">
                                         <label>Our Vission For You</label>
