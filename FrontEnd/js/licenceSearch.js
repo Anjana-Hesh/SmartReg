@@ -1074,7 +1074,7 @@
             trialDate: trialDate,
             trialTime: "09:00",
             trialLocation: "Colombo DMT",
-            trialResult: null,
+            trialResult: "null",
             examinerNotes: notes,
           };
 

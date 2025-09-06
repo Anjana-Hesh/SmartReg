@@ -593,7 +593,7 @@ $(document).ready(function () {
               const resultMessage =
                 examDetails.writtenExamResult === "PASS"
                   ? `🏆 Congratulations! You PASSED your written exam!`
-                  : examDetails.writtenExamResult === "FAIL"
+                  : examDetails.writtenExamResult === "FAIL" || "ABSANT"
                   ? `😔 You didn't pass this time, but don't give up!`
                   : `⏳ Your exam result is being processed`;
 
@@ -913,12 +913,24 @@ $(document).ready(function () {
     });
   }
 
-  function showExamDetails(examDetails) {
+ function showExamDetails(examDetails) {
     const examDate = new Date(examDetails.examDate);
     const isUpcoming = examDate > new Date();
     const daysUntilExam = Math.ceil(
       (examDate - new Date()) / (1000 * 60 * 60 * 24)
     );
+
+    // Check if there are trial exams
+    const hasTrialExams = examDetails.trialExams && examDetails.trialExams.length > 0;
+    
+    // Get the latest trial exam if available
+    const latestTrialExam = hasTrialExams ? 
+        examDetails.trialExams.reduce((latest, current) => {
+            return new Date(current.trialDate) > new Date(latest.trialDate) ? current : latest;
+        }, examDetails.trialExams[0]) : null;
+
+    // Check if the latest trial exam is a pass
+    const hasPassedTrial = latestTrialExam && latestTrialExam.trialResult === "PASS";
 
     Swal.fire({
       title: "📝 Written Exam Details",
@@ -1007,6 +1019,64 @@ $(document).ready(function () {
                         }
                     </div>
                     
+                    <!-- Trial Exam Information -->
+                    ${
+                      hasTrialExams
+                        ? `
+                        <div class="trial-exam-section">
+                            <h6><i class="fas fa-car me-2"></i>Trial Exam Details</h6>
+                            <div class="trial-exam-info">
+                                <div class="trial-exam-card ${hasPassedTrial ? 'passed' : 'failed'}">
+                                    <div class="trial-exam-header">
+                                        <span class="trial-date">${formatDate(latestTrialExam.trialDate)}</span>
+                                        <span class="trial-result ${latestTrialExam.trialResult.toLowerCase()}">${latestTrialExam.trialResult}</span>
+                                    </div>
+                                    <div class="trial-exam-details">
+                                        <div class="trial-time">
+                                            <i class="fas fa-clock me-1"></i>
+                                            ${latestTrialExam.trialTime || 'Not specified'}
+                                        </div>
+                                        <div class="trial-location">
+                                            <i class="fas fa-map-marker-alt me-1"></i>
+                                            ${latestTrialExam.trialLocation || 'Location not specified'}
+                                        </div>
+                                        ${
+                                          latestTrialExam.examinerNotes
+                                            ? `<div class="trial-notes">
+                                                <i class="fas fa-sticky-note me-1"></i>
+                                                ${latestTrialExam.examinerNotes}
+                                            </div>`
+                                            : ''
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            ${
+                              !hasPassedTrial
+                                ? `
+                                <div class="retry-message mt-3">
+                                    <i class="fas fa-redo text-info me-2"></i>
+                                    <span>You can apply for another trial exam. Contact the administration for more details.</span>
+                                </div>
+                            `
+                                : ''
+                            }
+                        </div>
+                    `
+                        : examDetails.writtenExamResult === "PASS"
+                        ? `
+                        <div class="trial-application-section">
+                            <h6><i class="fas fa-car me-2"></i>Trial Exam</h6>
+                            <p>You've passed the written exam! You can now apply for your trial exam.</p>
+                            <button class="btn btn-primary btn-sm apply-trial-btn" onclick="applyForTrialExam(${examDetails.id})">
+                                <i class="fas fa-paper-plane me-1"></i> Apply for Trial Exam
+                            </button>
+                        </div>
+                    `
+                        : ''
+                    }
+                    
                     ${
                       isUpcoming
                         ? `
@@ -1051,14 +1121,14 @@ $(document).ready(function () {
                     }
                     
                     ${
-                      examDetails.writtenExamResult === "PASS"
+                      examDetails.writtenExamResult === "PASS" && !hasTrialExams
                         ? `
                         <div class="success-message">
                             <i class="fas fa-trophy text-warning me-2"></i>
                             <span>Congratulations on passing your written exam! Next step: Practical driving test.</span>
                         </div>
                     `
-                        : examDetails.writtenExamResult === "FAIL" || "ABSANT"
+                        : examDetails.writtenExamResult === "FAIL" || examDetails.writtenExamResult === "ABSANT"
                         ? `
                         <div class="retry-message">
                             <i class="fas fa-redo text-info me-2"></i>
@@ -1113,6 +1183,42 @@ $(document).ready(function () {
                     .result-text.fail { color: #dc3545; }
                     .result-text.pending { color: #856404; }
                     .result-note { margin: 8px 0 0 0; font-size: 0.9rem; color: #6c757d; }
+                    
+                    /* Trial Exam Styles */
+                    .trial-exam-section {
+                        background: #f8f9fa; padding: 20px; border-radius: 10px; 
+                        margin-bottom: 15px; border-left: 4px solid #17a2b8;
+                    }
+                    .trial-exam-section h6 { color: #17a2b8; margin-bottom: 15px; }
+                    .trial-exam-card {
+                        background: white; padding: 15px; border-radius: 8px;
+                        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                    }
+                    .trial-exam-card.passed { border-left: 4px solid #28a745; }
+                    .trial-exam-card.failed { border-left: 4px solid #dc3545; }
+                    .trial-exam-header {
+                        display: flex; justify-content: space-between;
+                        align-items: center; margin-bottom: 10px;
+                    }
+                    .trial-date { font-weight: 600; color: #495057; }
+                    .trial-result {
+                        padding: 4px 10px; border-radius: 20px; font-size: 0.8rem;
+                        font-weight: 600;
+                    }
+                    .trial-result.pass { background: #d4edda; color: #155724; }
+                    .trial-result.fail { background: #f8d7da; color: #721c24; }
+                    .trial-exam-details > div { margin-bottom: 8px; }
+                    .trial-notes {
+                        background: #f8f9fa; padding: 10px; border-radius: 5px;
+                        margin-top: 10px; font-size: 0.9rem;
+                    }
+                    .trial-application-section {
+                        background: #e3f2fd; padding: 20px; border-radius: 10px;
+                        margin-bottom: 15px; text-align: center;
+                    }
+                    .trial-application-section h6 { color: #1565c0; }
+                    .apply-trial-btn { margin-top: 10px; }
+                    
                     .exam-preparation-section {
                         background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
                         padding: 20px; border-radius: 10px; margin-bottom: 15px;
@@ -1136,6 +1242,7 @@ $(document).ready(function () {
                     .retry-message {
                         background: #cce7ff; color: #0c5460;
                     }
+                    .mt-3 { margin-top: 15px; }
                 </style>
             `,
       confirmButtonText: '<i class="fas fa-times me-2"></i>Close',
@@ -1143,6 +1250,46 @@ $(document).ready(function () {
       width: "700px",
     });
   }
+
+// Helper function to apply for a trial exam
+function applyForTrialExam(writtenExamId) {
+  Swal.fire({
+    title: 'Apply for Trial Exam',
+    text: 'Are you sure you want to apply for a trial exam?',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Yes, Apply',
+    cancelButtonText: 'Cancel'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      // Call your API to apply for trial exam
+      // This would be your implementation to send a request to the server
+      console.log('Applying for trial exam for written exam ID:', writtenExamId);
+      
+      // Example API call (you'll need to implement this)
+      /*
+      fetch('/api/trial-exams/apply', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ writtenExamId: writtenExamId })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          Swal.fire('Success', 'Your trial exam application has been submitted!', 'success');
+        } else {
+          Swal.fire('Error', data.message, 'error');
+        }
+      })
+      .catch(error => {
+        Swal.fire('Error', 'An error occurred while applying for the trial exam.', 'error');
+      });
+      */
+    }
+  });
+}
 
   // =================== ENHANCED PAYMENT SYSTEM ===================
 

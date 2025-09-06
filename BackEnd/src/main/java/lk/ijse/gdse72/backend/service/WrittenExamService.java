@@ -10,14 +10,14 @@ import java.util.Optional;
 
 public interface WrittenExamService {
 
-    void updateExamResultWithDates(Long examId, String result, String note,
-                                   LocalDate trialDate, LocalDate nextExamDate);
+    void updateExamResultWithDates(Long examId, String result, String note,LocalDate trialDate, LocalDate nextExamDate);
     WrittenExamDto scheduleWrittenExam(WrittenExamRequestDto requestDto);
     Optional<WrittenExamDto> getWrittenExamById(Long examId);
     Optional<WrittenExamDto> getWrittenExamByApplicationId(Long applicationId);
     List<WrittenExamDto> getAllWrittenExams();
     WrittenExamDto updateWrittenExam(Long examId, WrittenExamRequestDto requestDto);
-    void updateExamResult(Long examId, String result, String note);    void deleteWrittenExam(Long examId);
+    void updateExamResult(Long examId, String result, String note);
+    void deleteWrittenExam(Long examId);
     List<WrittenExamDto> getWrittenExamsByResult(String result);
     boolean existsByApplicationId(Long applicationId);
 
