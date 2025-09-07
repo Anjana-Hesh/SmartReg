@@ -52,4 +52,22 @@ public class GlobelExceptionHandler {
         );
     }
 
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public static class PaymentNotFoundException extends RuntimeException {
+        public PaymentNotFoundException(String message) {
+            super(message);
+        }
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public static class PaymentException extends RuntimeException {
+        public PaymentException(String message) {
+            super(message);
+        }
+
+        public PaymentException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
 }

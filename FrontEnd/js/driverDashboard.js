@@ -19,6 +19,14 @@ $(document).ready(function () {
   let currentNotifications = [];
   let refreshInterval;
 
+checkPayHereLoaded().then((loaded) => {
+        if (loaded) {
+            console.log("✅ PayHere loaded successfully");
+        } else {
+            console.warn("⚠️ PayHere failed to load");
+        }
+    });
+
   // =================== AUTHENTICATION CHECK ===================
   if (!authToken || !currentDriverId) {
     Swal.fire({
@@ -1253,733 +1261,2039 @@ function submitTrialExamApplication(writtenExamId) {
 
   // =================== ENHANCED PAYMENT SYSTEM ===================
 
-  window.showPaymentForm = function () {
-    showLoading(true);
+// Complete Frontend Payment Integration with Spring Boot Backend
 
-    loadDriverApplications()
-      .then(() => {
-        showLoading(false);
 
-        const approvedApps = currentApplications.filter(
-          (app) => app.status === "APPROVED"
-        );
+window.showPaymentForm = function () {
+  showLoading(true);
 
-        if (approvedApps.length === 0) {
-          handleNoPaymentAvailable();
-          return;
-        }
+  loadDriverApplications()
+    .then(() => {
+      showLoading(false);
 
-        showEnhancedPaymentModal(approvedApps);
-      })
-      .catch((error) => {
-        showLoading(false);
-        showAlert("Error", "Failed to load applications for payment.", "error");
-      });
-  };
+      const approvedApps = currentApplications.filter(
+        (app) => app.status === "APPROVED"
+      );
 
-  function handleNoPaymentAvailable() {
-    const pendingApps = currentApplications.filter(
-      (app) => app.status === "PENDING"
-    );
-    const rejectedApps = currentApplications.filter(
-      (app) => app.status === "REJECTED"
-    );
+      if (approvedApps.length === 0) {
+        handleNoPaymentAvailable();
+        return;
+      }
 
-    let message,
-      type,
-      showApplyButton = false;
+      showEnhancedPaymentModal(approvedApps);
+    })
+    .catch((error) => {
+      showLoading(false);
+      showAlert("Error", "Failed to load applications for payment.", "error");
+    });
+};
 
-    if (pendingApps.length > 0) {
-      message =
-        "Your application is still under review. Payment will be available once approved.";
-      type = "info";
-    } else if (rejectedApps.length > 0) {
-      message =
-        "Your application was rejected. Please submit a new application first.";
-      type = "warning";
-      showApplyButton = true;
-    } else {
-      message =
-        "You don't have any applications yet. Please submit an application first.";
-      type = "info";
-      showApplyButton = true;
+function handleNoPaymentAvailable() {
+  const pendingApps = currentApplications.filter(
+    (app) => app.status === "PENDING"
+  );
+  const rejectedApps = currentApplications.filter(
+    (app) => app.status === "REJECTED"
+  );
+
+  let message,
+    type,
+    showApplyButton = false;
+
+  if (pendingApps.length > 0) {
+    message =
+      "Your application is still under review. Payment will be available once approved.";
+    type = "info";
+  } else if (rejectedApps.length > 0) {
+    message =
+      "Your application was rejected. Please submit a new application first.";
+    type = "warning";
+    showApplyButton = true;
+  } else {
+    message =
+      "You don't have any applications yet. Please submit an application first.";
+    type = "info";
+    showApplyButton = true;
+  }
+
+  Swal.fire({
+    title: "💳 Payment Not Available",
+    text: message,
+    icon: type,
+    showCancelButton: showApplyButton,
+    cancelButtonText: showApplyButton
+      ? '<i class="fas fa-plus me-2"></i>Submit Application'
+      : null,
+    confirmButtonText: '<i class="fas fa-times me-2"></i>Close',
+    cancelButtonColor: "#28a745",
+    confirmButtonColor: "#6c757d",
+  }).then((result) => {
+    if (result.dismiss === Swal.DismissReason.cancel && showApplyButton) {
+      showLicenseForm();
     }
+  });
+}
 
-    Swal.fire({
-      title: "💳 Payment Not Available",
-      text: message,
-      icon: type,
-      showCancelButton: showApplyButton,
-      cancelButtonText: showApplyButton
-        ? '<i class="fas fa-plus me-2"></i>Submit Application'
-        : null,
-      confirmButtonText: '<i class="fas fa-times me-2"></i>Close',
-      cancelButtonColor: "#28a745",
-      confirmButtonColor: "#6c757d",
-    }).then((result) => {
-      if (result.dismiss === Swal.DismissReason.cancel && showApplyButton) {
-        showLicenseForm();
-      }
-    });
-  }
-
-  async function showEnhancedPaymentModal(applications) {
-    const applicationsList = await Promise.all(
-      applications.map(async (app) => {
-        const vehicleClasses = app.vehicleClasses
-          ? Array.isArray(app.vehicleClasses)
-            ? app.vehicleClasses.join(", ")
-            : app.vehicleClasses
-          : "N/A";
-        const examFee = calculateExamFee(app.licenseType, app.vehicleClasses);
-
-        let examInfo = "";
-        try {
-          const examDetails = await getWrittenExamDetails(app.id);
-          if (examDetails) {
-            examInfo = `
-                        <div class="exam-info-mini">
-                            <i class="fas fa-calendar me-1"></i>${formatDate(
-                              examDetails.examDate
-                            )} 
-                            <i class="fas fa-clock ms-2 me-1"></i>${
-                              examDetails.examTime || "TBA"
-                            }
-                            ${
-                              examDetails.examLocation
-                                ? `<br><i class="fas fa-map-marker-alt me-1"></i>${examDetails.examLocation}`
-                                : ""
-                            }
-                        </div>
-                    `;
+async function showEnhancedPaymentModal(applications) {
+  const applicationsList = await Promise.all(
+    applications.map(async (app) => {
+      const vehicleClasses = app.vehicleClasses
+        ? Array.isArray(app.vehicleClasses)
+          ? app.vehicleClasses.join(", ")
+          : app.vehicleClasses
+        : "N/A";
+      
+      // Get fee from backend
+      let examFee = 3000;
+      try {
+        const feeResponse = await fetch(`${API_BASE_URL}/payment/calculate-fee?licenseType=${app.licenseType}&vehicleClasses=${app.vehicleClasses || ''}`, {
+          method: 'GET',
+          headers: {
+            Authorization: "Bearer " + (localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token")),
+            'Content-Type': 'application/json'
           }
-        } catch (error) {
-          console.log("No exam details for app:", app.id);
+        });
+        
+        if (feeResponse.ok) {
+          const feeData = await feeResponse.json();
+          if (feeData.status === 200) {
+            examFee = feeData.data.examFee;
+          }
         }
-
-        return `
-                <div class="payment-application-card" data-id="${app.id}">
-                    <input type="radio" name="paymentApplication" value="${
-                      app.id
-                    }" id="app_${app.id}" class="payment-radio">
-                    <label for="app_${app.id}" class="payment-card-label">
-                        <div class="payment-card-header">
-                            <div class="payment-app-info">
-                                <div class="payment-app-title">
-                                    <i class="fas fa-file-alt me-2"></i>
-                                    <strong>Application #${app.id}</strong>
-                                    <span class="badge bg-success ms-2">APPROVED</span>
-                                </div>
-                                <div class="payment-app-details">
-                                    <div class="detail-row">
-                                        <i class="fas fa-certificate me-2"></i>
-                                        <span>${app.licenseType.toUpperCase()} License</span>
-                                    </div>
-                                    <div class="detail-row">
-                                        <i class="fas fa-car me-2"></i>
-                                        <span>Classes: ${vehicleClasses}</span>
-                                    </div>
-                                    ${examInfo}
-                                </div>
-                            </div>
-                            <div class="payment-amount-section">
-                                <div class="amount-display">
-                                    <div class="currency">Rs.</div>
-                                    <div class="amount">${examFee.toLocaleString()}</div>
-                                </div>
-                                <div class="amount-label">Exam Fee</div>
-                            </div>
-                        </div>
-                    </label>
-                </div>
-            `;
-      })
-    );
-
-    Swal.fire({
-      title: '<i class="fas fa-credit-card me-2"></i>Exam Fee Payment',
-      html: `
-                <div class="enhanced-payment-modal">
-                    <div class="payment-intro-banner">
-                        <i class="fas fa-shield-alt me-2"></i>
-                        <span>Secure payment for your approved applications</span>
-                    </div>
-                    
-                    <div class="applications-section">
-                        <h6 class="section-title">
-                            <i class="fas fa-file-invoice me-2"></i>Select Application to Pay:
-                        </h6>
-                        <div class="applications-container">
-                            ${applicationsList.join("")}
-                        </div>
-                    </div>
-                    
-                    <div class="payment-methods-section">
-                        <h6 class="section-title">
-                            <i class="fas fa-credit-card me-2"></i>Choose Payment Method:
-                        </h6>
-                        <div class="payment-methods-grid">
-                            <div class="payment-method-option">
-                                <input type="radio" name="paymentMethod" id="card" value="card" class="method-radio" checked>
-                                <label for="card" class="method-label">
-                                    <div class="method-icon card-gradient">
-                                        <i class="fas fa-credit-card"></i>
-                                    </div>
-                                    <div class="method-info">
-                                        <strong>Credit/Debit Card</strong>
-                                        <small>Visa • MasterCard • American Express</small>
-                                    </div>
-                                    <div class="method-indicator">
-                                        <i class="fas fa-check-circle"></i>
-                                    </div>
-                                </label>
-                            </div>
-                            
-                            <div class="payment-method-option">
-                                <input type="radio" name="paymentMethod" id="bank" value="bank" class="method-radio">
-                                <label for="bank" class="method-label">
-                                    <div class="method-icon bank-gradient">
-                                        <i class="fas fa-university"></i>
-                                    </div>
-                                    <div class="method-info">
-                                        <strong>Bank Transfer</strong>
-                                        <small>Direct online banking</small>
-                                    </div>
-                                    <div class="method-indicator">
-                                        <i class="fas fa-check-circle"></i>
-                                    </div>
-                                </label>
-                            </div>
-                            
-                            <div class="payment-method-option">
-                                <input type="radio" name="paymentMethod" id="mobile" value="mobile" class="method-radio">
-                                <label for="mobile" class="method-label">
-                                    <div class="method-icon mobile-gradient">
-                                        <i class="fas fa-mobile-alt"></i>
-                                    </div>
-                                    <div class="method-info">
-                                        <strong>Mobile Payment</strong>
-                                        <small>eZ Cash • mCash • Frimi</small>
-                                    </div>
-                                    <div class="method-indicator">
-                                        <i class="fas fa-check-circle"></i>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="payment-security-footer">
-                        <i class="fas fa-lock me-2"></i>
-                        <span>256-bit SSL encryption • PCI DSS compliant • Your data is safe</span>
-                    </div>
-                </div>
-                
-                <style>
-                    .enhanced-payment-modal { text-align: left; }
-                    .payment-intro-banner {
-                        background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
-                        color: #155724; padding: 12px 20px; border-radius: 10px;
-                        text-align: center; margin-bottom: 25px; font-weight: 500;
-                    }
-                    .section-title {
-                        color: #495057; font-weight: 600; margin-bottom: 15px;
-                        padding-bottom: 8px; border-bottom: 2px solid #e9ecef;
-                    }
-                    .applications-section { margin-bottom: 25px; }
-                    .applications-container { max-height: 400px; overflow-y: auto; }
-                    .payment-application-card {
-                        border: 2px solid #e9ecef; border-radius: 12px;
-                        margin-bottom: 15px; transition: all 0.3s ease;
-                        background: #f8f9fa; overflow: hidden;
-                    }
-                    .payment-application-card:hover {
-                        border-color: #007bff; box-shadow: 0 4px 12px rgba(0,123,255,0.15);
-                    }
-                    .payment-radio { position: absolute; opacity: 0; }
-                    .payment-radio:checked + .payment-card-label {
-                        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-                        border: 2px solid #007bff;
-                    }
-                    .payment-card-label {
-                        display: block; padding: 20px; cursor: pointer;
-                        border: 2px solid transparent; border-radius: 10px;
-                        transition: all 0.3s ease;
-                    }
-                    .payment-card-header {
-                        display: flex; justify-content: space-between; align-items: center;
-                    }
-                    .payment-app-title {
-                        display: flex; align-items: center; margin-bottom: 12px;
-                    }
-                    .payment-app-details { }
-                    .detail-row {
-                        display: flex; align-items: center; margin-bottom: 6px;
-                        color: #6c757d; font-size: 0.9rem;
-                    }
-                    .exam-info-mini {
-                        margin-top: 8px; padding: 8px; background: rgba(0,123,255,0.1);
-                        border-radius: 6px; font-size: 0.85rem; color: #0056b3;
-                    }
-                    .payment-amount-section { text-align: right; }
-                    .amount-display {
-                        display: flex; align-items: baseline; justify-content: flex-end;
-                        margin-bottom: 5px;
-                    }
-                    .currency {
-                        font-size: 1rem; font-weight: 500; color: #28a745;
-                        margin-right: 4px;
-                    }
-                    .amount {
-                        font-size: 1.8rem; font-weight: bold; color: #28a745;
-                    }
-                    .amount-label {
-                        font-size: 0.8rem; color: #6c757d; font-weight: 500;
-                    }
-                    .payment-methods-section { margin-bottom: 20px; }
-                    .payment-methods-grid {
-                        display: grid; grid-template-columns: 1fr;
-                        gap: 12px;
-                    }
-                    .payment-method-option { position: relative; }
-                    .method-radio { position: absolute; opacity: 0; }
-                    .method-radio:checked + .method-label {
-                        border-color: #007bff;
-                        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-                    }
-                    .method-radio:checked + .method-label .method-indicator {
-                        color: #007bff;
-                    }
-                    .method-label {
-                        display: flex; align-items: center; padding: 15px;
-                        border: 2px solid #e9ecef; border-radius: 10px;
-                        cursor: pointer; transition: all 0.3s ease;
-                        background: #f8f9fa;
-                    }
-                    .method-label:hover {
-                        border-color: #007bff; box-shadow: 0 2px 8px rgba(0,123,255,0.1);
-                    }
-                    .method-icon {
-                        width: 50px; height: 50px; border-radius: 12px;
-                        display: flex; align-items: center; justify-content: center;
-                        margin-right: 15px; color: white; font-size: 1.3rem;
-                    }
-                    .card-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-                    .bank-gradient { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-                    .mobile-gradient { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
-                    .method-info { flex: 1; }
-                    .method-info strong { display: block; margin-bottom: 3px; }
-                    .method-info small { color: #6c757d; }
-                    .method-indicator {
-                        font-size: 1.2rem; color: #e9ecef; transition: color 0.3s ease;
-                    }
-                    .payment-security-footer {
-                        background: #f8f9fa; padding: 12px 20px; border-radius: 8px;
-                        text-align: center; color: #6c757d; font-size: 0.9rem;
-                        border: 1px solid #e9ecef;
-                    }
-                    @media (max-width: 768px) {
-                        .payment-card-header { flex-direction: column; text-align: center; }
-                        .payment-amount-section { margin-top: 15px; text-align: center; }
-                    }
-                </style>
-            `,
-      showCancelButton: true,
-      confirmButtonText:
-        '<i class="fas fa-lock me-2"></i>Proceed to Secure Payment',
-      cancelButtonText: '<i class="fas fa-times me-2"></i>Cancel',
-      confirmButtonColor: "#28a745",
-      cancelButtonColor: "#6c757d",
-      width: "900px",
-      preConfirm: () => {
-        const selectedApp = $('input[name="paymentApplication"]:checked').val();
-        const paymentMethod = $('input[name="paymentMethod"]:checked').val();
-
-        if (!selectedApp) {
-          Swal.showValidationMessage("Please select an application to pay for");
-          return false;
-        }
-
-        return { applicationId: selectedApp, method: paymentMethod };
-      },
-    }).then((result) => {
-      if (result.isConfirmed) {
-        processEnhancedPayment(result.value);
+      } catch (error) {
+        console.error('Error fetching exam fee:', error);
       }
+
+      let examInfo = "";
+      try {
+        const examDetails = await getWrittenExamDetails(app.id);
+        if (examDetails) {
+          examInfo = `
+            <div class="exam-info-mini">
+                <i class="fas fa-calendar me-1"></i>${formatDate(examDetails.examDate)} 
+                <i class="fas fa-clock ms-2 me-1"></i>${examDetails.examTime || "TBA"}
+                ${examDetails.examLocation ? `<br><i class="fas fa-map-marker-alt me-1"></i>${examDetails.examLocation}` : ""}
+            </div>
+          `;
+        }
+      } catch (error) {
+        console.log("No exam details for app:", app.id);
+      }
+
+      return `
+        <div class="payment-application-card" data-id="${app.id}">
+            <input type="radio" name="paymentApplication" value="${app.id}" id="app_${app.id}" class="payment-radio">
+            <label for="app_${app.id}" class="payment-card-label">
+                <div class="payment-card-header">
+                    <div class="payment-app-info">
+                        <div class="payment-app-title">
+                            <i class="fas fa-file-alt me-2"></i>
+                            <strong>Application #${app.id}</strong>
+                            <span class="badge bg-success ms-2">APPROVED</span>
+                        </div>
+                        <div class="payment-app-details">
+                            <div class="detail-row">
+                                <i class="fas fa-certificate me-2"></i>
+                                <span>${app.licenseType.toUpperCase()} License</span>
+                            </div>
+                            <div class="detail-row">
+                                <i class="fas fa-car me-2"></i>
+                                <span>Classes: ${vehicleClasses}</span>
+                            </div>
+                            ${examInfo}
+                        </div>
+                    </div>
+                    <div class="payment-amount-section">
+                        <div class="amount-display">
+                            <div class="currency">Rs.</div>
+                            <div class="amount">${examFee.toLocaleString()}</div>
+                        </div>
+                        <div class="amount-label">Exam Fee</div>
+                    </div>
+                </div>
+            </label>
+        </div>
+      `;
+    })
+  );
+
+  Swal.fire({
+    title: '<i class="fas fa-credit-card me-2"></i>Exam Fee Payment',
+    html: `
+      <div class="enhanced-payment-modal">
+          <div class="payment-intro-banner">
+              <i class="fas fa-shield-alt me-2"></i>
+              <span>Secure payment for your approved applications</span>
+          </div>
+          
+          <div class="applications-section">
+              <h6 class="section-title">
+                  <i class="fas fa-file-invoice me-2"></i>Select Application to Pay:
+              </h6>
+              <div class="applications-container">
+                  ${applicationsList.join("")}
+              </div>
+          </div>
+          
+          <div class="payment-methods-section">
+              <h6 class="section-title">
+                  <i class="fas fa-credit-card me-2"></i>Choose Payment Method:
+              </h6>
+              <div class="payment-methods-grid">
+                  <div class="payment-method-option">
+                      <input type="radio" name="paymentMethod" id="card" value="CARD" class="method-radio" checked>
+                      <label for="card" class="method-label">
+                          <div class="method-icon card-gradient">
+                              <i class="fas fa-credit-card"></i>
+                          </div>
+                          <div class="method-info">
+                              <strong>Credit/Debit Card</strong>
+                              <small>Visa • MasterCard • American Express</small>
+                          </div>
+                          <div class="method-indicator">
+                              <i class="fas fa-check-circle"></i>
+                          </div>
+                      </label>
+                  </div>
+                  
+                  <div class="payment-method-option">
+                      <input type="radio" name="paymentMethod" id="bank" value="BANK" class="method-radio">
+                      <label for="bank" class="method-label">
+                          <div class="method-icon bank-gradient">
+                              <i class="fas fa-university"></i>
+                          </div>
+                          <div class="method-info">
+                              <strong>Bank Transfer</strong>
+                              <small>Direct online banking</small>
+                          </div>
+                          <div class="method-indicator">
+                              <i class="fas fa-check-circle"></i>
+                          </div>
+                      </label>
+                  </div>
+                  
+                  <div class="payment-method-option">
+                      <input type="radio" name="paymentMethod" id="mobile" value="MOBILE" class="method-radio">
+                      <label for="mobile" class="method-label">
+                          <div class="method-icon mobile-gradient">
+                              <i class="fas fa-mobile-alt"></i>
+                          </div>
+                          <div class="method-info">
+                              <strong>Mobile Payment</strong>
+                              <small>eZ Cash • mCash • Frimi</small>
+                          </div>
+                          <div class="method-indicator">
+                              <i class="fas fa-check-circle"></i>
+                          </div>
+                      </label>
+                  </div>
+              </div>
+          </div>
+          
+          <div class="payment-security-footer">
+              <i class="fas fa-lock me-2"></i>
+              <span>256-bit SSL encryption • PCI DSS compliant • Your data is safe</span>
+          </div>
+      </div>
+      
+      <style>
+          .enhanced-payment-modal { text-align: left; }
+          .payment-intro-banner {
+              background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
+              color: #155724; padding: 12px 20px; border-radius: 10px;
+              text-align: center; margin-bottom: 25px; font-weight: 500;
+          }
+          .section-title {
+              color: #495057; font-weight: 600; margin-bottom: 15px;
+              padding-bottom: 8px; border-bottom: 2px solid #e9ecef;
+          }
+          .applications-section { margin-bottom: 25px; }
+          .applications-container { max-height: 400px; overflow-y: auto; }
+          .payment-application-card {
+              border: 2px solid #e9ecef; border-radius: 12px;
+              margin-bottom: 15px; transition: all 0.3s ease;
+              background: #f8f9fa; overflow: hidden;
+          }
+          .payment-application-card:hover {
+              border-color: #007bff; box-shadow: 0 4px 12px rgba(0,123,255,0.15);
+          }
+          .payment-radio { position: absolute; opacity: 0; }
+          .payment-radio:checked + .payment-card-label {
+              background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+              border: 2px solid #007bff;
+          }
+          .payment-card-label {
+              display: block; padding: 20px; cursor: pointer;
+              border: 2px solid transparent; border-radius: 10px;
+              transition: all 0.3s ease;
+          }
+          .payment-card-header {
+              display: flex; justify-content: space-between; align-items: center;
+          }
+          .payment-app-title {
+              display: flex; align-items: center; margin-bottom: 12px;
+          }
+          .payment-app-details { }
+          .detail-row {
+              display: flex; align-items: center; margin-bottom: 6px;
+              color: #6c757d; font-size: 0.9rem;
+          }
+          .exam-info-mini {
+              margin-top: 8px; padding: 8px; background: rgba(0,123,255,0.1);
+              border-radius: 6px; font-size: 0.85rem; color: #0056b3;
+          }
+          .payment-amount-section { text-align: right; }
+          .amount-display {
+              display: flex; align-items: baseline; justify-content: flex-end;
+              margin-bottom: 5px;
+          }
+          .currency {
+              font-size: 1rem; font-weight: 500; color: #28a745;
+              margin-right: 4px;
+          }
+          .amount {
+              font-size: 1.8rem; font-weight: bold; color: #28a745;
+          }
+          .amount-label {
+              font-size: 0.8rem; color: #6c757d; font-weight: 500;
+          }
+          .payment-methods-section { margin-bottom: 20px; }
+          .payment-methods-grid {
+              display: grid; grid-template-columns: 1fr;
+              gap: 12px;
+          }
+          .payment-method-option { position: relative; }
+          .method-radio { position: absolute; opacity: 0; }
+          .method-radio:checked + .method-label {
+              border-color: #007bff;
+              background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+          }
+          .method-radio:checked + .method-label .method-indicator {
+              color: #007bff;
+          }
+          .method-label {
+              display: flex; align-items: center; padding: 15px;
+              border: 2px solid #e9ecef; border-radius: 10px;
+              cursor: pointer; transition: all 0.3s ease;
+              background: #f8f9fa;
+          }
+          .method-label:hover {
+              border-color: #007bff; box-shadow: 0 2px 8px rgba(0,123,255,0.1);
+          }
+          .method-icon {
+              width: 50px; height: 50px; border-radius: 12px;
+              display: flex; align-items: center; justify-content: center;
+              margin-right: 15px; color: white; font-size: 1.3rem;
+          }
+          .card-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+          .bank-gradient { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+          .mobile-gradient { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+          .method-info { flex: 1; }
+          .method-info strong { display: block; margin-bottom: 3px; }
+          .method-info small { color: #6c757d; }
+          .method-indicator {
+              font-size: 1.2rem; color: #e9ecef; transition: color 0.3s ease;
+          }
+          .payment-security-footer {
+              background: #f8f9fa; padding: 12px 20px; border-radius: 8px;
+              text-align: center; color: #6c757d; font-size: 0.9rem;
+              border: 1px solid #e9ecef;
+          }
+          @media (max-width: 768px) {
+              .payment-card-header { flex-direction: column; text-align: center; }
+              .payment-amount-section { margin-top: 15px; text-align: center; }
+          }
+      </style>
+    `,
+    showCancelButton: true,
+    confirmButtonText: '<i class="fas fa-lock me-2"></i>Proceed to Secure Payment',
+    cancelButtonText: '<i class="fas fa-times me-2"></i>Cancel',
+    confirmButtonColor: "#28a745",
+    cancelButtonColor: "#6c757d",
+    width: "900px",
+    preConfirm: () => {
+      const selectedApp = $('input[name="paymentApplication"]:checked').val();
+      const paymentMethod = $('input[name="paymentMethod"]:checked').val();
+
+      if (!selectedApp) {
+        Swal.showValidationMessage("Please select an application to pay for");
+        return false;
+      }
+
+      return { applicationId: selectedApp, method: paymentMethod };
+    },
+  }).then((result) => {
+    if (result.isConfirmed) {
+      processEnhancedPayment(result.value);
+    }
+  });
+}
+
+function checkPayHereLoaded() {
+  return new Promise((resolve) => {
+    if (typeof payhere !== 'undefined') {
+      resolve(true);
+      return;
+    }
+    
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    const checkInterval = setInterval(() => {
+      attempts++;
+      if (typeof payhere !== 'undefined') {
+        clearInterval(checkInterval);
+        resolve(true);
+      } else if (attempts >= maxAttempts) {
+        clearInterval(checkInterval);
+        resolve(false);
+      }
+    }, 500);
+  });
+}
+
+async function processEnhancedPayment(paymentData) {
+  // First check if PayHere is available
+  const payhereLoaded = await checkPayHereLoaded();
+  if (!payhereLoaded) {
+    Swal.fire({
+      title: 'Payment System Error',
+      text: 'PayHere payment system could not be loaded. Please refresh the page and try again.',
+      icon: 'error',
+      confirmButtonText: 'Refresh Page'
+    }).then(() => {
+      location.reload();
     });
+    return;
   }
 
-  function processEnhancedPayment(paymentData) {
-    // Show payment processing animation
-    Swal.fire({
-      title: "Processing Payment...",
-      html: `
-                <div class="payment-processing">
-                    <div class="processing-animation">
-                        <div class="processing-spinner"></div>
-                    </div>
-                    <p>Securely processing your payment</p>
-                    <div class="processing-steps">
-                        <div class="step active">Verifying payment method</div>
-                        <div class="step">Processing transaction</div>
-                        <div class="step">Confirming payment</div>
-                    </div>
-                </div>
-                <style>
-                    .payment-processing { text-align: center; }
-                    .processing-animation { margin: 20px 0; }
-                    .processing-spinner {
-                        width: 60px; height: 60px; border: 4px solid #f3f3f3;
-                        border-top: 4px solid #28a745; border-radius: 50%;
-                        animation: spin 1s linear infinite; margin: 0 auto;
-                    }
-                    @keyframes spin {
-                        0% { transform: rotate(0deg); }
-                        100% { transform: rotate(360deg); }
-                    }
-                    .processing-steps { margin-top: 20px; }
-                    .step {
-                        padding: 8px; margin-bottom: 5px; border-radius: 5px;
-                        background: #f8f9fa; color: #6c757d;
-                    }
-                    .step.active {
-                        background: #d4edda; color: #155724;
-                    }
-                </style>
-            `,
-      allowOutsideClick: false,
-      showConfirmButton: false,
-    });
+  Swal.fire({
+    title: "Setting Up Payment...",
+    html: `
+      <div class="payment-setup">
+          <div class="setup-spinner"></div>
+          <p>Preparing secure payment form</p>
+          <div class="setup-progress">
+              <div class="progress-step active">Validating details</div>
+              <div class="progress-step">Generating hash</div>
+              <div class="progress-step">Ready to pay</div>
+          </div>
+      </div>
+      
+      <style>
+          .setup-spinner {
+              width: 40px; height: 40px;
+              border: 3px solid #f3f3f3;
+              border-top: 3px solid #007bff;
+              border-radius: 50%;
+              animation: spin 1s linear infinite;
+              margin: 0 auto 15px auto;
+          }
+          @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+          }
+          .setup-progress { margin-top: 20px; }
+          .progress-step {
+              padding: 5px 0;
+              color: #6c757d;
+              font-size: 0.9rem;
+          }
+          .progress-step.active {
+              color: #007bff;
+              font-weight: 600;
+          }
+      </style>
+    `,
+    allowOutsideClick: false,
+    showConfirmButton: false,
+  });
 
-    // Simulate payment processing steps
+  try {
     setTimeout(() => {
-      $(".step").eq(1).addClass("active");
+      $(".progress-step").eq(1).addClass("active");
     }, 1000);
 
-    setTimeout(() => {
-      $(".step").eq(2).addClass("active");
-    }, 2000);
-
-    // Complete payment after 3 seconds
-    setTimeout(() => {
-      showPaymentSuccessModal(paymentData);
-    }, 3000);
-  }
-
-  function showPaymentSuccessModal(paymentData) {
-    const transactionId = `TXN${Date.now()}`;
     const selectedApp = currentApplications.find(
       (app) => app.id == paymentData.applicationId
     );
-    const examFee = calculateExamFee(
-      selectedApp.licenseType,
-      selectedApp.vehicleClasses
-    );
 
-    Swal.fire({
-      title: null,
-      html: `
-                <div class="payment-success-modal">
-                    <div class="success-animation-container">
-                        <div class="success-checkmark">
-                            <div class="success-checkmark-circle"></div>
-                            <div class="success-checkmark-stem"></div>
-                            <div class="success-checkmark-kick"></div>
-                        </div>
-                    </div>
-                    
-                    <h3 class="success-title">🎉 Payment Successful!</h3>
-                    <p class="success-subtitle">Your exam fee has been processed successfully</p>
-                    
-                    <div class="payment-receipt-card">
-                        <div class="receipt-header">
-                            <i class="fas fa-receipt me-2"></i>
-                            <span>Payment Receipt</span>
-                        </div>
-                        <div class="receipt-body">
-                            <div class="receipt-row">
-                                <span class="label">Transaction ID:</span>
-                                <span class="value">${transactionId}</span>
-                            </div>
-                            <div class="receipt-row">
-                                <span class="label">Application:</span>
-                                <span class="value">#${
-                                  paymentData.applicationId
-                                }</span>
-                            </div>
-                            <div class="receipt-row">
-                                <span class="label">License Type:</span>
-                                <span class="value">${selectedApp.licenseType.toUpperCase()}</span>
-                            </div>
-                            <div class="receipt-row">
-                                <span class="label">Payment Method:</span>
-                                <span class="value">${getPaymentMethodName(
-                                  paymentData.method
-                                )}</span>
-                            </div>
-                            <div class="receipt-row">
-                                <span class="label">Date & Time:</span>
-                                <span class="value">${new Date().toLocaleString()}</span>
-                            </div>
-                            <div class="receipt-row total-row">
-                                <span class="label">Amount Paid:</span>
-                                <span class="value amount">Rs. ${examFee.toLocaleString()}</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="next-steps-card">
-                        <h6><i class="fas fa-route me-2"></i>What Happens Next?</h6>
-                        <div class="next-steps-timeline">
-                            <div class="timeline-step completed">
-                                <i class="fas fa-check-circle"></i>
-                                <span>Payment Confirmed</span>
-                            </div>
-                            <div class="timeline-step next">
-                                <i class="fas fa-envelope"></i>
-                                <span>Exam confirmation via SMS/Email</span>
-                            </div>
-                            <div class="timeline-step future">
-                                <i class="fas fa-graduation-cap"></i>
-                                <span>Attend written examination</span>
-                            </div>
-                            <div class="timeline-step future">
-                                <i class="fas fa-car"></i>
-                                <span>Practical driving test (if passed)</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="important-reminders">
-                        <h6><i class="fas fa-exclamation-circle me-2"></i>Important Reminders</h6>
-                        <ul>
-                            <li>Save this receipt for your records</li>
-                            <li>Check your email/SMS for exam details</li>
-                            <li>Bring your NIC and this receipt to the exam</li>
-                            <li>Arrive 30 minutes before your exam time</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <style>
-                    .payment-success-modal { text-align: center; }
-                    .success-animation-container { margin: 20px 0; }
-                    .success-checkmark {
-                        width: 80px; height: 80px; border-radius: 50%;
-                        display: block; stroke-width: 2; stroke: #28a745;
-                        stroke-miterlimit: 10; margin: 0 auto;
-                        box-shadow: inset 0px 0px 0px #28a745;
-                        animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
-                        position: relative;
-                    }
-                    .success-checkmark-circle {
-                        stroke-dasharray: 166; stroke-dashoffset: 166;
-                        stroke-width: 2; stroke-miterlimit: 10;
-                        stroke: #28a745; fill: none;
-                        animation: stroke .6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
-                        width: 80px; height: 80px; border-radius: 50%;
-                        background: #f0f8f0; border: 2px solid #28a745;
-                    }
-                    .success-checkmark-stem, .success-checkmark-kick {
-                        position: absolute; background: #28a745;
-                    }
-                    .success-checkmark-stem {
-                        left: 35px; top: 42px; width: 3px; height: 15px;
-                        transform-origin: bottom; animation: checkmark-stem 0.3s ease-in-out 0.6s forwards;
-                        transform: rotate(-45deg) scaleY(0);
-                    }
-                    .success-checkmark-kick {
-                        left: 30px; top: 48px; width: 12px; height: 3px;
-                        transform-origin: left; animation: checkmark-kick 0.3s ease-in-out 0.8s forwards;
-                        transform: rotate(45deg) scaleX(0);
-                    }
-                    @keyframes stroke {
-                        100% { stroke-dashoffset: 0; }
-                    }
-                    @keyframes scale {
-                        0%, 100% { transform: none; }
-                        50% { transform: scale3d(1.1, 1.1, 1); }
-                    }
-                    @keyframes fill {
-                        100% { box-shadow: inset 0px 0px 0px 30px #28a745; }
-                    }
-                    @keyframes checkmark-stem {
-                        100% { transform: rotate(-45deg) scaleY(1); }
-                    }
-                    @keyframes checkmark-kick {
-                        100% { transform: rotate(45deg) scaleX(1); }
-                    }
-                    .success-title {
-                        color: #28a745; margin: 20px 0 10px 0; font-weight: 700;
-                    }
-                    .success-subtitle {
-                        color: #6c757d; margin-bottom: 25px;
-                    }
-                    .payment-receipt-card {
-                        background: #f8f9fa; border: 2px dashed #28a745;
-                        border-radius: 15px; margin-bottom: 25px; overflow: hidden;
-                    }
-                    .receipt-header {
-                        background: #28a745; color: white; padding: 15px;
-                        font-weight: 600; font-size: 1.1rem;
-                    }
-                    .receipt-body { padding: 20px; }
-                    .receipt-row {
-                        display: flex; justify-content: space-between;
-                        margin-bottom: 12px; padding: 8px 0;
-                    }
-                    .receipt-row.total-row {
-                        border-top: 2px solid #28a745; margin-top: 15px;
-                        padding-top: 15px; font-weight: 600;
-                    }
-                    .receipt-row .label { color: #6c757d; }
-                    .receipt-row .value { font-weight: 500; }
-                    .receipt-row .amount { color: #28a745; font-size: 1.2rem; }
-                    .next-steps-card, .important-reminders {
-                        background: #e8f5e8; padding: 20px; border-radius: 12px;
-                        margin-bottom: 20px; text-align: left;
-                    }
-                    .next-steps-card h6, .important-reminders h6 {
-                        color: #155724; margin-bottom: 15px;
-                    }
-                    .next-steps-timeline { }
-                    .timeline-step {
-                        display: flex; align-items: center; margin-bottom: 10px;
-                        padding: 8px; border-radius: 6px;
-                    }
-                    .timeline-step.completed {
-                        background: #d4edda; color: #155724;
-                    }
-                    .timeline-step.next {
-                        background: #fff3cd; color: #856404;
-                    }
-                    .timeline-step.future {
-                        background: #f8f9fa; color: #6c757d;
-                    }
-                    .timeline-step i { margin-right: 12px; width: 20px; }
-                    .important-reminders ul {
-                        margin: 0; padding-left: 20px;
-                    }
-                    .important-reminders li {
-                        margin-bottom: 8px; color: #155724;
-                    }
-                </style>
-            `,
-      showCancelButton: true,
-      confirmButtonText: '<i class="fas fa-download me-2"></i>Download Receipt',
-      cancelButtonText: '<i class="fas fa-check me-2"></i>Continue',
-      confirmButtonColor: "#28a745",
-      cancelButtonColor: "#007bff",
-      width: "700px",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        downloadPaymentReceipt(paymentData, transactionId, examFee);
+    let writtenExamId = null;
+    try {
+      const examDetails = await getWrittenExamDetails(selectedApp.id);
+      if (examDetails && examDetails.id) {
+        writtenExamId = examDetails.id;
       }
-
-      // Refresh data after payment
-      loadDriverApplications().then(() => {
-        loadSmartNotifications();
-      });
-    });
-  }
-
-  function downloadPaymentReceipt(paymentData, transactionId, amount) {
-    const selectedApp = currentApplications.find(
-      (app) => app.id == paymentData.applicationId
-    );
-    const receipt = `
-LICENSEPRO - PAYMENT RECEIPT
-====================================
-
-Transaction Details:
-- Transaction ID: ${transactionId}
-- Date & Time: ${new Date().toLocaleString()}
-- Status: COMPLETED
-
-Application Details:
-- Application ID: #${paymentData.applicationId}
-- License Type: ${selectedApp.licenseType.toUpperCase()}
-- Driver Name: ${currentDriverName}
-- Driver ID: ${currentDriverId}
-
-Payment Details:
-- Amount Paid: Rs. ${amount.toLocaleString()}
-- Payment Method: ${getPaymentMethodName(paymentData.method)}
-- Currency: LKR
-
-Important Notes:
-- Keep this receipt for your records
-- Present this receipt during your exam
-- Contact support if you have any questions
-
-Thank you for using LicensePro!
-Support: support@licensepro.lk
-        `.trim();
-
-    const element = document.createElement("a");
-    const file = new Blob([receipt], { type: "text/plain" });
-    element.href = URL.createObjectURL(file);
-    element.download = `LicensePro_Receipt_${
-      paymentData.applicationId
-    }_${Date.now()}.txt`;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-
-    showAlert("Success", "Receipt downloaded successfully!", "success");
-  }
-
-  function getPaymentMethodName(method) {
-    const methods = {
-      card: "Credit/Debit Card",
-      bank: "Bank Transfer",
-      mobile: "Mobile Payment",
-    };
-    return methods[method] || method.toUpperCase();
-  }
-
-  function calculateExamFee(licenseType, vehicleClasses) {
-    let baseFee = 3000;
-
-    switch (licenseType?.toLowerCase()) {
-      case "learner":
-        baseFee = 2500;
-        break;
-      case "restricted":
-        baseFee = 3000;
-        break;
-      case "full":
-        baseFee = 4000;
-        break;
-      case "heavy":
-        baseFee = 6000;
-        break;
-      case "commercial":
-        baseFee = 7500;
-        break;
-      case "international":
-        baseFee = 5000;
-        break;
-      case "motorcycle":
-        baseFee = 3500;
-        break;
-      case "special":
-        baseFee = 8000;
-        break;
-      default:
-        baseFee = 3000;
+    } catch (error) {
+      console.log("No exam details found:", error);
     }
 
-    const classCount = Array.isArray(vehicleClasses)
-      ? vehicleClasses.length
-      : vehicleClasses
-      ? vehicleClasses.split(",").length
-      : 1;
-    const additionalFee = Math.max(0, classCount - 1) * 500;
+    const paymentRequest = {
+      applicationId: parseInt(paymentData.applicationId),
+      paymentMethod: paymentData.method.toUpperCase(),
+      driverId: currentDriverId,
+      driverName: currentDriverName,
+      licenseType: selectedApp.licenseType || "",
+      writtenExamId: writtenExamId
+    };
 
-    return baseFee + additionalFee;
+    const response = await fetch(`${API_BASE_URL}/payment/initialize`, {
+      method: 'POST',
+      headers: {
+        Authorization: "Bearer " + (localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token")),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(paymentRequest)
+    });
+
+    const responseData = await response.json();
+
+    if (!response.ok || responseData.code !== 200) {
+      throw new Error(responseData.message || 'Payment initialization failed');
+    }
+
+    setTimeout(() => {
+      $(".progress-step").eq(2).addClass("active");
+    }, 1500);
+
+    const paymentDataBackend = responseData.data;
+    
+    setTimeout(() => {
+      showPayHerePaymentForm(paymentDataBackend);
+    }, 2500);
+
+  } catch (error) {
+    console.error('Payment setup error:', error);
+    Swal.fire({
+      title: 'Payment Setup Failed',
+      text: error.message || 'Could not initialize payment. Please try again.',
+      icon: 'error',
+      confirmButtonText: 'OK'
+    });
+  }
+}
+
+function showPayHerePaymentForm(paymentData) {
+  Swal.close();
+
+  const nameParts = currentDriverName.split(' ');
+  const firstName = nameParts[0] || '';
+  const lastName = nameParts.slice(1).join(' ') || '';
+
+  Swal.fire({
+    title: 'Secure Payment',
+    html: `
+      <div class="payhere-form-container">
+          <div class="payment-header">
+              <i class="fas fa-shield-alt text-success"></i>
+              <h5>PayHere Secure Payment</h5>
+              <p>Your payment is protected by industry-standard encryption</p>
+          </div>
+          
+          <div class="payment-details">
+              <div class="detail-card">
+                  <div class="card-title">Payment Summary</div>
+                  <div class="detail-item">
+                      <span>Application ID:</span>
+                      <strong>#${paymentData.paymentId}</strong>
+                  </div>
+                  <div class="detail-item">
+                      <span>License Type:</span>
+                      <strong>Driving License Exam</strong>
+                  </div>
+                  <div class="detail-item">
+                      <span>Applicant:</span>
+                      <strong>${currentDriverName}</strong>
+                  </div>
+                  <div class="detail-item total">
+                      <span>Total Amount:</span>
+                      <strong>Rs. ${paymentData.amount.toLocaleString()}</strong>
+                  </div>
+              </div>
+          </div>
+          
+          <div class="payment-info">
+              <div class="info-item">
+                  <i class="fas fa-check-circle text-success"></i>
+                  <span>SSL Encrypted</span>
+              </div>
+              <div class="info-item">
+                  <i class="fas fa-credit-card text-primary"></i>
+                  <span>All Cards Accepted</span>
+              </div>
+              <div class="info-item">
+                  <i class="fas fa-mobile-alt text-info"></i>
+                  <span>Mobile Payments</span>
+              </div>
+          </div>
+      </div>
+      
+      <style>
+          .payhere-form-container { text-align: center; }
+          .payment-header {
+              margin-bottom: 25px;
+          }
+          .payment-header i {
+              font-size: 2rem;
+              margin-bottom: 10px;
+          }
+          .payment-header h5 {
+              color: #495057;
+              margin-bottom: 5px;
+          }
+          .payment-header p {
+              color: #6c757d;
+              font-size: 0.9rem;
+          }
+          .detail-card {
+              background: #f8f9fa;
+              border-radius: 10px;
+              padding: 20px;
+              margin-bottom: 20px;
+              text-align: left;
+          }
+          .card-title {
+              font-weight: 600;
+              margin-bottom: 15px;
+              color: #495057;
+              text-align: center;
+          }
+          .detail-item {
+              display: flex;
+              justify-content: space-between;
+              padding: 8px 0;
+              border-bottom: 1px solid #e9ecef;
+          }
+          .detail-item.total {
+              border-bottom: none;
+              border-top: 2px solid #007bff;
+              margin-top: 10px;
+              padding-top: 15px;
+              font-size: 1.1rem;
+              color: #007bff;
+          }
+          .payment-info {
+              display: flex;
+              justify-content: space-around;
+              margin-top: 20px;
+          }
+          .info-item {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              font-size: 0.8rem;
+          }
+          .info-item i {
+              margin-bottom: 5px;
+          }
+      </style>
+    `,
+    showCancelButton: true,
+    confirmButtonText: '<i class="fas fa-credit-card me-2"></i>Pay Securely',
+    cancelButtonText: '<i class="fas fa-times me-2"></i>Cancel',
+    confirmButtonColor: '#28a745',
+    cancelButtonColor: '#6c757d',
+    allowOutsideClick: false,
+    width: '500px'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      executePayHerePayment(paymentData, firstName, lastName);
+    }
+  });
+}
+
+function executePayHerePayment(paymentData, firstName, lastName) {
+  // Extract hash from checkout URL
+  let hash = '';
+  try {
+    const url = new URL(paymentData.checkoutUrl);
+    hash = url.searchParams.get('hash') || '';
+  } catch (error) {
+    console.error("Could not extract hash from checkout URL:", error);
+    Swal.fire({
+      title: 'Payment Error',
+      text: 'Payment configuration error. Please try again.',
+      icon: 'error'
+    });
+    return;
   }
 
+  // PayHere payment configuration
+  const payment = {
+    "sandbox": true, // Your backend is using sandbox
+    "merchant_id": 1231944,
+    "return_url": undefined,
+    "cancel_url": undefined,
+    "notify_url": `${API_BASE_URL}/payment/callback`,
+    "order_id": paymentData.payhereOrderId,
+    "items": "License Exam Fee",
+    "amount": paymentData.amount.toString(),
+    "currency": "LKR",
+    "hash": hash,
+    "first_name": firstName,
+    "last_name": lastName,
+    "email": "",
+    "phone": "",
+    "address": "",
+    "city": "Colombo",
+    "country": "Sri Lanka",
+    "custom_1": paymentData.transactionId,
+    "custom_2": paymentData.paymentId.toString()
+  };
+
+  console.log("Starting PayHere payment with config:", payment);
+
+  // Set up PayHere callbacks
+  payhere.onCompleted = function onCompleted(orderId) {
+    console.log("Payment completed successfully! Order ID:", orderId);
+    
+    Swal.fire({
+      title: 'Payment Completed!',
+      html: `
+        <div class="payment-success">
+            <i class="fas fa-check-circle text-success" style="font-size: 3rem; margin-bottom: 15px;"></i>
+            <p>Your payment has been processed successfully.</p>
+            <p><strong>Order ID:</strong> ${orderId}</p>
+            <p><small>Checking payment status...</small></p>
+        </div>
+      `,
+      allowOutsideClick: false,
+      showConfirmButton: false,
+      didOpen: () => {
+        // Start monitoring payment status after a short delay
+        setTimeout(() => {
+          startPaymentStatusMonitoring(paymentData.transactionId);
+        }, 2000);
+      }
+    });
+  };
+
+  payhere.onDismissed = function onDismissed() {
+    console.log("PayHere payment window was dismissed");
+    Swal.fire({
+      title: 'Payment Cancelled',
+      text: 'You closed the payment window. You can try again anytime.',
+      icon: 'warning',
+      confirmButtonText: 'OK'
+    });
+  };
+
+  payhere.onError = function onError(error) {
+    console.error("PayHere payment error:", error);
+    Swal.fire({
+      title: 'Payment Error',
+      text: 'Payment could not be processed: ' + error,
+      icon: 'error',
+      confirmButtonText: 'Try Again'
+    });
+  };
+
+  // Start the payment
+  try {
+    payhere.startPayment(payment);
+  } catch (error) {
+    console.error("Error starting PayHere payment:", error);
+    Swal.fire({
+      title: 'Payment Error',
+      text: 'Could not start payment process. Please refresh and try again.',
+      icon: 'error',
+      confirmButtonText: 'OK'
+    });
+  }
+}
+
+function initializePayHereJS(paymentData) {
+  Swal.close();
+
+  // Check if PayHere is loaded
+  if (typeof payhere === 'undefined') {
+    Swal.fire({
+      title: 'Payment System Error',
+      text: 'PayHere payment system is not loaded. Please refresh the page and try again.',
+      icon: 'error',
+      confirmButtonText: 'Refresh Page'
+    }).then(() => {
+      location.reload();
+    });
+    return;
+  }
+
+  // Show payment form in modal
+  Swal.fire({
+    title: 'Complete Your Payment',
+    html: `
+      <div class="js-payment-container">
+          <div class="payment-summary">
+              <div class="summary-header">
+                  <i class="fas fa-credit-card me-2"></i>
+                  Payment Details
+              </div>
+              <div class="summary-content">
+                  <div class="detail-row">
+                      <span>Application:</span>
+                      <strong>#${paymentData.paymentId}</strong>
+                  </div>
+                  <div class="detail-row">
+                      <span>Amount:</span>
+                      <strong>Rs. ${paymentData.amount.toLocaleString()}</strong>
+                  </div>
+                  <div class="detail-row">
+                      <span>Transaction:</span>
+                      <strong>${paymentData.transactionId}</strong>
+                  </div>
+              </div>
+          </div>
+          
+          <div class="payment-instructions">
+              <div class="instruction-card">
+                  <i class="fas fa-info-circle text-primary me-2"></i>
+                  Click "Pay Now" to open secure PayHere payment form
+              </div>
+              
+              <div class="payment-methods">
+                  <div class="method-badge">
+                      <i class="fab fa-cc-visa"></i>
+                  </div>
+                  <div class="method-badge">
+                      <i class="fab fa-cc-mastercard"></i>
+                  </div>
+                  <div class="method-badge">
+                      <i class="fas fa-university"></i>
+                  </div>
+                  <div class="method-badge">
+                      <i class="fas fa-mobile-alt"></i>
+                  </div>
+              </div>
+          </div>
+      </div>
+      
+      <style>
+          .js-payment-container { text-align: left; }
+          .payment-summary {
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              border-radius: 12px;
+              margin-bottom: 20px;
+              color: white;
+          }
+          .summary-header {
+              padding: 15px 20px;
+              font-weight: 600;
+              font-size: 1.1rem;
+          }
+          .summary-content { padding: 0 20px 20px 20px; }
+          .detail-row {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 8px;
+              padding: 5px 0;
+          }
+          .payment-instructions {
+              text-align: center;
+          }
+          .instruction-card {
+              background: #e8f4fd;
+              color: #0c5460;
+              padding: 15px;
+              border-radius: 8px;
+              margin-bottom: 20px;
+          }
+          .payment-methods {
+              display: flex;
+              justify-content: center;
+              gap: 15px;
+              margin-top: 15px;
+          }
+          .method-badge {
+              background: white;
+              padding: 10px;
+              border-radius: 8px;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+              color: #007bff;
+              font-size: 1.2rem;
+          }
+      </style>
+    `,
+    showCancelButton: true,
+    confirmButtonText: '<i class="fas fa-credit-card me-2"></i>Pay Now',
+    cancelButtonText: '<i class="fas fa-times me-2"></i>Cancel',
+    confirmButtonColor: '#28a745',
+    cancelButtonColor: '#6c757d',
+    allowOutsideClick: false,
+    width: '600px'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      startPayHerePayment(paymentData);
+    }
+  });
+}
+
+function startPayHerePayment(paymentData) {
+  // Extract names from driverName
+  const nameParts = currentDriverName.split(' ');
+  const firstName = nameParts[0] || '';
+  const lastName = nameParts.slice(1).join(' ') || '';
+
+  // PayHere payment object
+  const payment = {
+    "sandbox": true, // Set to false for production
+    "merchant_id": paymentData.merchantId,
+    "return_url": undefined,
+    "cancel_url": undefined,  
+    "notify_url": `${API_BASE_URL}/api/v1/payment/callback`,
+    "order_id": paymentData.payhereOrderId,
+    "items": "License Exam Fee",
+    "amount": paymentData.amount.toString(),
+    "currency": "LKR",
+    "hash": generatePayHereHashFrontend(paymentData), // We'll generate this
+    "first_name": firstName,
+    "last_name": lastName,
+    "email": "",
+    "phone": "",
+    "address": "",
+    "city": "Colombo",
+    "country": "Sri Lanka"
+  };
+
+  console.log("PayHere payment object:", payment);
+
+  // Set up PayHere event handlers
+  payhere.onCompleted = function onCompleted(orderId) {
+    console.log("Payment completed. OrderID:" + orderId);
+    
+    Swal.fire({
+      title: 'Payment Processing...',
+      text: 'Please wait while we confirm your payment.',
+      allowOutsideClick: false,
+      showConfirmButton: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+    
+    // Start monitoring payment status
+    setTimeout(() => {
+      startPaymentStatusMonitoring(paymentData.transactionId);
+    }, 2000);
+  };
+
+  payhere.onDismissed = function onDismissed() {
+    console.log("Payment dismissed");
+    Swal.fire({
+      title: 'Payment Cancelled',
+      text: 'You cancelled the payment process.',
+      icon: 'warning',
+      confirmButtonText: 'OK'
+    });
+  };
+
+  payhere.onError = function onError(error) {
+    console.log("Payment Error:" + error);
+    Swal.fire({
+      title: 'Payment Error',
+      text: 'There was an error processing your payment: ' + error,
+      icon: 'error',
+      confirmButtonText: 'OK'
+    });
+  };
+
+  // Start the payment
+  try {
+    payhere.startPayment(payment);
+  } catch (error) {
+    console.error("Error starting PayHere payment:", error);
+    Swal.fire({
+      title: 'Payment Error',
+      text: 'Failed to start payment process. Please try again.',
+      icon: 'error',
+      confirmButtonText: 'OK'
+    });
+  }
+}
+
+function generatePayHereHashFrontend(paymentData) {
+  // This is a temporary solution - ideally hash should come from backend
+  // But for now we'll construct it based on the checkout URL hash parameter
+  try {
+    const url = new URL(paymentData.checkoutUrl);
+    const hash = url.searchParams.get('hash');
+    return hash;
+  } catch (error) {
+    console.error("Error extracting hash:", error);
+    return "";
+  }
+}
+
+// Add this function to handle the PayHere redirect
+function redirectToPayHere(paymentData) {
+  if (paymentData && paymentData.checkoutUrl) {
+    // Store payment data for tracking
+    sessionStorage.setItem('currentPayment', JSON.stringify(paymentData));
+    
+    // Redirect to PayHere in a new tab
+    window.open(paymentData.checkoutUrl, '_blank');
+    console.log("CHECKOUT URL EKA .........................................." + paymentData.checkoutUrl);
+    
+    // Start monitoring payment status
+    startPaymentStatusMonitoring(paymentData.transactionId);
+  } else {
+    console.error("❌ Invalid payment data:", paymentData);
+    Swal.fire({
+      title: 'Payment Error',
+      text: 'Invalid payment data received. Please try again.',
+      icon: 'error',
+      confirmButtonText: 'OK'
+    });
+  }
+}
+
+// Then update the setTimeout call:
+// setTimeout(() => {
+//   redirectToPayHere(paymentData_backend);
+// }, 3000);
+
+
+function handlePayHerePayment(paymentData) {
+  // Close processing modal
+  Swal.close();
+  
+  // Show PayHere redirect confirmation with better design
+  Swal.fire({
+    title: 'PayHere Payment Gateway',
+    html: `
+      <div class="payhere-redirect-container">
+          <div class="payment-gateway-logo">
+              <i class="fas fa-credit-card" style="font-size: 4rem; color: #007bff; margin-bottom: 20px;"></i>
+          </div>
+          
+          <div class="payment-summary-card">
+              <div class="card-header">
+                  <i class="fas fa-receipt me-2"></i>
+                  Payment Summary
+              </div>
+              <div class="card-body">
+                  <div class="summary-item">
+                      <span class="label">Application ID:</span>
+                      <span class="value">#${paymentData.paymentId}</span>
+                  </div>
+                  <div class="summary-item">
+                      <span class="label">Transaction ID:</span>
+                      <span class="value">${paymentData.transactionId}</span>
+                  </div>
+                  <div class="summary-item total">
+                      <span class="label">Amount to Pay:</span>
+                      <span class="value">Rs. ${paymentData.amount.toLocaleString()}</span>
+                  </div>
+              </div>
+          </div>
+          
+          <div class="payment-methods-info">
+              <h6><i class="fas fa-info-circle me-2"></i>Available Payment Methods</h6>
+              <div class="methods-grid">
+                  <div class="method-item">
+                      <i class="fab fa-cc-visa"></i>
+                      <span>Visa</span>
+                  </div>
+                  <div class="method-item">
+                      <i class="fab fa-cc-mastercard"></i>
+                      <span>MasterCard</span>
+                  </div>
+                  <div class="method-item">
+                      <i class="fas fa-university"></i>
+                      <span>Bank Transfer</span>
+                  </div>
+                  <div class="method-item">
+                      <i class="fas fa-mobile-alt"></i>
+                      <span>Mobile Payment</span>
+                  </div>
+              </div>
+          </div>
+          
+          <div class="instructions-card">
+              <div class="instruction-step">
+                  <div class="step-number">1</div>
+                  <div class="step-text">Click "Continue to PayHere" to open payment window</div>
+              </div>
+              <div class="instruction-step">
+                  <div class="step-number">2</div>
+                  <div class="step-text">Select your payment method (Visa, MasterCard, etc.)</div>
+              </div>
+              <div class="instruction-step">
+                  <div class="step-number">3</div>
+                  <div class="step-text">Enter your card details securely</div>
+              </div>
+              <div class="instruction-step">
+                  <div class="step-number">4</div>
+                  <div class="step-text">Complete payment and return to this page</div>
+              </div>
+          </div>
+          
+          <div class="security-badges">
+              <div class="badge-item">
+                  <i class="fas fa-shield-alt"></i>
+                  <span>256-bit SSL</span>
+              </div>
+              <div class="badge-item">
+                  <i class="fas fa-lock"></i>
+                  <span>PCI DSS Compliant</span>
+              </div>
+              <div class="badge-item">
+                  <i class="fas fa-check-circle"></i>
+                  <span>PayHere Verified</span>
+              </div>
+          </div>
+      </div>
+      
+      <style>
+          .payhere-redirect-container { text-align: center; max-width: 600px; margin: 0 auto; }
+          
+          .payment-summary-card {
+              background: #f8f9fa; border-radius: 12px; margin: 25px 0;
+              box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+          }
+          .card-header {
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              color: white; padding: 15px; border-radius: 12px 12px 0 0;
+              font-weight: 600; font-size: 1.1rem;
+          }
+          .card-body { padding: 20px; }
+          .summary-item {
+              display: flex; justify-content: space-between;
+              padding: 10px 0; border-bottom: 1px solid #eee;
+          }
+          .summary-item.total {
+              border-bottom: none; font-weight: 600;
+              font-size: 1.2rem; color: #28a745;
+              border-top: 2px solid #28a745; margin-top: 10px; padding-top: 15px;
+          }
+          
+          .payment-methods-info {
+              background: #e8f4fd; padding: 20px; border-radius: 12px;
+              margin: 20px 0;
+          }
+          .payment-methods-info h6 { color: #0c5460; margin-bottom: 15px; }
+          .methods-grid {
+              display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;
+          }
+          .method-item {
+              background: white; padding: 15px; border-radius: 8px;
+              box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+              display: flex; flex-direction: column; align-items: center;
+          }
+          .method-item i { font-size: 1.5rem; margin-bottom: 8px; color: #007bff; }
+          .method-item span { font-size: 0.8rem; font-weight: 500; }
+          
+          .instructions-card {
+              background: #fff3cd; padding: 20px; border-radius: 12px;
+              margin: 20px 0; text-align: left;
+          }
+          .instruction-step {
+              display: flex; align-items: center; margin-bottom: 15px;
+          }
+          .step-number {
+              background: #ffc107; color: #856404; width: 30px; height: 30px;
+              border-radius: 50%; display: flex; align-items: center;
+              justify-content: center; font-weight: bold; margin-right: 15px;
+              font-size: 0.9rem;
+          }
+          .step-text { color: #856404; font-weight: 500; }
+          
+          .security-badges {
+              display: flex; justify-content: center; gap: 20px; margin-top: 25px;
+          }
+          .badge-item {
+              display: flex; flex-direction: column; align-items: center;
+              color: #28a745; font-size: 0.8rem;
+          }
+          .badge-item i { font-size: 1.2rem; margin-bottom: 5px; }
+          
+          @media (max-width: 768px) {
+              .methods-grid { grid-template-columns: repeat(2, 1fr); }
+              .security-badges { flex-wrap: wrap; gap: 15px; }
+          }
+      </style>
+    `,
+    showCancelButton: true,
+    confirmButtonText: '<i class="fas fa-external-link-alt me-2"></i>Continue to PayHere',
+    cancelButtonText: '<i class="fas fa-times me-2"></i>Cancel Payment',
+    confirmButtonColor: '#28a745',
+    cancelButtonColor: '#6c757d',
+    allowOutsideClick: false,
+    width: '800px'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      // Store payment data for tracking
+      sessionStorage.setItem('currentPayment', JSON.stringify(paymentData));
+      
+      // Open PayHere in popup window with better dimensions
+      const popup = window.open(
+        paymentData.checkoutUrl, 
+        'PayHerePayment',
+        'width=800,height=700,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no'
+      );
+      
+      console.log("🚀 PayHere checkout URL:", paymentData.checkoutUrl);
+      
+      // Check if popup was blocked
+      if (!popup || popup.closed || typeof popup.closed == 'undefined') {
+        Swal.fire({
+          title: 'Popup Blocked',
+          text: 'Please allow popups for this site and try again, or manually visit the PayHere page.',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Go to PayHere Manually',
+          cancelButtonText: 'Try Again'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            window.location.href = paymentData.checkoutUrl;
+          } else {
+            handlePayHerePayment(paymentData); // Retry
+          }
+        });
+        return;
+      }
+      
+      // Start monitoring payment status
+      startPaymentStatusMonitoring(paymentData.transactionId);
+      
+      // Monitor popup window
+      const popupMonitor = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(popupMonitor);
+          console.log('PayHere popup window closed by user');
+        }
+      }, 1000);
+    }
+  });
+}
+
+function monitorPayHereIframe(transactionId) {
+  const checkInterval = 3000; // Check every 3 seconds
+  let checkCount = 0;
+  const maxChecks = 100; // Maximum 5 minutes
+
+  const statusInterval = setInterval(async () => {
+    checkCount++;
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/payment/status/${transactionId}`, {
+        method: 'GET',
+        headers: {
+          Authorization: "Bearer " + (localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token")),
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const statusData = await response.json();
+        
+        if (statusData.status === 200) {
+          const paymentStatus = statusData.data.status;
+          
+          if (paymentStatus === 'COMPLETED') {
+            clearInterval(statusInterval);
+            Swal.close(); // Close iframe modal
+            showPaymentSuccessModal(statusData.data);
+          } else if (paymentStatus === 'FAILED' || paymentStatus === 'CANCELLED') {
+            clearInterval(statusInterval);
+            Swal.close(); // Close iframe modal
+            showPaymentFailedModal(statusData.data);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error checking payment status:', error);
+    }
+
+    // Stop checking after max attempts
+    if (checkCount >= maxChecks) {
+      clearInterval(statusInterval);
+    }
+  }, checkInterval);
+}
+function handlePayHerePaymentWithPostMessage(paymentData) {
+  Swal.close();
+  
+  // Listen for messages from PayHere iframe
+  window.addEventListener('message', function(event) {
+    // Make sure it's from PayHere domain
+    if (event.origin === 'https://sandbox.payhere.lk' || event.origin === 'https://www.payhere.lk') {
+      console.log('PayHere message received:', event.data);
+      
+      // Handle different message types
+      if (event.data.type === 'payment_success') {
+        Swal.close();
+        startPaymentStatusMonitoring(paymentData.transactionId);
+      } else if (event.data.type === 'payment_failed') {
+        Swal.close();
+        showAlert('Payment Failed', 'Payment was not completed successfully.', 'error');
+      }
+    }
+  });
+  
+  Swal.fire({
+    title: 'Complete Your Payment',
+    html: `
+      <div class="payhere-embedded-container">
+          <div class="payment-info-card">
+              <h6><i class="fas fa-info-circle me-2"></i>Payment Details</h6>
+              <div class="info-row">
+                  <span>Application:</span>
+                  <strong>#${paymentData.paymentId}</strong>
+              </div>
+              <div class="info-row">
+                  <span>Amount:</span>
+                  <strong>Rs. ${paymentData.amount.toLocaleString()}</strong>
+              </div>
+              <div class="info-row">
+                  <span>Transaction ID:</span>
+                  <strong>${paymentData.transactionId}</strong>
+              </div>
+          </div>
+          
+          <div class="payhere-embed-frame">
+              <iframe 
+                  id="payhere-payment-iframe" 
+                  src="${paymentData.checkoutUrl}" 
+                  width="100%" 
+                  height="650px" 
+                  frameborder="0"
+                  style="border: none; border-radius: 8px;">
+              </iframe>
+          </div>
+          
+          <div class="payment-instructions">
+              <div class="instruction-item">
+                  <i class="fas fa-credit-card text-primary me-2"></i>
+                  <span>Select your preferred payment method (Visa, MasterCard, etc.)</span>
+              </div>
+              <div class="instruction-item">
+                  <i class="fas fa-keyboard text-success me-2"></i>
+                  <span>Enter your card details securely</span>
+              </div>
+              <div class="instruction-item">
+                  <i class="fas fa-lock text-warning me-2"></i>
+                  <span>Complete the payment process</span>
+              </div>
+          </div>
+      </div>
+      
+      <style>
+          .payhere-embedded-container {
+              text-align: left;
+              max-width: 100%;
+          }
+          .payment-info-card {
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              color: white;
+              padding: 20px;
+              border-radius: 12px;
+              margin-bottom: 20px;
+          }
+          .payment-info-card h6 {
+              color: white;
+              margin-bottom: 15px;
+          }
+          .info-row {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 8px;
+              padding: 5px 0;
+          }
+          .payhere-embed-frame {
+              background: white;
+              border-radius: 12px;
+              padding: 10px;
+              box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+              margin-bottom: 20px;
+          }
+          .payment-instructions {
+              background: #f8f9fa;
+              padding: 20px;
+              border-radius: 10px;
+              border-left: 4px solid #007bff;
+          }
+          .instruction-item {
+              display: flex;
+              align-items: center;
+              margin-bottom: 10px;
+              font-size: 0.9rem;
+          }
+          
+          @media (max-width: 768px) {
+              .payhere-embed-frame iframe {
+                  height: 500px;
+              }
+          }
+      </style>
+    `,
+    showConfirmButton: false,
+    showCancelButton: true,
+    cancelButtonText: '<i class="fas fa-times me-2"></i>Close',
+    cancelButtonColor: '#6c757d',
+    allowOutsideClick: false,
+    width: '90%',
+    didOpen: () => {
+      monitorPayHereIframe(paymentData.transactionId);
+    }
+  });
+}
+
+// Update your existing function call
+// Change this line in processEnhancedPayment():
+// setTimeout(() => {
+//   handlePayHerePayment(paymentData_backend); // This will now show PayHere in same page
+// }, 3000);
+
+setTimeout(() => {
+  handlePayHerePayment(paymentData); // Use the correct variable name
+}, 3000);
+
+function startPaymentStatusMonitoring(transactionId) {
+  const checkInterval = 5000; // Check every 5 seconds
+  let checkCount = 0;
+  const maxChecks = 60; // Maximum 5 minutes
+
+  const statusInterval = setInterval(async () => {
+    checkCount++;
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/payment/status/${transactionId}`, {
+        method: 'GET',
+        headers: {
+          Authorization: "Bearer " + (localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token")),
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const statusData = await response.json();
+        
+        if (statusData.status === 200) {
+          const paymentStatus = statusData.data.status;
+          
+          if (paymentStatus === 'COMPLETED') {
+            clearInterval(statusInterval);
+            showPaymentSuccessModal(statusData.data);
+          } else if (paymentStatus === 'FAILED' || paymentStatus === 'CANCELLED') {
+            clearInterval(statusInterval);
+            showPaymentFailedModal(statusData.data);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error checking payment status:', error);
+    }
+
+    // Stop checking after max attempts
+    if (checkCount >= maxChecks) {
+      clearInterval(statusInterval);
+      showPaymentTimeoutModal(transactionId);
+    }
+  }, checkInterval);
+
+  // Show status checking modal
+  Swal.fire({
+    title: 'Monitoring Payment...',
+    html: `
+      <div class="payment-monitoring">
+          <div class="monitoring-animation">
+              <div class="pulse-dot"></div>
+          </div>
+          <p>We're monitoring your payment status...</p>
+          <p><small>Please complete your payment on PayHere</small></p>
+          <div class="monitoring-info">
+              <div>Transaction ID: <strong>${transactionId}</strong></div>
+          </div>
+      </div>
+      <style>
+          .payment-monitoring { text-align: center; }
+          .monitoring-animation { margin: 20px 0; }
+          .pulse-dot {
+              width: 40px; height: 40px; background: #28a745;
+              border-radius: 50%; margin: 0 auto;
+              animation: pulse 2s infinite;
+          }
+          @keyframes pulse {
+              0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+              70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
+              100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+          }
+          .monitoring-info {
+              background: #f8f9fa; padding: 15px; border-radius: 8px;
+              margin-top: 20px; font-size: 0.9rem;
+          }
+      </style>
+    `,
+    allowOutsideClick: false,
+    showConfirmButton: false,
+    showCloseButton: true
+  });
+}
+
+function showPaymentSuccessModal(paymentStatusData) {
+  Swal.fire({
+    title: null,
+    html: `
+      <div class="payment-success-modal">
+          <div class="success-animation-container">
+              <div class="success-checkmark">
+                  <div class="success-checkmark-circle"></div>
+                  <div class="success-checkmark-stem"></div>
+                  <div class="success-checkmark-kick"></div>
+              </div>
+          </div>
+          
+          <h3 class="success-title">🎉 Payment Successful!</h3>
+          <p class="success-subtitle">Your exam fee has been processed successfully</p>
+          
+          <div class="payment-receipt-card">
+              <div class="receipt-header">
+                  <i class="fas fa-receipt me-2"></i>
+                  <span>Payment Receipt</span>
+              </div>
+              <div class="receipt-body">
+                  <div class="receipt-row">
+                      <span class="label">Transaction ID:</span>
+                      <span class="value">${paymentStatusData.transactionId}</span>
+                  </div>
+                  <div class="receipt-row">
+                      <span class="label">Status:</span>
+                      <span class="value">${paymentStatusData.statusMessage}</span>
+                  </div>
+                  <div class="receipt-row">
+                      <span class="label">Payment Method:</span>
+                      <span class="value">${paymentStatusData.paymentMethod}</span>
+                  </div>
+                  <div class="receipt-row">
+                      <span class="label">Date & Time:</span>
+                      <span class="value">${new Date(paymentStatusData.paymentDate).toLocaleString()}</span>
+                  </div>
+                  <div class="receipt-row total-row">
+                      <span class="label">Amount Paid:</span>
+                      <span class="value amount">Rs. ${paymentStatusData.amount.toLocaleString()}</span>
+                  </div>
+              </div>
+          </div>
+          
+          <div class="next-steps-card">
+              <h6><i class="fas fa-route me-2"></i>What Happens Next?</h6>
+              <div class="next-steps-timeline">
+                  <div class="timeline-step completed">
+                      <i class="fas fa-check-circle"></i>
+                      <span>Payment Confirmed</span>
+                  </div>
+                  <div class="timeline-step next">
+                      <i class="fas fa-envelope"></i>
+                      <span>Exam confirmation via SMS/Email</span>
+                  </div>
+                  <div class="timeline-step future">
+                      <i class="fas fa-graduation-cap"></i>
+                      <span>Attend written examination</span>
+                  </div>
+                  <div class="timeline-step future">
+                      <i class="fas fa-car"></i>
+                      <span>Practical driving test (if passed)</span>
+                  </div>
+              </div>
+          </div>
+          
+          <div class="important-reminders">
+              <h6><i class="fas fa-exclamation-circle me-2"></i>Important Reminders</h6>
+              <ul>
+                  <li>Save this receipt for your records</li>
+                  <li>Check your email/SMS for exam details</li>
+                  <li>Bring your NIC and this receipt to the exam</li>
+                  <li>Arrive 30 minutes before your exam time</li>
+              </ul>
+          </div>
+      </div>
+      
+      <style>
+          .payment-success-modal { text-align: center; }
+          .success-animation-container { margin: 20px 0; }
+          .success-checkmark {
+              width: 80px; height: 80px; border-radius: 50%;
+              display: block; stroke-width: 2; stroke: #28a745;
+              stroke-miterlimit: 10; margin: 0 auto;
+              box-shadow: inset 0px 0px 0px #28a745;
+              animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+              position: relative;
+          }
+          .success-checkmark-circle {
+              stroke-dasharray: 166; stroke-dashoffset: 166;
+              stroke-width: 2; stroke-miterlimit: 10;
+              stroke: #28a745; fill: none;
+              animation: stroke .6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+              width: 80px; height: 80px; border-radius: 50%;
+              background: #f0f8f0; border: 2px solid #28a745;
+          }
+          .success-checkmark-stem, .success-checkmark-kick {
+              position: absolute; background: #28a745;
+          }
+          .success-checkmark-stem {
+              left: 35px; top: 42px; width: 3px; height: 15px;
+              transform-origin: bottom; animation: checkmark-stem 0.3s ease-in-out 0.6s forwards;
+              transform: rotate(-45deg) scaleY(0);
+          }
+          .success-checkmark-kick {
+              left: 30px; top: 48px; width: 12px; height: 3px;
+              transform-origin: left; animation: checkmark-kick 0.3s ease-in-out 0.8s forwards;
+              transform: rotate(45deg) scaleX(0);
+          }
+          @keyframes stroke {
+              100% { stroke-dashoffset: 0; }
+          }
+          @keyframes scale {
+              0%, 100% { transform: none; }
+              50% { transform: scale3d(1.1, 1.1, 1); }
+          }
+          @keyframes fill {
+              100% { box-shadow: inset 0px 0px 0px 30px #28a745; }
+          }
+          @keyframes checkmark-stem {
+              100% { transform: rotate(-45deg) scaleY(1); }
+          }
+          @keyframes checkmark-kick {
+              100% { transform: rotate(45deg) scaleX(1); }
+          }
+          .success-title {
+              color: #28a745; margin: 20px 0 10px 0; font-weight: 700;
+          }
+          .success-subtitle {
+              color: #6c757d; margin-bottom: 25px;
+          }
+          .payment-receipt-card {
+              background: #f8f9fa; border: 2px dashed #28a745;
+              border-radius: 15px; margin-bottom: 25px; overflow: hidden;
+          }
+          .receipt-header {
+              background: #28a745; color: white; padding: 15px;
+              font-weight: 600; font-size: 1.1rem;
+          }
+          .receipt-body { padding: 20px; }
+          .receipt-row {
+              display: flex; justify-content: space-between;
+              margin-bottom: 12px; padding: 8px 0;
+          }
+          .receipt-row.total-row {
+              border-top: 2px solid #28a745; margin-top: 15px;
+              padding-top: 15px; font-weight: 600;
+          }
+          .receipt-row .label { color: #6c757d; }
+          .receipt-row .value { font-weight: 500; }
+          .receipt-row .amount { color: #28a745; font-size: 1.2rem; }
+          .next-steps-card, .important-reminders {
+              background: #e8f5e8; padding: 20px; border-radius: 12px;
+              margin-bottom: 20px; text-align: left;
+          }
+          .next-steps-card h6, .important-reminders h6 {
+              color: #155724; margin-bottom: 15px;
+          }
+          .next-steps-timeline { }
+          .timeline-step {
+              display: flex; align-items: center; margin-bottom: 10px;
+              padding: 8px; border-radius: 6px;
+          }
+          .timeline-step.completed {
+              background: #d4edda; color: #155724;
+          }
+          .timeline-step.next {
+              background: #fff3cd; color: #856404;
+          }
+          .timeline-step.future {
+              background: #f8f9fa; color: #6c757d;
+          }
+          .timeline-step i { margin-right: 12px; width: 20px; }
+          .important-reminders ul {
+              margin: 0; padding-left: 20px;
+          }
+          .important-reminders li {
+              margin-bottom: 8px; color: #155724;
+          }
+      </style>
+    `,
+    showCancelButton: true,
+    confirmButtonText: '<i class="fas fa-download me-2"></i>Download Receipt',
+    cancelButtonText: '<i class="fas fa-check me-2"></i>Continue',
+    confirmButtonColor: "#28a745",
+    cancelButtonColor: "#007bff",
+    width: "700px",
+  }).then((result) => {
+    if (result.isConfirmed) {
+      downloadPaymentReceiptFromBackend(paymentStatusData.transactionId);
+    }
+
+    // Clear stored payment data and refresh
+    sessionStorage.removeItem('currentPayment');
+    
+    // Refresh data after payment
+    loadDriverApplications().then(() => {
+      loadSmartNotifications();
+    });
+  });
+}
+
+function showPaymentFailedModal(paymentStatusData) {
+  Swal.fire({
+    title: 'Payment Failed',
+    html: `
+      <div class="payment-failed-modal">
+          <div class="failed-animation">
+              <i class="fas fa-times-circle" style="font-size: 4rem; color: #dc3545; margin-bottom: 20px;"></i>
+          </div>
+          
+          <h4 style="color: #dc3545; margin-bottom: 15px;">Payment Unsuccessful</h4>
+          <p style="color: #6c757d; margin-bottom: 25px;">We're sorry, but your payment could not be processed.</p>
+          
+          <div class="failed-details-card">
+              <div class="failed-header">
+                  <i class="fas fa-info-circle me-2"></i>
+                  <span>Transaction Details</span>
+              </div>
+              <div class="failed-body">
+                  <div class="detail-row">
+                      <span>Transaction ID:</span>
+                      <strong>${paymentStatusData.transactionId}</strong>
+                  </div>
+                  <div class="detail-row">
+                      <span>Status:</span>
+                      <strong>${paymentStatusData.statusMessage}</strong>
+                  </div>
+                  <div class="detail-row">
+                      <span>Amount:</span>
+                      <strong>Rs. ${paymentStatusData.amount.toLocaleString()}</strong>
+                  </div>
+              </div>
+          </div>
+          
+          <div class="retry-suggestions">
+              <h6><i class="fas fa-lightbulb me-2"></i>What You Can Do</h6>
+              <ul>
+                  <li>Check your card details and try again</li>
+                  <li>Ensure sufficient balance in your account</li>
+                  <li>Try a different payment method</li>
+                  <li>Contact your bank if the issue persists</li>
+                  <li>Contact our support team for assistance</li>
+              </ul>
+          </div>
+      </div>
+      
+      <style>
+          .payment-failed-modal { text-align: center; }
+          .failed-details-card {
+              background: #f8f9fa; border: 2px solid #dc3545;
+              border-radius: 12px; margin-bottom: 20px; overflow: hidden;
+          }
+          .failed-header {
+              background: #dc3545; color: white; padding: 12px;
+              font-weight: 600;
+          }
+          .failed-body { padding: 15px; }
+          .detail-row {
+              display: flex; justify-content: space-between;
+              margin-bottom: 8px; padding: 5px 0;
+          }
+          .retry-suggestions {
+              background: #fff3cd; padding: 20px; border-radius: 10px;
+              text-align: left; border: 1px solid #ffeaa7;
+          }
+          .retry-suggestions h6 { color: #856404; margin-bottom: 15px; }
+          .retry-suggestions ul { margin: 0; padding-left: 20px; }
+          .retry-suggestions li { margin-bottom: 8px; color: #856404; }
+      </style>
+    `,
+    showCancelButton: true,
+    confirmButtonText: '<i class="fas fa-redo me-2"></i>Try Again',
+    cancelButtonText: '<i class="fas fa-times me-2"></i>Close',
+    confirmButtonColor: '#28a745',
+    cancelButtonColor: '#6c757d'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      // Retry payment
+      showPaymentForm();
+    }
+  });
+}
+
+function showPaymentTimeoutModal(transactionId) {
+  Swal.fire({
+    title: 'Payment Status Unknown',
+    html: `
+      <div class="payment-timeout-modal">
+          <div class="timeout-icon">
+              <i class="fas fa-clock" style="font-size: 3rem; color: #ffc107; margin-bottom: 20px;"></i>
+          </div>
+          
+          <p>We couldn't confirm your payment status automatically. This might mean:</p>
+          
+          <div class="timeout-reasons">
+              <div class="reason-item">
+                  <i class="fas fa-hourglass-half me-2"></i>
+                  <span>Your payment is still being processed</span>
+              </div>
+              <div class="reason-item">
+                  <i class="fas fa-wifi me-2"></i>
+                  <span>Network connectivity issues</span>
+              </div>
+              <div class="reason-item">
+                  <i class="fas fa-window-close me-2"></i>
+                  <span>PayHere window was closed</span>
+              </div>
+          </div>
+          
+          <div class="timeout-actions">
+              <p><strong>Transaction ID:</strong> ${transactionId}</p>
+              <p><small>You can check your payment status manually or contact support if needed.</small></p>
+          </div>
+      </div>
+      
+      <style>
+          .payment-timeout-modal { text-align: center; }
+          .timeout-reasons {
+              background: #fff3cd; padding: 20px; border-radius: 10px;
+              margin: 20px 0; text-align: left;
+          }
+          .reason-item {
+              display: flex; align-items: center;
+              margin-bottom: 12px; color: #856404;
+          }
+          .timeout-actions {
+              background: #f8f9fa; padding: 15px; border-radius: 8px;
+              margin-top: 20px;
+          }
+      </style>
+    `,
+    showCancelButton: true,
+    confirmButtonText: '<i class="fas fa-search me-2"></i>Check Status',
+    cancelButtonText: '<i class="fas fa-times me-2"></i>Close',
+    confirmButtonColor: '#ffc107',
+    cancelButtonColor: '#6c757d'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      checkPaymentStatusManually(transactionId);
+    }
+  });
+}
+
+async function checkPaymentStatusManually(transactionId) {
+  try {
+    showLoading(true);
+    
+    const response = await fetch(`${API_BASE_URL}/payment/status/${transactionId}`, {
+      method: 'GET',
+      headers: {
+       Authorization: "Bearer " + (localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token")),
+        'Content-Type': 'application/json'
+      }
+    });
+
+    showLoading(false);
+
+    if (response.ok) {
+      const statusData = await response.json();
+      
+      if (statusData.status === 200) {
+        const paymentStatus = statusData.data.status;
+        
+        if (paymentStatus === 'COMPLETED') {
+          showPaymentSuccessModal(statusData.data);
+        } else if (paymentStatus === 'FAILED' || paymentStatus === 'CANCELLED') {
+          showPaymentFailedModal(statusData.data);
+        } else {
+          showAlert('Payment Status', `Your payment is currently: ${statusData.data.statusMessage}`, 'info');
+        }
+      } else {
+        showAlert('Error', statusData.message || 'Could not retrieve payment status', 'error');
+      }
+    } else {
+      showAlert('Error', 'Failed to check payment status. Please try again later.', 'error');
+    }
+  } catch (error) {
+    showLoading(false);
+    console.error('Error checking payment status:', error);
+    showAlert('Error', 'Network error. Please check your connection and try again.', 'error');
+  }
+}
+
+async function downloadPaymentReceiptFromBackend(transactionId) {
+  try {
+    showLoading(true);
+    
+    const response = await fetch(`${API_BASE_URL}/payment/receipt/${transactionId}`, {
+      method: 'GET',
+      headers: {
+       Authorization: "Bearer " + (localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token"))
+      }
+    });
+
+    showLoading(false);
+
+    if (response.ok) {
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `LicensePro_Receipt_${transactionId}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      showAlert('Success', 'Receipt downloaded successfully!', 'success');
+    } else {
+      showAlert('Error', 'Failed to download receipt. Please try again.', 'error');
+    }
+  } catch (error) {
+    showLoading(false);
+    console.error('Error downloading receipt:', error);
+    showAlert('Error', 'Network error. Please check your connection and try again.', 'error');
+  }
+}
+
+// Get payment history for driver
+async function getDriverPaymentHistory() {
+  try {
+    showLoading(true);
+    
+    const response = await fetch(`${API_BASE_URL}/payment/history/${currentDriverId}`, {
+      method: 'GET',
+      headers: {
+        Authorization: "Bearer " + (localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token")),
+        'Content-Type': 'application/json'
+      }
+    });
+
+    showLoading(false);
+
+    if (response.ok) {
+      const historyData = await response.json();
+      
+      if (historyData.status === 200) {
+        displayPaymentHistory(historyData.data);
+      } else {
+        showAlert('Error', historyData.message || 'Could not retrieve payment history', 'error');
+      }
+    } else {
+      showAlert('Error', 'Failed to load payment history. Please try again later.', 'error');
+    }
+  } catch (error) {
+    showLoading(false);
+    console.error('Error fetching payment history:', error);
+    showAlert('Error', 'Network error. Please check your connection and try again.', 'error');
+  }
+}
+
+function displayPaymentHistory(paymentHistory) {
+  if (!paymentHistory || paymentHistory.length === 0) {
+    showAlert('No History', 'You have no payment history yet.', 'info');
+    return;
+  }
+
+  const historyHtml = paymentHistory.map(payment => `
+    <div class="payment-history-item ${payment.status.toLowerCase()}">
+        <div class="history-header">
+            <div class="transaction-info">
+                <strong>Transaction: ${payment.transactionId}</strong>
+                <span class="status-badge ${payment.status.toLowerCase()}">${payment.statusMessage}</span>
+            </div>
+            <div class="amount-info">
+                <strong>Rs. ${payment.amount.toLocaleString()}</strong>
+            </div>
+        </div>
+        <div class="history-details">
+            <div class="detail-item">
+                <i class="fas fa-calendar me-1"></i>
+                ${payment.paymentDate ? new Date(payment.paymentDate).toLocaleString() : 'N/A'}
+            </div>
+            <div class="detail-item">
+                <i class="fas fa-credit-card me-1"></i>
+                ${payment.paymentMethod}
+            </div>
+            ${payment.status === 'COMPLETED' ? `
+                <div class="detail-item">
+                    <a href="${payment.receiptUrl}" class="receipt-link">
+                        <i class="fas fa-download me-1"></i>Download Receipt
+                    </a>
+                </div>
+            ` : ''}
+        </div>
+    </div>
+  `).join('');
+
+  Swal.fire({
+    title: '<i class="fas fa-history me-2"></i>Payment History',
+    html: `
+      <div class="payment-history-container">
+          ${historyHtml}
+      </div>
+      
+      <style>
+          .payment-history-container {
+              max-height: 500px; overflow-y: auto; text-align: left;
+          }
+          .payment-history-item {
+              border: 1px solid #e9ecef; border-radius: 10px;
+              margin-bottom: 15px; padding: 20px; background: #f8f9fa;
+          }
+          .payment-history-item.completed {
+              border-color: #28a745; background: #f0f8f0;
+          }
+          .payment-history-item.failed {
+              border-color: #dc3545; background: #fdf2f2;
+          }
+          .payment-history-item.pending {
+              border-color: #ffc107; background: #fffbf0;
+          }
+          .history-header {
+              display: flex; justify-content: space-between;
+              align-items: center; margin-bottom: 15px;
+          }
+          .status-badge {
+              padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;
+              font-weight: 500; margin-left: 10px;
+          }
+          .status-badge.completed {
+              background: #d4edda; color: #155724;
+          }
+          .status-badge.failed {
+              background: #f8d7da; color: #721c24;
+          }
+          .status-badge.pending {
+              background: #fff3cd; color: #856404;
+          }
+          .history-details {
+              display: flex; flex-wrap: wrap; gap: 15px;
+          }
+          .detail-item {
+              color: #6c757d; font-size: 0.9rem;
+          }
+          .receipt-link {
+              color: #007bff; text-decoration: none;
+          }
+          .receipt-link:hover {
+              text-decoration: underline;
+          }
+      </style>
+    `,
+    width: '800px',
+    confirmButtonText: '<i class="fas fa-times me-2"></i>Close',
+    confirmButtonColor: '#6c757d'
+  });
+}
+
+// Helper function to format payment method display name
+function getPaymentMethodName(method) {
+  const methods = {
+    'CARD': 'Credit/Debit Card',
+    'BANK': 'Bank Transfer', 
+    'MOBILE': 'Mobile Payment',
+    'card': 'Credit/Debit Card',
+    'bank': 'Bank Transfer',
+    'mobile': 'Mobile Payment'
+  };
+  return methods[method] || method.toUpperCase();
+}
   // =================== FORM HANDLING ===================
 
   window.showLicenseForm = function () {
@@ -2065,6 +3379,79 @@ Support: support@licensepro.lk
       );
     }
   }
+
+  // Add this function to your driverDashboard.js file
+
+function calculateExamFee(licenseType, vehicleClasses) {
+  let baseFee = 3000;
+
+  switch (licenseType?.toLowerCase()) {
+    case "learner":
+      baseFee = 2500;
+      break;
+    case "restricted":
+      baseFee = 3000;
+      break;
+    case "full":
+      baseFee = 4000;
+      break;
+    case "heavy":
+      baseFee = 6000;
+      break;
+    case "commercial":
+      baseFee = 7500;
+      break;
+    case "international":
+      baseFee = 5000;
+      break;
+    case "motorcycle":
+      baseFee = 3500;
+      break;
+    case "special":
+      baseFee = 8000;
+      break;
+    default:
+      baseFee = 3000;
+  }
+
+  // Handle vehicle classes - can be array or comma-separated string
+  const classCount = Array.isArray(vehicleClasses)
+    ? vehicleClasses.length
+    : vehicleClasses
+    ? vehicleClasses.split(",").length
+    : 1;
+    
+  const additionalFee = Math.max(0, classCount - 1) * 500;
+
+  return baseFee + additionalFee;
+}
+
+// Also add this async version that fetches from backend (recommended)
+async function calculateExamFeeFromBackend(licenseType, vehicleClasses) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/payment/calculate-fee?licenseType=${licenseType}&vehicleClasses=${vehicleClasses || ''}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${getAuthToken()}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (response.ok) {
+      const feeData = await response.json();
+      if (feeData.status === 200) {
+        return feeData.data.examFee;
+      }
+    }
+    
+    // Fallback to client-side calculation
+    return calculateExamFee(licenseType, vehicleClasses);
+  } catch (error) {
+    console.error('Error fetching exam fee from backend:', error);
+    // Fallback to client-side calculation
+    return calculateExamFee(licenseType, vehicleClasses);
+  }
+}
 
   window.removeVehicleClass = function (value) {
     selectedVehicleClasses = selectedVehicleClasses.filter(
