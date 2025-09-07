@@ -217,7 +217,10 @@ public class WrittenExamServiceImpl implements WrittenExamService {
                 .writtenExamLocation(writtenExam.getWrittenExamLocation())
                 .note(writtenExam.getNote())
                 .writtenExamResult(writtenExam.getWrittenExamResult())
-                .applicationId(writtenExam.getApplication().getId());
+                .applicationId(writtenExam.getApplication().getId())
+                // Add the new fields
+                .nextExamDate(writtenExam.getNextExamDate())
+                .trialDate(writtenExam.getTrialDate());
 
         // Safely handle driver information
         try {

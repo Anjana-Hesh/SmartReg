@@ -32,6 +32,10 @@ public class WrittenExamDto {
     private String licenseType;
 
     private String examLanguage;
+
+    // Add these missing fields
+    private LocalDate nextExamDate;
+    private LocalDate trialDate;
 }
 
 // This DTO is used to transfer written exam data, including application details if needed.

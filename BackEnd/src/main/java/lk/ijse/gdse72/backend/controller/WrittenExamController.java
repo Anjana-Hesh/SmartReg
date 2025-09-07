@@ -72,6 +72,8 @@ public class WrittenExamController {
                                 .note("No written exam scheduled for this application")
                                 .writtenExamResult(null)
                                 .applicationId(applicationId)
+                                .nextExamDate(null) // Add this
+                                .trialDate(null) // Add this
                                 .driverName(null)
                                 .licenseType(null)
                                 .examLanguage(null)

@@ -171,115 +171,95 @@ $(document).ready(function () {
     });
   }
 
-  // Get written exam details for approved application
   function getWrittenExamDetails(applicationId) {
     return $.ajax({
-      url: `${API_BASE_URL}/written-exams/application/${applicationId}`,
-      method: "GET",
-      headers: {
-        Authorization: "Bearer " + localStorage.getItem("token"),
-        "Content-Type": "application/json",
-      },
+        url: `${API_BASE_URL}/written-exams/application/${applicationId}`,
+        method: "GET",
+        headers: {
+            Authorization: "Bearer " + (localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token")),
+            "Content-Type": "application/json",
+        },
     })
-      .then(function (examDetails) {
+    .then(function (examDetails) {
         console.log("Raw exam details response:", examDetails);
 
         // Handle the response properly - check if it's a real exam or default response
-        const isRealExam =
-          examDetails &&
-          examDetails.id !== null &&
-          examDetails.id !== undefined;
+        const isRealExam = examDetails && examDetails.id !== null && examDetails.id !== undefined;
 
         // Normalize the response
-        const normalizedResponse = {
-          id: examDetails.id || null,
-          writtenExamDate: examDetails.writtenExamDate || null,
-          writtenExamTime: examDetails.writtenExamTime || null,
-          writtenExamLocation:
-            examDetails.writtenExamLocation || "Not scheduled yet",
-          writtenExamResult: examDetails.writtenExamResult || null,
-          note:
-            examDetails.note ||
-            (isRealExam
-              ? "No additional notes"
-              : "No written exam scheduled for this application"),
-          applicationId: examDetails.applicationId || applicationId,
-          driverName: examDetails.driverName || null,
-          licenseType: examDetails.licenseType || null,
-          examLanguage: examDetails.examLanguage || null,
-          trialDate:examDetails.trialDate || null,
-          isScheduled: isRealExam,
+        let normalizedResponse = {
+            id: examDetails.id || null,
+            writtenExamDate: examDetails.writtenExamDate || null,
+            writtenExamTime: examDetails.writtenExamTime || null,
+            writtenExamLocation: examDetails.writtenExamLocation || "Not scheduled yet",
+            writtenExamResult: examDetails.writtenExamResult || null,
+            note: examDetails.note || (isRealExam ? "No additional notes" : "No written exam scheduled for this application"),
+            applicationId: examDetails.applicationId || applicationId,
+            driverName: examDetails.driverName || null,
+            licenseType: examDetails.licenseType || null,
+            examLanguage: examDetails.examLanguage || null,
+            trialDate: examDetails.trialDate || null,
+            nextExamDate:examDetails.nextExamDate || "3 Months again" || null,
+            isScheduled: isRealExam,
+            trialExams: [] // Initialize empty array for trial exams
         };
+
+        // If written exam result is PASS, fetch trial exam details
+        if (examDetails.writtenExamResult === "PASS" && examDetails.id) {
+            return getTrialExamDetails(examDetails.id).then(function(trialExams) {
+                normalizedResponse.trialExams = trialExams;
+                return normalizedResponse;
+            }).catch(function(error) {
+                console.warn("Failed to fetch trial exams, continuing without trial data:", error);
+                return normalizedResponse;
+            });
+        }
 
         console.log("Normalized exam details:", normalizedResponse);
         return normalizedResponse;
-      })
-      .catch(function (error) {
+    })
+    .catch(function (error) {
         console.error("Failed to get written exam details:", error);
 
         // Return a consistent error response
         return {
-          id: null,
-          writtenExamDate: null,
-          writtenExamTime: null,
-          writtenExamLocation: "Error loading details",
-          writtenExamResult: null,
-          note:
-            "Failed to load exam details - " +
-            (error.responseJSON?.message ||
-              error.statusText ||
-              "Unknown error"),
-          applicationId: applicationId,
-          driverName: null,
-          licenseType: null,
-          examLanguage: null,
-          trialDate:null,
-          isScheduled: false,
-          error: true,
-        };
-      });
-  }
-
-  // Alternative function that checks if exam exists first
-  function getWrittenExamDetailsWithCheck(applicationId) {
-    // First check if exam exists
-    return $.ajax({
-      url: `${API_BASE_URL}/written-exams/exists/application/${applicationId}`,
-      method: "GET",
-      headers: {
-        Authorization: "Bearer " + localStorage.getItem("token"),
-        "Content-Type": "application/json",
-      },
-    })
-      .then(function (exists) {
-        console.log(`Exam exists for application ${applicationId}:`, exists);
-
-        if (exists) {
-          // If exam exists, get the details
-          return getWrittenExamDetails(applicationId);
-        } else {
-          // If no exam exists, return default structure
-          return {
             id: null,
             writtenExamDate: null,
             writtenExamTime: null,
-            writtenExamLocation: "Not scheduled yet",
+            writtenExamLocation: "Error loading details",
             writtenExamResult: null,
-            note: "No written exam has been scheduled for this application",
+            note: "Failed to load exam details - " + (error.responseJSON?.message || error.statusText || "Unknown error"),
             applicationId: applicationId,
             driverName: null,
             licenseType: null,
             examLanguage: null,
-            trialDate:null,
+            trialDate: null,
             isScheduled: false,
-          };
-        }
-      })
-      .catch(function (error) {
-        console.error("Error checking exam existence:", error);
-        return getWrittenExamDetails(applicationId); // Fallback to original function
-      });
-  }
+            trialExams: [],
+            error: true,
+        };
+    });
+}
+
+// New function to get trial exam details
+function getTrialExamDetails(writtenExamId) {
+    return $.ajax({
+        url: `${API_BASE_URL}/trial-exams/written-exam/${writtenExamId}`,
+        method: "GET",
+        headers: {
+            Authorization: "Bearer " + (localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token")),
+            "Content-Type": "application/json",
+        },
+    })
+    .then(function (trialExams) {
+        console.log("Trial exams response:", trialExams);
+        return trialExams || [];
+    })
+    .catch(function (error) {
+        console.error("Failed to get trial exam details:", error);
+        throw error;
+    });
+}
 
   // Submit license application
   function submitLicenseApplication(applicationData, photoFile, medicalFile) {
@@ -913,382 +893,345 @@ $(document).ready(function () {
     });
   }
 
- function showExamDetails(examDetails) {
+async function showExamDetails(examDetails) {
     const examDate = new Date(examDetails.examDate);
     const isUpcoming = examDate > new Date();
     const daysUntilExam = Math.ceil(
-      (examDate - new Date()) / (1000 * 60 * 60 * 24)
+        (examDate - new Date()) / (1000 * 60 * 60 * 24)
     );
 
-    // Check if there are trial exams
-    const hasTrialExams = examDetails.trialExams && examDetails.trialExams.length > 0;
-    
-    // Get the latest trial exam if available
-    const latestTrialExam = hasTrialExams ? 
-        examDetails.trialExams.reduce((latest, current) => {
-            return new Date(current.trialDate) > new Date(latest.trialDate) ? current : latest;
-        }, examDetails.trialExams[0]) : null;
+    let trialExamData = null;
+    let hasTrialExams = false;
+    let latestTrialExam = null;
+    let hasPassedTrial = false;
 
-    // Check if the latest trial exam is a pass
-    const hasPassedTrial = latestTrialExam && latestTrialExam.trialResult === "PASS";
+    // If written exam is passed, fetch trial exam details
+    if (examDetails.writtenExamResult === "PASS") {
+        try {
+            const response = await fetch(`/api/v1/trial-exams/written-exam/${examDetails.id}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Add authorization header if needed
+                    // 'Authorization': `Bearer ${getToken()}`
+                }
+            });
+
+            if (response.ok) {
+                trialExamData = await response.json();
+                hasTrialExams = trialExamData && trialExamData.length > 0;
+                
+                if (hasTrialExams) {
+                    // Get the latest trial exam
+                    latestTrialExam = trialExamData.reduce((latest, current) => {
+                        return new Date(current.trialDate) > new Date(latest.trialDate) ? current : latest;
+                    }, trialExamData[0]);
+                    
+                    hasPassedTrial = latestTrialExam && latestTrialExam.trialResult === "PASS";
+                }
+            } else {
+                console.warn('Failed to fetch trial exam data:', response.status);
+            }
+        } catch (error) {
+            console.error('Error fetching trial exam data:', error);
+        }
+    }
+
+    // Check completion status
+    const isComplete = examDetails.writtenExamResult === "PASS" && hasPassedTrial;
 
     Swal.fire({
-      title: "📝 Written Exam Details",
-      html: `
-                <div class="exam-details-modal">
-                    <div class="exam-status-banner ${
-                      isUpcoming ? "upcoming" : "past"
-                    }">
-                        <i class="fas fa-${
-                          isUpcoming ? "calendar-check" : "history"
-                        } me-2"></i>
-                        ${
-                          isUpcoming
-                            ? `Exam in ${daysUntilExam} day${
-                                daysUntilExam !== 1 ? "s" : ""
-                              }`
-                            : "Past Exam"
-                        }
+        title: `📝 Written Exam Details ${isComplete ? '✅ COMPLETE' : ''}`,
+        html: `
+            <div class="exam-details-modal">
+                ${isComplete ? `
+                    <div class="completion-banner">
+                        <i class="fas fa-trophy me-2"></i>
+                        <strong>License Process Complete!</strong>
+                        <p>You have successfully passed both written and trial exams.</p>
+                    </div>
+                ` : ''}
+                
+                <div class="exam-status-banner ${isUpcoming ? "upcoming" : "past"}">
+                    <i class="fas fa-${isUpcoming ? "calendar-check" : "history"} me-2"></i>
+                    ${isUpcoming
+                        ? `Exam in ${daysUntilExam} day${daysUntilExam !== 1 ? "s" : ""}`
+                        : "Past Exam"
+                    }
+                </div>
+                
+                <div class="exam-info-grid">
+                    <div class="exam-info-card">
+                        <div class="exam-info-icon date-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div class="exam-info-content">
+                            <label>Exam Date</label>
+                            <strong>${formatDate(examDetails.examDate)}</strong>
+                        </div>
                     </div>
                     
-                    <div class="exam-info-grid">
-                        <div class="exam-info-card">
-                            <div class="exam-info-icon date-icon">
-                                <i class="fas fa-calendar-alt"></i>
-                            </div>
-                            <div class="exam-info-content">
-                                <label>Exam Date</label>
-                                <strong>${formatDate(
-                                  examDetails.examDate
-                                )}</strong>
-                            </div>
+                    <div class="exam-info-card">
+                        <div class="exam-info-icon time-icon">
+                            <i class="fas fa-clock"></i>
                         </div>
-                        
-                        <div class="exam-info-card">
-                            <div class="exam-info-icon time-icon">
-                                <i class="fas fa-clock"></i>
-                            </div>
-                            <div class="exam-info-content">
-                                <label>Time</label>
-                                <strong>${
-                                  examDetails.examTime || "To be announced"
-                                }</strong>
-                            </div>
+                        <div class="exam-info-content">
+                            <label>Time</label>
+                            <strong>${examDetails.examTime || "To be announced"}</strong>
                         </div>
-                        
-                        <div class="exam-info-card full-width">
-                            <div class="exam-info-icon location-icon">
-                                <i class="fas fa-map-marker-alt"></i>
-                            </div>
-                            <div class="exam-info-content">
-                                <label>Location</label>
-                                <strong>${
-                                  examDetails.examLocation ||
-                                  "Will be announced soon"
-                                }</strong>
-                            </div>
-                        </div>
-                        
-                        ${
-                          examDetails.writtenExamResult
-                            ? `
-                            <div class="exam-info-card full-width result-card">
-                                <div class="exam-info-icon result-icon ${examDetails.writtenExamResult.toLowerCase()}">
-                                    <i class="fas fa-${
-                                      examDetails.writtenExamResult === "PASS"
-                                        ? "trophy"
-                                        : examDetails.writtenExamResult === "FAIL"
-                                        ? "times"
-                                        : "clock"
-                                    }"></i>
-                                </div>
-                                <div class="exam-info-content">
-                                    <label>Result</label>
-                                    <strong class="result-text ${examDetails.writtenExamResult.toLowerCase()}">${
-                                examDetails.writtenExamResult
-                              }</strong>
-                                    ${
-                                      examDetails.note
-                                        ? `<p class="result-note">${examDetails.note}</p>`
-                                        : ""
-                                    }
-                                </div>
-                            </div>
-                        `
-                            : ""
-                        }
                     </div>
                     
-                    <!-- Trial Exam Information -->
-                    ${
-                      hasTrialExams
-                        ? `
-                        <div class="trial-exam-section">
-                            <h6><i class="fas fa-car me-2"></i>Trial Exam Details</h6>
-                            <div class="trial-exam-info">
-                                <div class="trial-exam-card ${hasPassedTrial ? 'passed' : 'failed'}">
+                    <div class="exam-info-card full-width">
+                        <div class="exam-info-icon location-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div class="exam-info-content">
+                            <label>Location</label>
+                            <strong>${examDetails.examLocation || "Will be announced soon"}</strong>
+                        </div>
+                    </div>
+                    
+                    ${examDetails.writtenExamResult ? `
+                        <div class="exam-info-card full-width result-card">
+                            <div class="exam-info-icon result-icon ${examDetails.writtenExamResult.toLowerCase()}">
+                                <i class="fas fa-${examDetails.writtenExamResult === "PASS"
+                                    ? "trophy"
+                                    : examDetails.writtenExamResult === "FAIL"
+                                    ? "times"
+                                    : "clock"
+                                }"></i>
+                            </div>
+                            <div class="exam-info-content">
+                                <label>Written Exam Result</label>
+                                <strong class="result-text ${examDetails.writtenExamResult.toLowerCase()}">${examDetails.writtenExamResult}</strong>
+                                ${examDetails.note ? `<p class="result-note">${examDetails.note}</p>` : ""}
+                            </div>
+                        </div>
+                    ` : ""}
+                </div>
+                
+                <!-- Trial Exam Information -->
+                ${hasTrialExams ? `
+                    <div class="trial-exam-section">
+                        <h6><i class="fas fa-car me-2"></i>Trial Exam Details</h6>
+                        <div class="trial-exam-info">
+                            ${trialExamData.map(trialExam => `
+                                <div class="trial-exam-card ${trialExam.trialResult === 'PASS' ? 'passed' : 'failed'}">
                                     <div class="trial-exam-header">
-                                        <span class="trial-date">${formatDate(latestTrialExam.trialDate)}</span>
-                                        <span class="trial-result ${latestTrialExam.trialResult.toLowerCase()}">${latestTrialExam.trialResult}</span>
+                                        <span class="trial-date">${formatDate(trialExam.trialDate)}</span>
+                                        <span class="trial-result ${trialExam.trialResult.toLowerCase()}">${trialExam.trialResult}</span>
                                     </div>
                                     <div class="trial-exam-details">
                                         <div class="trial-time">
                                             <i class="fas fa-clock me-1"></i>
-                                            ${latestTrialExam.trialTime || 'Not specified'}
+                                            ${trialExam.trialTime || 'Not specified'}
                                         </div>
                                         <div class="trial-location">
                                             <i class="fas fa-map-marker-alt me-1"></i>
-                                            ${latestTrialExam.trialLocation || 'Location not specified'}
+                                            ${trialExam.trialLocation || 'Location not specified'}
                                         </div>
-                                        ${
-                                          latestTrialExam.examinerNotes
-                                            ? `<div class="trial-notes">
+                                        ${trialExam.examinerName ? `
+                                            <div class="trial-examiner">
+                                                <i class="fas fa-user-tie me-1"></i>
+                                                Examiner: ${trialExam.examinerName}
+                                            </div>
+                                        ` : ''}
+                                        ${trialExam.examinerNotes ? `
+                                            <div class="trial-notes">
                                                 <i class="fas fa-sticky-note me-1"></i>
-                                                ${latestTrialExam.examinerNotes}
-                                            </div>`
-                                            : ''
-                                        }
+                                                ${trialExam.examinerNotes}
+                                            </div>
+                                        ` : ''}
                                     </div>
                                 </div>
-                            </div>
-                            
-                            ${
-                              !hasPassedTrial
-                                ? `
-                                <div class="retry-message mt-3">
-                                    <i class="fas fa-redo text-info me-2"></i>
-                                    <span>You can apply for another trial exam. Contact the administration for more details.</span>
-                                </div>
-                            `
-                                : ''
-                            }
-                        </div>
-                    `
-                        : examDetails.writtenExamResult === "PASS"
-                        ? `
-                        <div class="trial-application-section">
-                            <h6><i class="fas fa-car me-2"></i>Trial Exam</h6>
-                            <p>You've passed the written exam! You can now apply for your trial exam.</p>
-                            <button class="btn btn-primary btn-sm apply-trial-btn" onclick="applyForTrialExam(${examDetails.id})">
-                                <i class="fas fa-paper-plane me-1"></i> Apply for Trial Exam
-                            </button>
-                        </div>
-                    `
-                        : ''
-                    }
-                    
-                    ${
-                      isUpcoming
-                        ? `
-                        <div class="exam-preparation-section">
-                            <h6><i class="fas fa-graduation-cap me-2"></i>Exam Preparation Checklist</h6>
-                            <div class="preparation-checklist">
-                                <div class="checklist-item">
-                                    <i class="fas fa-check-circle me-2"></i>
-                                    <span>Study traffic rules and road signs</span>
-                                </div>
-                                <div class="checklist-item">
-                                    <i class="fas fa-check-circle me-2"></i>
-                                    <span>Review your license type requirements</span>
-                                </div>
-                                <div class="checklist-item">
-                                    <i class="fas fa-check-circle me-2"></i>
-                                    <span>Take practice tests online</span>
-                                </div>
-                                <div class="checklist-item">
-                                    <i class="fas fa-check-circle me-2"></i>
-                                    <span>Bring NIC and application receipt</span>
-                                </div>
-                                <div class="checklist-item">
-                                    <i class="fas fa-check-circle me-2"></i>
-                                    <span>Arrive 30 minutes early</span>
-                                </div>
-                            </div>
+                            `).join('')}
                         </div>
                         
-                        ${
-                          daysUntilExam <= 7
-                            ? `
-                            <div class="exam-reminder-section">
-                                <i class="fas fa-bell text-warning me-2"></i>
-                                <strong>Important Reminder:</strong> Your exam is coming up soon! Make sure you're well-prepared and well-rested.
+                        ${!hasPassedTrial ? `
+                            <div class="retry-message mt-3">
+                                <i class="fas fa-redo text-info me-2"></i>
+                                <span>You can apply for another trial exam. Contact the administration for more details.</span>
                             </div>
-                        `
-                            : ""
-                        }
-                    `
-                        : ""
-                    }
-                    
-                    ${
-                      examDetails.writtenExamResult === "PASS" && !hasTrialExams
-                        ? `
-                        <div class="success-message">
-                            <i class="fas fa-trophy text-warning me-2"></i>
-                            <span>Congratulations on passing your written exam! Next step: Practical driving test.</span>
-                        </div>
-                    `
-                        : examDetails.writtenExamResult === "FAIL" || examDetails.writtenExamResult === "ABSANT"
-                        ? `
-                        <div class="retry-message">
-                            <i class="fas fa-redo text-info me-2"></i>
-                            <span>Don't worry! You can retake the exam. Use this as a learning experience.</span>
-                        </div>
-                    `
-                        : ""
-                    }
-                </div>
+                        ` : `
+                            <div class="success-message mt-3">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                <span>Congratulations! You have successfully completed your trial exam.</span>
+                            </div>
+                        `}
+                    </div>
+                ` : examDetails.writtenExamResult === "PASS" ? `
+                    <div class="trial-application-section">
+                        <h6><i class="fas fa-car me-2"></i>Trial Exam</h6>
+                        <p>You've passed the written exam! You can now apply for your trial exam.</p>
+                        <button class="btn btn-primary btn-sm apply-trial-btn" onclick="applyForTrialExam(${examDetails.id})">
+                            <i class="fas fa-paper-plane me-1"></i> Apply for Trial Exam
+                        </button>
+                    </div>
+                ` : ''}
                 
-                <style>
-                    .exam-details-modal { text-align: left; }
-                    .exam-status-banner {
-                        text-align: center; padding: 15px; border-radius: 10px;
-                        margin-bottom: 20px; font-weight: 600; font-size: 1.1rem;
-                    }
-                    .exam-status-banner.upcoming {
-                        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-                        color: #155724;
-                    }
-                    .exam-status-banner.past {
-                        background: linear-gradient(135deg, #e2e3e5 0%, #d6d8db 100%);
-                        color: #383d41;
-                    }
-                    .exam-info-grid {
-                        display: grid; grid-template-columns: 1fr 1fr; gap: 15px;
-                        margin-bottom: 20px;
-                    }
-                    .exam-info-card {
-                        display: flex; align-items: center; background: #f8f9fa;
-                        padding: 20px; border-radius: 10px; border-left: 3px solid #007bff;
-                    }
-                    .exam-info-card.full-width { grid-column: 1 / -1; }
-                    .exam-info-card.result-card { border-left-color: #28a745; }
-                    .exam-info-icon {
-                        width: 50px; height: 50px; border-radius: 50%;
-                        display: flex; align-items: center; justify-content: center;
-                        margin-right: 15px; color: white; font-size: 1.2rem;
-                    }
-                    .date-icon { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-                    .time-icon { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-                    .location-icon { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
-                    .result-icon.pass { background: #28a745; }
-                    .result-icon.fail { background: #dc3545; }
-                    .result-icon.pending { background: #ffc107; }
-                    .exam-info-content label {
-                        display: block; font-size: 0.85rem; color: #6c757d;
-                        font-weight: 500; margin-bottom: 2px;
-                    }
-                    .exam-info-content strong { color: #495057; }
-                    .result-text.pass { color: #28a745; }
-                    .result-text.fail { color: #dc3545; }
-                    .result-text.pending { color: #856404; }
-                    .result-note { margin: 8px 0 0 0; font-size: 0.9rem; color: #6c757d; }
+                ${isUpcoming ? `
+                    <div class="exam-preparation-section">
+                        <h6><i class="fas fa-graduation-cap me-2"></i>Exam Preparation Checklist</h6>
+                        <div class="preparation-checklist">
+                            <div class="checklist-item">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <span>Study traffic rules and road signs</span>
+                            </div>
+                            <div class="checklist-item">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <span>Review your license type requirements</span>
+                            </div>
+                            <div class="checklist-item">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <span>Take practice tests online</span>
+                            </div>
+                            <div class="checklist-item">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <span>Bring NIC and application receipt</span>
+                            </div>
+                            <div class="checklist-item">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <span>Arrive 30 minutes early</span>
+                            </div>
+                        </div>
+                    </div>
                     
-                    /* Trial Exam Styles */
-                    .trial-exam-section {
-                        background: #f8f9fa; padding: 20px; border-radius: 10px; 
-                        margin-bottom: 15px; border-left: 4px solid #17a2b8;
-                    }
-                    .trial-exam-section h6 { color: #17a2b8; margin-bottom: 15px; }
-                    .trial-exam-card {
-                        background: white; padding: 15px; border-radius: 8px;
-                        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-                    }
-                    .trial-exam-card.passed { border-left: 4px solid #28a745; }
-                    .trial-exam-card.failed { border-left: 4px solid #dc3545; }
-                    .trial-exam-header {
-                        display: flex; justify-content: space-between;
-                        align-items: center; margin-bottom: 10px;
-                    }
-                    .trial-date { font-weight: 600; color: #495057; }
-                    .trial-result {
-                        padding: 4px 10px; border-radius: 20px; font-size: 0.8rem;
-                        font-weight: 600;
-                    }
-                    .trial-result.pass { background: #d4edda; color: #155724; }
-                    .trial-result.fail { background: #f8d7da; color: #721c24; }
-                    .trial-exam-details > div { margin-bottom: 8px; }
-                    .trial-notes {
-                        background: #f8f9fa; padding: 10px; border-radius: 5px;
-                        margin-top: 10px; font-size: 0.9rem;
-                    }
-                    .trial-application-section {
-                        background: #e3f2fd; padding: 20px; border-radius: 10px;
-                        margin-bottom: 15px; text-align: center;
-                    }
-                    .trial-application-section h6 { color: #1565c0; }
-                    .apply-trial-btn { margin-top: 10px; }
-                    
-                    .exam-preparation-section {
-                        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-                        padding: 20px; border-radius: 10px; margin-bottom: 15px;
-                    }
-                    .exam-preparation-section h6 { color: #1565c0; margin-bottom: 15px; }
-                    .preparation-checklist { }
-                    .checklist-item {
-                        display: flex; align-items: center; margin-bottom: 8px;
-                        color: #1976d2;
-                    }
-                    .exam-reminder-section, .success-message, .retry-message {
-                        padding: 15px; border-radius: 8px; text-align: center;
-                        margin-bottom: 10px;
-                    }
-                    .exam-reminder-section {
-                        background: #fff3cd; color: #856404;
-                    }
-                    .success-message {
-                        background: #d4edda; color: #155724;
-                    }
-                    .retry-message {
-                        background: #cce7ff; color: #0c5460;
-                    }
-                    .mt-3 { margin-top: 15px; }
-                </style>
-            `,
-      confirmButtonText: '<i class="fas fa-times me-2"></i>Close',
-      confirmButtonColor: "#007bff",
-      width: "700px",
+                    ${daysUntilExam <= 7 ? `
+                        <div class="exam-reminder-section">
+                            <i class="fas fa-bell text-warning me-2"></i>
+                            <strong>Important Reminder:</strong> Your exam is coming up soon! Make sure you're well-prepared and well-rested.
+                        </div>
+                    ` : ""}
+                ` : ""}
+                
+                ${examDetails.writtenExamResult === "FAIL" || examDetails.writtenExamResult === "ABSANT" ? `
+                    <div class="retry-message">
+                        <i class="fas fa-redo text-info me-2"></i>
+                        <span>Don't worry! You can retake the exam. Use this as a learning experience.</span>
+                    </div>
+                ` : ""}
+            </div>
+            
+            <style>
+                .exam-details-modal { text-align: left; }
+                
+                .completion-banner {
+                    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                    color: white; text-align: center; padding: 20px;
+                    border-radius: 10px; margin-bottom: 20px;
+                    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+                }
+                .completion-banner i { font-size: 1.5rem; }
+                .completion-banner p { margin: 5px 0 0 0; opacity: 0.9; }
+                
+                .exam-status-banner {
+                    text-align: center; padding: 15px; border-radius: 10px;
+                    margin-bottom: 20px; font-weight: 600; font-size: 1.1rem;
+                }
+                .exam-status-banner.upcoming {
+                    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+                    color: #155724;
+                }
+                .exam-status-banner.past {
+                    background: linear-gradient(135deg, #e2e3e5 0%, #d6d8db 100%);
+                    color: #383d41;
+                }
+                .exam-info-grid {
+                    display: grid; grid-template-columns: 1fr 1fr; gap: 15px;
+                    margin-bottom: 20px;
+                }
+                .exam-info-card {
+                    display: flex; align-items: center; background: #f8f9fa;
+                    padding: 20px; border-radius: 10px; border-left: 3px solid #007bff;
+                }
+                .exam-info-card.full-width { grid-column: 1 / -1; }
+                .exam-info-card.result-card { border-left-color: #28a745; }
+                .exam-info-icon {
+                    width: 50px; height: 50px; border-radius: 50%;
+                    display: flex; align-items: center; justify-content: center;
+                    margin-right: 15px; color: white; font-size: 1.2rem;
+                }
+                .date-icon { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+                .time-icon { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+                .location-icon { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+                .result-icon.pass { background: #28a745; }
+                .result-icon.fail { background: #dc3545; }
+                .result-icon.pending { background: #ffc107; }
+                .exam-info-content label {
+                    display: block; font-size: 0.85rem; color: #6c757d;
+                    font-weight: 500; margin-bottom: 2px;
+                }
+                .exam-info-content strong { color: #495057; }
+                .result-text.pass { color: #28a745; }
+                .result-text.fail { color: #dc3545; }
+                .result-text.pending { color: #856404; }
+                .result-note { margin: 8px 0 0 0; font-size: 0.9rem; color: #6c757d; }
+                
+                /* Trial Exam Styles */
+                .trial-exam-section {
+                    background: #f8f9fa; padding: 20px; border-radius: 10px; 
+                    margin-bottom: 15px; border-left: 4px solid #17a2b8;
+                }
+                .trial-exam-section h6 { color: #17a2b8; margin-bottom: 15px; }
+                .trial-exam-card {
+                    background: white; padding: 15px; border-radius: 8px;
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 10px;
+                }
+                .trial-exam-card.passed { border-left: 4px solid #28a745; }
+                .trial-exam-card.failed { border-left: 4px solid #dc3545; }
+                .trial-exam-header {
+                    display: flex; justify-content: space-between;
+                    align-items: center; margin-bottom: 10px;
+                }
+                .trial-date { font-weight: 600; color: #495057; }
+                .trial-result {
+                    padding: 4px 10px; border-radius: 20px; font-size: 0.8rem;
+                    font-weight: 600;
+                }
+                .trial-result.pass { background: #d4edda; color: #155724; }
+                .trial-result.fail { background: #f8d7da; color: #721c24; }
+                .trial-exam-details > div { margin-bottom: 8px; }
+                .trial-notes, .trial-examiner {
+                    background: #f8f9fa; padding: 10px; border-radius: 5px;
+                    margin-top: 10px; font-size: 0.9rem;
+                }
+                .trial-application-section {
+                    background: #e3f2fd; padding: 20px; border-radius: 10px;
+                    margin-bottom: 15px; text-align: center;
+                }
+                .trial-application-section h6 { color: #1565c0; }
+                .apply-trial-btn { margin-top: 10px; }
+                
+                .exam-preparation-section {
+                    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+                    padding: 20px; border-radius: 10px; margin-bottom: 15px;
+                }
+                .exam-preparation-section h6 { color: #1565c0; margin-bottom: 15px; }
+                .preparation-checklist { }
+                .checklist-item {
+                    display: flex; align-items: center; margin-bottom: 8px;
+                    color: #1976d2;
+                }
+                .exam-reminder-section, .success-message, .retry-message {
+                    padding: 15px; border-radius: 8px; text-align: center;
+                    margin-bottom: 10px;
+                }
+                .exam-reminder-section {
+                    background: #fff3cd; color: #856404;
+                }
+                .success-message {
+                    background: #d4edda; color: #155724;
+                }
+                .retry-message {
+                    background: #cce7ff; color: #0c5460;
+                }
+                .mt-3 { margin-top: 15px; }
+            </style>
+        `,
+        confirmButtonText: '<i class="fas fa-times me-2"></i>Close',
+        confirmButtonColor: "#007bff",
+        width: "700px",
     });
-  }
-
-// Helper function to apply for a trial exam
-function applyForTrialExam(writtenExamId) {
-  Swal.fire({
-    title: 'Apply for Trial Exam',
-    text: 'Are you sure you want to apply for a trial exam?',
-    icon: 'question',
-    showCancelButton: true,
-    confirmButtonText: 'Yes, Apply',
-    cancelButtonText: 'Cancel'
-  }).then((result) => {
-    if (result.isConfirmed) {
-      // Call your API to apply for trial exam
-      // This would be your implementation to send a request to the server
-      console.log('Applying for trial exam for written exam ID:', writtenExamId);
-      
-      // Example API call (you'll need to implement this)
-      /*
-      fetch('/api/trial-exams/apply', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ writtenExamId: writtenExamId })
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          Swal.fire('Success', 'Your trial exam application has been submitted!', 'success');
-        } else {
-          Swal.fire('Error', data.message, 'error');
-        }
-      })
-      .catch(error => {
-        Swal.fire('Error', 'An error occurred while applying for the trial exam.', 'error');
-      });
-      */
-    }
-  });
 }
 
   // =================== ENHANCED PAYMENT SYSTEM ===================
@@ -2871,197 +2814,6 @@ async function getExamChangeButtonHTML(application) {
     }
 }
 
-// Function to show exam change request modal
-function showExamChangeRequestModal(applicationId, currentExamDate) {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const minDate = tomorrow.toISOString().split('T')[0];
-    
-    Swal.fire({
-        title: '📅 Request Exam Date Change',
-        html: `
-            <div class="exam-change-form">
-                <div class="form-group mb-3">
-                    <label class="form-label">Current Exam Date:</label>
-                    <input type="date" class="form-control" value="${currentExamDate}" disabled>
-                </div>
-                
-                <div class="form-group mb-3">
-                    <label class="form-label">New Requested Exam Date: <span class="text-danger">*</span></label>
-                    <input type="date" id="newExamDate" class="form-control" min="${minDate}" required>
-                </div>
-                
-                <div class="form-group mb-3">
-                    <label class="form-label">Reason for Change: <span class="text-danger">*</span></label>
-                    <textarea id="changeReason" class="form-control" rows="4" 
-                              placeholder="Please provide a reason for requesting the exam date change..." 
-                              maxlength="500" required></textarea>
-                    <small class="form-text text-muted">Maximum 500 characters</small>
-                </div>
-            </div>
-            
-            <style>
-                .exam-change-form { text-align: left; }
-                .form-label { 
-                    font-weight: 600; 
-                    color: #495057; 
-                    margin-bottom: 8px; 
-                    display: block; 
-                }
-                .form-control {
-                    border-radius: 8px;
-                    border: 2px solid #e9ecef;
-                    padding: 12px;
-                    font-size: 0.95rem;
-                }
-                .form-control:focus {
-                    border-color: #007bff;
-                    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
-                }
-                .text-danger { color: #dc3545 !important; }
-                .form-text { font-size: 0.875rem; }
-            </style>
-        `,
-        showCancelButton: true,
-        confirmButtonText: '<i class="fas fa-paper-plane me-2"></i>Submit Request',
-        cancelButtonText: '<i class="fas fa-times me-2"></i>Cancel',
-        confirmButtonColor: '#28a745',
-        cancelButtonColor: '#6c757d',
-        width: '600px',
-        preConfirm: () => {
-            const newExamDate = document.getElementById('newExamDate').value;
-            const changeReason = document.getElementById('changeReason').value.trim();
-            
-            if (!newExamDate) {
-                Swal.showValidationMessage('Please select a new exam date');
-                return false;
-            }
-            
-            if (!changeReason) {
-                Swal.showValidationMessage('Please provide a reason for the change');
-                return false;
-            }
-            
-            if (changeReason.length > 500) {
-                Swal.showValidationMessage('Reason must be less than 500 characters');
-                return false;
-            }
-            
-            // Check if new date is in the future
-            const selectedDate = new Date(newExamDate);
-            const today = new Date();
-            if (selectedDate <= today) {
-                Swal.showValidationMessage('New exam date must be in the future');
-                return false;
-            }
-            
-            return {
-                applicationId: applicationId,
-                currentExamDate: currentExamDate,
-                requestedExamDate: newExamDate,
-                reason: changeReason
-            };
-        }
-    }).then(async (result) => {
-        if (result.isConfirmed) {
-            await submitExamChangeRequest(result.value);
-        }
-    });
-}
-
-// Function to submit exam change request
-async function submitExamChangeRequest(requestData) {
-    try {
-        // Show loading
-        Swal.fire({
-            title: 'Submitting Request...',
-            html: 'Please wait while we process your exam date change request.',
-            allowOutsideClick: false,
-            allowEscapeKey: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        });
-        
-        // Submit the request
-        const response = await ExamChangeRequestAPI.createRequest(requestData);
-        
-        // Show success message
-        Swal.fire({
-            icon: 'success',
-            title: '✅ Request Submitted Successfully!',
-            html: `
-                <div class="success-message">
-                    <p><strong>Your exam date change request has been submitted.</strong></p>
-                    <div class="request-details">
-                        <p><strong>Request ID:</strong> #${response.id}</p>
-                        <p><strong>Current Date:</strong> ${formatDate(response.currentExamDate)}</p>
-                        <p><strong>Requested Date:</strong> ${formatDate(response.requestedExamDate)}</p>
-                        <p><strong>Status:</strong> <span class="badge bg-warning">PENDING</span></p>
-                    </div>
-                    <p class="mt-3 text-muted">
-                        <i class="fas fa-info-circle me-1"></i>
-                        You will be notified once your request is reviewed by an administrator.
-                    </p>
-                </div>
-                
-                <style>
-                    .success-message { text-align: left; }
-                    .request-details { 
-                        background: #f8f9fa; 
-                        padding: 15px; 
-                        border-radius: 8px; 
-                        margin: 15px 0; 
-                    }
-                    .request-details p { margin-bottom: 8px; }
-                    .badge { 
-                        padding: 6px 12px; 
-                        border-radius: 15px; 
-                        font-size: 0.8rem; 
-                    }
-                </style>
-            `,
-            confirmButtonText: '<i class="fas fa-check me-2"></i>OK',
-            confirmButtonColor: '#28a745',
-            width: '500px'
-        });
-        
-    } catch (error) {
-        console.error('Error submitting exam change request:', error);
-        
-        Swal.fire({
-            icon: 'error',
-            title: '❌ Request Failed',
-            html: `
-                <div class="error-message">
-                    <p>Sorry, we couldn't submit your exam date change request.</p>
-                    <div class="error-details">
-                        <strong>Error:</strong> ${error.message}
-                    </div>
-                    <p class="mt-3 text-muted">
-                        Please try again or contact support if the problem persists.
-                    </p>
-                </div>
-                
-                <style>
-                    .error-message { text-align: left; }
-                    .error-details { 
-                        background: #f8d7da; 
-                        color: #721c24; 
-                        padding: 10px; 
-                        border-radius: 5px; 
-                        margin: 10px 0; 
-                        font-size: 0.9rem;
-                    }
-                </style>
-            `,
-            confirmButtonText: '<i class="fas fa-retry me-2"></i>OK',
-            confirmButtonColor: '#dc3545',
-            width: '500px'
-        });
-    }
-}
-
 // Modified function to update your existing getStatusSpecificContent function
 // Add this to your existing getStatusSpecificContent function or create a new one
 async function getExamChangeSpecificContent(application, additionalInfo) {
@@ -3077,13 +2829,6 @@ async function getExamChangeSpecificContent(application, additionalInfo) {
     }
     
     return '';
-}
-
-// Integration function to add exam change button to your existing modal
-// You can call this function in your existing showDetailedApplicationModal function
-async function addExamChangeButtonToModal(application) {
-    const examChangeContent = await getExamChangeSpecificContent(application);
-    return examChangeContent;
 }
 
 // Utility function to format dates (if not already exists)
@@ -3153,154 +2898,213 @@ function formatDateTime(dateString) {
                 `;
 
       case "APPROVED":
-        if (examDetails) {
-          const examDate = new Date(examDetails.examDate);
-          const isUpcoming = examDate > new Date();
+    if (examDetails) {
+        // Check if exam is passed and has trial exams
+        const hasPassed = examDetails.writtenExamResult === "PASS";
+        const hasFailed = examDetails.writtenExamResult === "FAIL";
+        const hasTrialExams = examDetails.trialExams && examDetails.trialExams.length > 0;
+        const latestTrialExam = hasTrialExams ? 
+            examDetails.trialExams.reduce((latest, current) => {
+                const currentDate = new Date(current.trialDate || 0);
+                const latestDate = new Date(latest.trialDate || 0);
+                return currentDate > latestDate ? current : latest;
+            }, examDetails.trialExams[0]) : null;
 
-          return `
-                        <div class="status-specific-section approval-section">
-                            <h6 class="section-title approval-title">
-                                <i class="fas fa-check-circle text-success me-2"></i>Application Approved - Exam Scheduled
-                            </h6>
-                            <div class="exam-details-grid">
-                                <div class="exam-detail-card">
-                                    <div class="detail-icon date-icon">
-                                        <i class="fas fa-calendar-alt"></i>
-                                    </div>
-                                    <div class="detail-content">
-                                        <label>Exam Date</label>
-                                        <strong>${formatDate(
-                                          examDetails.writtenExamDate
-                                        )}</strong>
-                                    </div>
-                                </div>
-                                <div class="exam-detail-card">
-                                    <div class="detail-icon time-icon">
-                                        <i class="fas fa-clock"></i>
-                                    </div>
-                                    <div class="detail-content">
-                                        <label>Exam Time</label>
-                                        <strong>${
-                                          examDetails.writtenExamTime ||
-                                          "To be announced"
-                                        }</strong>
-                                    </div>
-                                </div>
-                                <div class="exam-detail-card full-width">
-                                    <div class="detail-icon location-icon">
-                                        <i class="fas fa-map-marker-alt"></i>
-                                    </div>
-                                    <div class="detail-content">
-                                        <label>Exam Location</label>
-                                        <strong>${
-                                          examDetails.writtenExamLocation ||
-                                          "Will be announced soon"
-                                        }</strong>
-                                    </div>
-                                </div>
-                                <div class="exam-detail-card full-width">
-                                    <div class="detail-icon notebook-icon">
-                                        <i class="fas fa-sticky-note" style="color: #facc15;"></i>
-                                    </div>
-                                    <div class="detail-content">
-                                        <label>Our Vission For You</label>
-                                        <strong>${
-                                          examDetails.note ||
-                                          "Will be announced soon"
-                                        }</strong>
-                                    </div>
-                                </div>
-                                ${
-                                  examDetails.writtenExamResult
-                                    ? `
-                                    <div class="exam-detail-card full-width result-card">
-                                        <div class="detail-icon result-icon">
-                                            <i class="fas fa-${
-                                              examDetails.writtenExamResult ===
-                                              "PASS"
-                                                ? "trophy" + examDetails.trialDate
-                                                : examDetails.writtenExamResult ===
-                                                  "FAIL"
-                                                ? "times" + examDetails.newExamDate 
-                                                : "clock"
-                                            }"></i>
-                                        </div>
-                                        <div class="detail-content">
-                                            <label>Exam Result</label>
-                                            <strong class="result-text ${examDetails.writtenExamResult.toLowerCase()}">${
-                                        examDetails.writtenExamResult
-                                      }</strong>
-                                            ${
-                                              examDetails.note
-                                                ? `<p class="result-note">${examDetails.note}</p>`
-                                                : ""
-                                            }
-                                        </div>
-                                    </div>
-                                `
-                                    : ""
-                                }
+        return `
+            <div class="status-specific-section approval-section">
+                <h6 class="section-title approval-title">
+                    <i class="fas fa-check-circle text-success me-2"></i>Application Approved - ${hasPassed ? 'Exam Passed' : 'Exam Scheduled'}
+                </h6>
+                <div class="exam-details-grid">
+                    ${!hasPassed ? `
+    <!-- Show written exam details if not passed -->
+    <div class="exam-detail-card">
+        <div class="detail-icon date-icon">
+            <i class="fas fa-calendar-alt"></i>
+        </div>
+        <div class="detail-content">
+            <label>${hasFailed ? 'Last Exam Date' : 'Exam Date'}</label>
+            <strong>${formatDate(examDetails.writtenExamDate)}</strong>
+        </div>
+    </div>
+    ${hasFailed ? `
+        <!-- Show next exam date only if failed -->
+        <div class="exam-detail-card">
+            <div class="detail-icon date-icon">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div class="detail-content">
+                <label>Next Exam Date</label>
+                <strong>${formatDate(examDetails.nextExamDate || "To be announced")}</strong>
+            </div>
+        </div>
+    ` : ""}
+                        
+                        <div class="exam-detail-card">
+                            <div class="detail-icon time-icon">
+                                <i class="fas fa-clock"></i>
                             </div>
-                            <div class="approval-actions">
-                                <button class="btn btn-primary me-2" onclick="Swal.close(); showExamDetails(${JSON.stringify(
-                                  examDetails
-                                ).replace(/"/g, "&quot;")});">
-                                    <i class="fas fa-info-circle me-2"></i>Full Exam Details
-                                </button>
-                                <button class="btn btn-success" onclick="Swal.close(); showPaymentForm();">
-                                    <i class="fas fa-credit-card me-2"></i>Make Payment
-                                </button>
+                            <div class="detail-content">
+                                <label>Exam Time</label>
+                                <strong>${examDetails.writtenExamTime || "To be announced"}</strong>
                             </div>
                         </div>
                         
-                        <style>
-                            .approval-section { border-left-color: #28a745; }
-                            .exam-details-grid {
-                                display: grid; grid-template-columns: 1fr 1fr; gap: 15px;
-                                margin-bottom: 20px;
-                            }
-                            .exam-detail-card {
-                                display: flex; align-items: center; background: #f8f9fa;
-                                padding: 15px; border-radius: 10px;
-                            }
-                            .exam-detail-card.full-width { grid-column: 1 / -1; }
-                            .detail-icon {
-                                width: 45px; height: 45px; border-radius: 50%;
-                                display: flex; align-items: center; justify-content: center;
-                                margin-right: 15px; color: white; font-size: 1.1rem;
-                            }
-                            .date-icon { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-                            .time-icon { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-                            .location-icon { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
-                            .result-icon { background: #28a745; }
-                            .detail-content label {
-                                display: block; font-size: 0.8rem; color: #6c757d;
-                                font-weight: 600; margin-bottom: 2px; text-transform: uppercase;
-                            }
-                            .detail-content strong { color: #495057; }
-                            .result-text.pass { color: #28a745; }
-                            .result-text.fail { color: #dc3545; }
-                            .result-text.pending { color: #856404; }
-                            .result-note { margin: 5px 0 0 0; font-size: 0.9rem; color: #6c757d; }
-                        </style>
-                    `;
-        } else {
-          return `
-                        <div class="status-specific-section approval-section">
-                            <h6 class="section-title approval-title">
-                                <i class="fas fa-check-circle text-success me-2"></i>Application Approved
-                            </h6>
-                            <div class="approval-message">
-                                <p><i class="fas fa-info-circle me-2"></i>Congratulations! Your application has been approved. The written exam will be scheduled soon and you'll receive notification with all details.</p>
-                                <div class="approval-actions">
-                                    <button class="btn btn-success" onclick="Swal.close(); showPaymentForm();">
-                                        <i class="fas fa-credit-card me-2"></i>Proceed to Payment
-                                    </button>
-                                </div>
+                        <div class="exam-detail-card full-width">
+                            <div class="detail-icon location-icon">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div class="detail-content">
+                                <label>Exam Location</label>
+                                <strong>${examDetails.writtenExamLocation || "Will be announced soon"}</strong>
                             </div>
                         </div>
-                    `;
-        }
+                    ` : ''}
+                    
+                    ${hasPassed && hasTrialExams ? `
+                        <!-- Show trial exam details if passed and has trial exams -->
+                        <div class="exam-detail-card">
+                            <div class="detail-icon date-icon">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div class="detail-content">
+                                <label>Trial Exam Date</label>
+                                <strong>${formatDate(latestTrialExam.trialDate)}</strong>
+                            </div>
+                        </div>
+                        
+                        ${latestTrialExam.trialTime ? `
+                            <div class="exam-detail-card">
+                                <div class="detail-icon time-icon">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="detail-content">
+                                    <label>Trial Time</label>
+                                    <strong>${latestTrialExam.trialTime}</strong>
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${latestTrialExam.trialLocation ? `
+                            <div class="exam-detail-card full-width">
+                                <div class="detail-icon location-icon">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </div>
+                                <div class="detail-content">
+                                    <label>Trial Location</label>
+                                    <strong>${latestTrialExam.trialLocation}</strong>
+                                </div>
+                            </div>
+                        ` : ''}
+                    ` : ''}
+                    
+                    <div class="exam-detail-card full-width">
+                        <div class="detail-icon notebook-icon">
+                            <i class="fas fa-sticky-note" style="color: #facc15;"></i>
+                        </div>
+                        <div class="detail-content">
+                            <label>Notes</label>
+                            <strong>${examDetails.note || "No additional notes"}</strong>
+                        </div>
+                    </div>
+                    
+                    ${examDetails.writtenExamResult ? `
+                        <div class="exam-detail-card full-width result-card">
+                            <div class="detail-icon result-icon ${examDetails.writtenExamResult.toLowerCase()}">
+                                <i class="fas fa-${examDetails.writtenExamResult === "PASS" ? "trophy" : examDetails.writtenExamResult === "FAIL" ? "times" : "clock"}"></i>
+                            </div>
+                            <div class="detail-content">
+                                <label>Exam Result</label>
+                                <strong class="result-text ${examDetails.writtenExamResult.toLowerCase()}">${examDetails.writtenExamResult}</strong>
+                                ${examDetails.note ? `<p class="result-note">${examDetails.note}</p>` : ""}
+                            </div>
+                        </div>
+                    ` : ""}
+                </div>
+                
+                ${hasPassed && !hasTrialExams ? `
+                    <!-- Show trial exam application option if passed but no trial exams -->
+                    <div class="trial-application-prompt">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>You've passed the written exam!</strong> You can now apply for your practical driving test (trial exam).
+                        </div>
+                        <!--<button class="btn btn-primary" onclick="applyForTrialExam(${examDetails.id})">
+                            <i class="fas fa-car me-2"></i>Apply for Trial Exam
+                        </button> -->
+                    </div>
+                ` : ''}
+                
+                <div class="approval-actions">
+                    <button class="btn btn-primary me-2" onclick="Swal.close(); showExamDetails(${JSON.stringify(examDetails).replace(/"/g, "&quot;")});">
+                        <i class="fas fa-info-circle me-2"></i>Full Exam Details
+                    </button>
+                    ${!hasPassed ? `
+                        <button class="btn btn-success" onclick="Swal.close(); showPaymentForm();">
+                            <i class="fas fa-credit-card me-2"></i>Make Payment
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+            
+            <style>
+                .approval-section { border-left-color: #28a745; }
+                .exam-details-grid {
+                    display: grid; grid-template-columns: 1fr 1fr; gap: 15px;
+                    margin-bottom: 20px;
+                }
+                .exam-detail-card {
+                    display: flex; align-items: center; background: #f8f9fa;
+                    padding: 15px; border-radius: 10px;
+                }
+                .exam-detail-card.full-width { grid-column: 1 / -1; }
+                .detail-icon {
+                    width: 45px; height: 45px; border-radius: 50%;
+                    display: flex; align-items: center; justify-content: center;
+                    margin-right: 15px; color: white; font-size: 1.1rem;
+                }
+                .date-icon { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+                .time-icon { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+                .location-icon { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+                .result-icon.pass { background: #28a745; }
+                .result-icon.fail { background: #dc3545; }
+                .result-icon.pending { background: #ffc107; }
+                .detail-content label {
+                    display: block; font-size: 0.8rem; color: #6c757d;
+                    font-weight: 600; margin-bottom: 2px; text-transform: uppercase;
+                }
+                .detail-content strong { color: #495057; }
+                .result-text.pass { color: #28a745; }
+                .result-text.fail { color: #dc3545; }
+                .result-text.pending { color: #856404; }
+                .result-note { margin: 5px 0 0 0; font-size: 0.9rem; color: #6c757d; }
+                
+                .trial-application-prompt {
+                    background: #e8f4f8; padding: 15px; border-radius: 8px;
+                    margin-bottom: 20px; border-left: 4px solid #17a2b8;
+                }
+                .trial-application-prompt .alert {
+                    margin-bottom: 15px;
+                }
+            </style>
+        `;
+    } else {
+        return `
+            <div class="status-specific-section approval-section">
+                <h6 class="section-title approval-title">
+                    <i class="fas fa-check-circle text-success me-2"></i>Application Approved
+                </h6>
+                <div class="approval-message">
+                    <p><i class="fas fa-info-circle me-2"></i>Congratulations! Your application has been approved. The written exam will be scheduled soon and you'll receive notification with all details.</p>
+                    <div class="approval-actions">
+                        <button class="btn btn-success" onclick="Swal.close(); showPaymentForm();">
+                            <i class="fas fa-credit-card me-2"></i>Proceed to Payment
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
 
       case "PENDING":
         return `
@@ -3777,4 +3581,5 @@ function formatDateTime(dateString) {
     "🔐 Authentication token:",
     authToken ? "✅ Present" : "❌ Missing"
   );
+  
 });
