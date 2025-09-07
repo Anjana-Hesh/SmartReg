@@ -49,9 +49,9 @@ public class TrialExamServiceImpl implements TrialExamService {
 
         // Validate trial result values
         String normalizedResult = trialExamDTO.getTrialResult().toUpperCase().trim();
-        if (!normalizedResult.equals("PASS") && !normalizedResult.equals("FAIL") && !normalizedResult.equals("ABSENT")) {
+        if (!normalizedResult.equals("PASS") && !normalizedResult.equals("FAIL") && !normalizedResult.equals("ABSENT") && !normalizedResult.equals("PENDING")) {
             log.error("Invalid trial result: {}", trialExamDTO.getTrialResult());
-            throw new IllegalArgumentException("Trial result must be PASS, FAIL, or ABSENT");
+            throw new IllegalArgumentException("Trial result must be PASS, FAIL, ABSENT or PENDING");
         }
 
         try {

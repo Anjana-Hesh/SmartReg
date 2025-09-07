@@ -472,207 +472,262 @@
         // <button class="btn btn-sm btn-warning" onclick="editApplication(${application.id})">
         //       <i class="fas fa-edit"></i> Edit
         //     </button>
-        function getAdminActions(application) {
-          let actions = "";
-          const hasExam = application.examData && application.examData.id;
-          const examResult = hasExam
-            ? application.examData.writtenExamResult
-            : null;
-          const hasResult = examResult && examResult !== "PENDING";
+       function getAdminActions(application) {
+    let actions = "";
+    const hasExam = application.examData && application.examData.id;
+    const examResult = hasExam ? application.examData.writtenExamResult : null;
+    const hasResult = examResult && examResult !== "PENDING";
 
-          // Check if there's a trial exam record
-          const hasTrialExam =
-            application.trialExamData && application.trialExamData.id;
-          const trialResult = hasTrialExam
-            ? application.trialExamData.trialResult
-            : null;
-          const hasTrialResult = trialResult && trialResult !== "PENDING";
+    // Check trial exam data more thoroughly
+    const hasTrialExam = application.trialExamData && 
+                        Array.isArray(application.trialExamData) && 
+                        application.trialExamData.length > 0;
+    
+    let trialResult = null;
+    let hasTrialResult = false;
+    
+    if (hasTrialExam) {
+        // Get the latest trial exam
+        const latestTrial = application.trialExamData.reduce((latest, current) => {
+            const currentDate = new Date(current.trialDate || 0);
+            const latestDate = new Date(latest.trialDate || 0);
+            return currentDate > latestDate ? current : latest;
+        }, application.trialExamData[0]);
+        
+        trialResult = latestTrial.trialResult;
+        hasTrialResult = trialResult && trialResult !== "PENDING" && trialResult !== null && trialResult !== "null";
+    }
 
-          // Add exam management actions
-          if (hasExam) {
-            if (hasResult) {
-              // Disable the Update Result button after a result is set
-              actions += `
+    // Add exam management actions
+    if (hasExam) {
+        if (hasResult) {
+            // Written exam result is submitted
+            actions += `
                 <button class="btn btn-sm btn-info" disabled>
                     <i class="fas fa-clipboard-check"></i> Result Submitted
                 </button>
             `;
 
-              // Show Update Trial Result button for exams with results
-              // Only show if there's a trial exam record or if exam was passed
-              if (examResult === "PASS" || hasTrialExam) {
-                actions += `
-                    <button class="btn btn-sm btn-warning" onclick="updateTrialResultModal(${
-                      application.id
-                    }, ${
-                  hasTrialExam ? application.trialExamData.id : "null"
-                })">
-                        <i class="fas fa-clipboard-list"></i> Update Trial Result
-                    </button>
-                `;
-              }
-            } else {
-              // Show the normal Update Result button if no result yet
-              actions += `
+            // Trial exam button logic
+            if (examResult === "PASS") {
+                if (hasTrialResult) {
+                    // Trial result is also submitted - show disabled button
+                    actions += `
+                        <button class="btn btn-sm btn-success" disabled title="Trial result already submitted">
+                            <i class="fas fa-check-circle"></i> Trial Result Submitted
+                        </button>
+                    `;
+                } else {
+                    // Written exam passed but no trial result yet - show active button
+                    actions += `
+                        <button class="btn btn-sm btn-warning" onclick="updateTrialResultModal(${application.id}, ${
+                            hasTrialExam ? application.trialExamData[0].id : "null"
+                        })">
+                            <i class="fas fa-clipboard-list"></i> Update Trial Result
+                        </button>
+                    `;
+                }
+            }
+        } else {
+            // No written exam result yet - show update result button
+            actions += `
                 <button class="btn btn-sm btn-info" onclick="updateExamResultModal(${application.examData.id})">
                     <i class="fas fa-clipboard-check"></i> Update Result
                 </button>
             `;
-            }
-          } else if (application.status === "APPROVED") {
-            actions += `
+        }
+    } else if (application.status === "APPROVED") {
+        // No exam scheduled yet - show schedule exam button
+        actions += `
             <button class="btn btn-sm btn-success" onclick="scheduleExamModal(${application.id})">
                 <i class="fas fa-calendar-plus"></i> Schedule Exam
             </button>
         `;
-          }
+    }
 
-          return actions;
-        }
+    return actions;
+}
+
 
         function getTrialExam(trialExamId) {
-          return $.ajax({
-            url: `${API_BASE_URL}/trial-exams/${trialExamId}`,
-            method: "GET",
-            beforeSend: function (xhr) {
-              const token = authToken || localStorage.getItem("authToken");
-              if (token) {
+    return $.ajax({
+        url: `${API_BASE_URL}/trial-exams/${trialExamId}`,
+        method: "GET",
+        beforeSend: function (xhr) {
+            const token = authToken || localStorage.getItem("authToken");
+            if (token) {
                 xhr.setRequestHeader("Authorization", "Bearer " + token);
-              }
-            },
-          });
+            }
+        },
+    }).catch(function(error) {
+        // Handle 403 Forbidden error gracefully
+        if (error.status === 403) {
+            console.warn("Access denied to trial exam endpoint, returning null data");
+            return null; // Return null instead of throwing error
         }
+        throw error; // Re-throw other errors
+    });
+}
 
-        function updateTrialResultModal(applicationId, trialExamId) {
-          // Store the application and trial exam IDs
-          $("#trialApplicationId").val(applicationId);
-          $("#trialExamId").val(trialExamId);
+    function updateTrialResultModal(applicationId, trialExamId) {
+    // Store the application and trial exam IDs
+    $("#trialApplicationId").val(applicationId);
+    $("#trialExamId").val(trialExamId);
 
-          // If we have a trial exam ID, fetch the current data
-          if (trialExamId && trialExamId !== "null") {
-            getTrialExam(trialExamId)
-              .then((trialData) => {
-                $("#trialResult").val(trialData.trialResult || "");
-                $("#trialNotes").val(trialData.examinerNotes || "");
-              })
-              .catch((error) => {
-                console.error("Error fetching trial exam data:", error);
-              });
-          }
+    // Reset form
+    $("#trialResult").val("");
+    $("#trialNotes").val("");
 
-          const modal = new bootstrap.Modal(
-            document.getElementById("trialResultModal")
-          );
-          modal.show();
+    // First get the written exam for this application
+    $.ajax({
+        url: `${API_BASE_URL}/written-exams/application/${applicationId}`,
+        method: "GET",
+        beforeSend: function (xhr) {
+            const token = authToken || localStorage.getItem("authToken");
+            if (token) {
+                xhr.setRequestHeader("Authorization", "Bearer " + token);
+            }
+        },
+    })
+    .then((writtenExamData) => {
+        if (writtenExamData && writtenExamData.id) {
+            // Now get trial exams for this written exam
+            return getTrialExamByWrittenExam(writtenExamData.id);
         }
+        return null;
+    })
+    .then((trialExams) => {
+        if (trialExams && trialExams.length > 0) {
+            const trialData = trialExams[0]; // Get the first trial exam
+            $("#trialResult").val(trialData.trialResult || "");
+            $("#trialNotes").val(trialData.examinerNotes || "");
+            
+            const modalTitle = trialData.trialResult ? "Update Trial Result" : "Schedule Trial Exam";
+            $("#trialResultModal .modal-title").text(modalTitle);
+        } else {
+            $("#trialResultModal .modal-title").text("Schedule Trial Exam");
+        }
+    })
+    .catch((error) => {
+        console.error("Error fetching trial exam data:", error);
+        $("#trialResultModal .modal-title").text("Schedule Trial Exam");
+    });
 
-        function saveTrialResult() {
-          const applicationId = $("#trialApplicationId").val();
-          const trialExamId = $("#trialExamId").val();
-          const trialResult = $("#trialResult").val();
-          const trialNotes = $("#trialNotes").val();
+    const modal = new bootstrap.Modal(document.getElementById("trialResultModal"));
+    modal.show();
+}
 
-          if (!trialResult) {
-            showAlert("Error", "Please select a trial result", "error");
-            return;
-          }
+function getTrialExamByWrittenExam(writtenExamId) {
+    return $.ajax({
+        url: `${API_BASE_URL}/trial-exams/written-exam/${writtenExamId}`,
+        method: "GET",
+        beforeSend: function (xhr) {
+            const token = authToken || localStorage.getItem("authToken");
+            if (token) {
+                xhr.setRequestHeader("Authorization", "Bearer " + token);
+            }
+        },
+    });
+}
+       function saveTrialResult() {
+    const applicationId = $("#trialApplicationId").val();
+    const trialExamId = $("#trialExamId").val();
+    const trialResult = $("#trialResult").val();
+    const trialNotes = $("#trialNotes").val();
 
-          Swal.fire({
-            title: "Updating Trial Result...",
-            allowOutsideClick: false,
-            didOpen: () => {
-              Swal.showLoading();
-            },
-          });
+    if (!trialResult) {
+        showAlert("Error", "Please select a trial result", "error");
+        return;
+    }
 
-          if (trialExamId && trialExamId !== "null") {
-            // Update existing trial exam
-            updateTrialExam(trialExamId, trialResult, trialNotes)
-              .then((response) => {
+    Swal.fire({
+        title: "Updating Trial Result...",
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+    });
+
+    if (trialExamId && trialExamId !== "null") {
+        // Update existing trial exam
+        updateTrialExam(trialExamId, trialResult, trialNotes)
+            .then((response) => {
                 Swal.fire({
-                  title: "Success!",
-                  text: "Trial result updated successfully",
-                  icon: "success",
+                    title: "Success!",
+                    text: "Trial result updated successfully",
+                    icon: "success",
                 }).then(() => {
-                  $("#trialResultModal").modal("hide");
-                  loadApplications(); // Reload to refresh the UI
+                    $("#trialResultModal").modal("hide");
+                    loadApplications(); // Reload to refresh the UI and button states
                 });
-              })
-              .catch((error) => {
+            })
+            .catch((error) => {
                 console.error("Error updating trial result:", error);
                 Swal.fire({
-                  title: "Error!",
-                  text: "Failed to update trial result. Please try again.",
-                  icon: "error",
+                    title: "Error!",
+                    text: "Failed to update trial result. Please try again.",
+                    icon: "error",
                 });
-              });
-          } else {
-            // Create new trial exam record
-            createTrialExamRecordFromApplication(
-              applicationId,
-              trialResult,
-              trialNotes
-            )
-              .then((response) => {
+            });
+    } else {
+        // Create new trial exam record with result as null initially for scheduling
+        createTrialExamRecordFromApplication(applicationId, null, trialNotes) // Pass null for result
+            .then((response) => {
                 Swal.fire({
-                  title: "Success!",
-                  text: "Trial result saved successfully",
-                  icon: "success",
+                    title: "Success!",
+                    text: "Trial exam scheduled successfully",
+                    icon: "success",
                 }).then(() => {
-                  $("#trialResultModal").modal("hide");
-                  loadApplications(); // Reload to refresh the UI
+                    $("#trialResultModal").modal("hide");
+                    loadApplications(); // Reload to refresh the UI and button states
                 });
-              })
-              .catch((error) => {
+            })
+            .catch((error) => {
                 console.error("Error creating trial result:", error);
                 Swal.fire({
-                  title: "Error!",
-                  text: "Failed to save trial result. Please try again.",
-                  icon: "error",
+                    title: "Error!",
+                    text: "Failed to save trial result. Please try again.",
+                    icon: "error",
                 });
-              });
-          }
-        }
+            });
+    }
+}
 
-        function createTrialExamRecordFromApplication(
-          applicationId,
-          result,
-          notes
-        ) {
-          // First get the written exam data for this application
-          return $.ajax({
-            url: `${API_BASE_URL}/written-exams/application/${applicationId}`,
-            method: "GET",
-            beforeSend: function (xhr) {
-              const token = authToken || localStorage.getItem("authToken");
-              if (token) {
+function createTrialExamRecordFromApplication(applicationId, result, notes) {
+    // First get the written exam data for this application
+    return $.ajax({
+        url: `${API_BASE_URL}/written-exams/application/${applicationId}`,
+        method: "GET",
+        beforeSend: function (xhr) {
+            const token = authToken || localStorage.getItem("authToken");
+            if (token) {
                 xhr.setRequestHeader("Authorization", "Bearer " + token);
-              }
-            },
-          }).then((writtenExamData) => {
-            const trialExamData = {
-              writtenExamId: writtenExamData.id,
-              trialDate: new Date().toISOString().split("T")[0], // Current date
-              trialTime: "09:00",
-              trialLocation: "Colombo DMT",
-              trialResult: result,
-              examinerNotes: notes,
-            };
+            }
+        },
+    }).then((writtenExamData) => {
+        const trialExamData = {
+            writtenExamId: writtenExamData.id,
+            trialDate: writtenExamData.trialDate || new Date().toISOString().split("T")[0], // Use existing or current date
+            trialTime: "09:00",
+            trialLocation: "Colombo DMT",
+            trialResult: result, // This will be null for initial scheduling
+            examinerNotes: notes,
+        };
 
-            return $.ajax({
-              url: `${API_BASE_URL}/trial-exams`,
-              method: "POST",
-              contentType: "application/json",
-              data: JSON.stringify(trialExamData),
-              beforeSend: function (xhr) {
+        return $.ajax({
+            url: `${API_BASE_URL}/trial-exams`,
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify(trialExamData),
+            beforeSend: function (xhr) {
                 const token = authToken || localStorage.getItem("authToken");
                 if (token) {
-                  xhr.setRequestHeader("Authorization", "Bearer " + token);
+                    xhr.setRequestHeader("Authorization", "Bearer " + token);
                 }
-              },
-            });
-          });
-        }
+            },
+        });
+    });
+}
 
         function updateTrialExam(trialExamId, result, notes) {
           const updateData = {
@@ -1074,7 +1129,7 @@
             trialDate: trialDate,
             trialTime: "09:00",
             trialLocation: "Colombo DMT",
-            trialResult: "null",
+            trialResult: "PENDING",
             examinerNotes: notes,
           };
 

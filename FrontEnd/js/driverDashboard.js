@@ -2902,6 +2902,7 @@ function getTrialExamDetails(writtenExamId) {
 }
 
 // Non-async function with beautiful inline styling
+// Corrected getStatusSpecificContent function with proper exam detail display
 function getStatusSpecificContent(application, additionalInfo) {
     const { declineReason, examDetails } = additionalInfo;
 
@@ -2960,118 +2961,34 @@ function getStatusSpecificContent(application, additionalInfo) {
                     padding: 24px;
                     margin: 16px 0;
                     box-shadow: 0 10px 25px rgba(239, 68, 68, 0.1);
-                    position: relative;
-                    overflow: hidden;
                 ">
-                    <div style="
-                        position: absolute;
-                        top: -10px;
-                        right: -10px;
-                        width: 100px;
-                        height: 100px;
-                        background: rgba(220, 38, 38, 0.1);
-                        border-radius: 50%;
-                        z-index: 0;
-                    "></div>
-                    
-                    <h6 class="section-title rejection-title" style="
-                        color: #dc2626;
-                        font-size: 20px;
-                        font-weight: 700;
-                        margin-bottom: 20px;
-                        display: flex;
-                        align-items: center;
-                        position: relative;
-                        z-index: 1;
-                    ">
+                    <h6 style="color: #dc2626; font-size: 20px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center;">
                         <i class="fas fa-times-circle" style="margin-right: 12px; font-size: 24px;"></i>
                         Application Rejected
                     </h6>
                     
-                    <div class="rejection-content" style="position: relative; z-index: 1;">
-                        <div class="reason-display" style="
-                            background: white;
-                            border-radius: 12px;
-                            padding: 20px;
-                            margin-bottom: 16px;
-                            border-left: 4px solid #dc2626;
-                            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-                        ">
+                    <div class="rejection-content">
+                        <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; border-left: 4px solid #dc2626; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
                             <h7 style="color: #374151; font-weight: 600; font-size: 16px; display: block; margin-bottom: 8px;">
                                 <strong>Reason for Rejection:</strong>
                             </h7>
-                            <p class="reason-text" style="
-                                color: #6b7280;
-                                font-size: 14px;
-                                line-height: 1.6;
-                                margin: 0;
-                                background: #f9fafb;
-                                padding: 12px;
-                                border-radius: 8px;
-                            ">${
-                                declineReason?.declineReason ||
-                                "No specific reason provided. Please contact support for details."
-                            }</p>
+                            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0; background: #f9fafb; padding: 12px; border-radius: 8px;">
+                                ${declineReason?.declineReason || "No specific reason provided. Please contact support for details."}
+                            </p>
                         </div>
                         
-                        <div class="reason-display" style="
-                            background: white;
-                            border-radius: 12px;
-                            padding: 20px;
-                            margin-bottom: 20px;
-                            border-left: 4px solid #dc2626;
-                            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-                        ">
+                        <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; border-left: 4px solid #dc2626; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
                             <h7 style="color: #374151; font-weight: 600; font-size: 16px; display: block; margin-bottom: 8px;">
                                 <strong>Note For You:</strong>
                             </h7>
-                            <p class="reason-text" style="
-                                color: #6b7280;
-                                font-size: 14px;
-                                line-height: 1.6;
-                                margin: 0;
-                                background: #f9fafb;
-                                padding: 12px;
-                                border-radius: 8px;
-                            ">${
-                                declineReason?.declineNotes ||
-                                "No specific Note provided. Please contact support for details."
-                            }</p>
+                            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0; background: #f9fafb; padding: 12px; border-radius: 8px;">
+                                ${declineReason?.declineNotes || "No specific Note provided. Please contact support for details."}
+                            </p>
                         </div>
                         
-                        <div class="rejection-actions" style="display: flex; gap: 12px; flex-wrap: wrap;">
-                            <button class="btn btn-success" onclick="Swal.close(); showLicenseForm();" style="
-                                background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
-                                border: none;
-                                color: white;
-                                padding: 12px 24px;
-                                border-radius: 10px;
-                                font-weight: 600;
-                                cursor: pointer;
-                                transition: all 0.3s ease;
-                                box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
-                                display: flex;
-                                align-items: center;
-                                font-size: 14px;
-                            " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(22, 163, 74, 0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(22, 163, 74, 0.3)';">
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                            <button onclick="Swal.close(); showLicenseForm();" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); border: none; color: white; padding: 12px 24px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3); display: flex; align-items: center; font-size: 14px;">
                                 <i class="fas fa-plus" style="margin-right: 8px;"></i>Submit New Application
-                            </button>
-                            
-                            <button class="btn btn-info" onclick="Swal.close(); showRejectionDetails('${application.id}', '${declineReason || ""}');" style="
-                                background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
-                                border: none;
-                                color: white;
-                                padding: 12px 24px;
-                                border-radius: 10px;
-                                font-weight: 600;
-                                cursor: pointer;
-                                transition: all 0.3s ease;
-                                box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
-                                display: flex;
-                                align-items: center;
-                                font-size: 14px;
-                            " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(14, 165, 233, 0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(14, 165, 233, 0.3)';">
-                                <i class="fas fa-info-circle" style="margin-right: 8px;"></i>View Full Details
                             </button>
                         </div>
                     </div>
@@ -3100,197 +3017,110 @@ function getStatusSpecificContent(application, additionalInfo) {
                         padding: 24px;
                         margin: 16px 0;
                         box-shadow: 0 10px 25px rgba(34, 197, 94, 0.15);
-                        position: relative;
-                        overflow: hidden;
                     ">
-                        <div style="
-                            position: absolute;
-                            top: -20px;
-                            right: -20px;
-                            width: 120px;
-                            height: 120px;
-                            background: rgba(22, 163, 74, 0.1);
-                            border-radius: 50%;
-                            z-index: 0;
-                        "></div>
-                        
-                        <h6 class="section-title approval-title" style="
-                            color: #16a34a;
-                            font-size: 20px;
-                            font-weight: 700;
-                            margin-bottom: 20px;
-                            display: flex;
-                            align-items: center;
-                            position: relative;
-                            z-index: 1;
-                        ">
+                        <h6 style="color: #16a34a; font-size: 20px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center;">
                             <i class="fas fa-check-circle" style="margin-right: 12px; font-size: 24px;"></i>
                             Application Approved - ${isComplete ? 'Process Complete' : (hasPassed ? 'Exam Passed' : 'Exam Scheduled')}
                         </h6>
                         
                         ${isComplete ? `
-                            <div class="completion-notice" style="
-                                background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
-                                color: white;
-                                padding: 20px;
-                                border-radius: 12px;
-                                margin-bottom: 20px;
-                                text-align: center;
-                                box-shadow: 0 8px 20px rgba(22, 163, 74, 0.3);
-                                position: relative;
-                                z-index: 1;
-                            ">
+                            <div style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: center; box-shadow: 0 8px 20px rgba(22, 163, 74, 0.3);">
                                 <i class="fas fa-trophy" style="font-size: 32px; margin-bottom: 10px; display: block;"></i>
                                 <strong style="font-size: 18px;">Congratulations!</strong>
                                 <p style="margin: 8px 0 0 0; opacity: 0.9;">You have successfully completed both written and practical exams.</p>
                             </div>
                         ` : ''}
                         
-                        <div class="exam-details-grid" style="
-                            display: grid;
-                            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-                            gap: 16px;
-                            margin-bottom: 20px;
-                            position: relative;
-                            z-index: 1;
-                        ">
-                            ${!hasPassed ? `
-                                <div class="exam-detail-card" style="
-                                    background: white;
-                                    border-radius: 12px;
-                                    padding: 20px;
-                                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-                                    border: 1px solid #e5e7eb;
-                                    transition: all 0.3s ease;
-                                    position: relative;
-                                    overflow: hidden;
-                                " onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 12px 24px rgba(0, 0, 0, 0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(0, 0, 0, 0.05)';">
-                                    <div style="
-                                        position: absolute;
-                                        top: 0;
-                                        left: 0;
-                                        width: 4px;
-                                        height: 100%;
-                                        background: #3b82f6;
-                                    "></div>
-                                    <div class="detail-icon date-icon" style="
-                                        color: #3b82f6;
-                                        font-size: 24px;
-                                        margin-bottom: 12px;
-                                    ">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 20px;">
+                            
+                            <!-- Written Exam Date (only if scheduled and not passed yet) -->
+                            ${!hasPassed && examDetails.writtenExamDate ? `
+                                <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border-left: 4px solid #3b82f6;">
+                                    <div style="color: #3b82f6; font-size: 24px; margin-bottom: 12px;">
                                         <i class="fas fa-calendar-alt"></i>
                                     </div>
-                                    <div class="detail-content">
-                                        <label style="
-                                            color: #6b7280;
-                                            font-size: 14px;
-                                            font-weight: 500;
-                                            display: block;
-                                            margin-bottom: 6px;
-                                            text-transform: uppercase;
-                                            letter-spacing: 0.5px;
-                                        ">${hasFailed ? 'Last Exam Date' : 'Exam Date'}</label>
-                                        <strong style="
-                                            color: #1f2937;
-                                            font-size: 16px;
-                                            font-weight: 600;
-                                        ">${formatDate(examDetails.writtenExamDate)}</strong>
+                                    <div>
+                                        <label style="color: #6b7280; font-size: 14px; font-weight: 500; display: block; margin-bottom: 6px; text-transform: uppercase;">
+                                            ${hasFailed ? 'Last Exam Date' : 'Written Exam Date'}
+                                        </label>
+                                        <strong style="color: #1f2937; font-size: 16px; font-weight: 600;">
+                                            ${formatDate(examDetails.writtenExamDate)}
+                                        </strong>
                                     </div>
                                 </div>
-                                
-                                ${hasFailed ? `
-                                    <div class="exam-detail-card" style="
-                                        background: white;
-                                        border-radius: 12px;
-                                        padding: 20px;
-                                        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-                                        border: 1px solid #e5e7eb;
-                                        transition: all 0.3s ease;
-                                        position: relative;
-                                        overflow: hidden;
-                                    " onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 12px 24px rgba(0, 0, 0, 0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(0, 0, 0, 0.05)';">
-                                        <div style="
-                                            position: absolute;
-                                            top: 0;
-                                            left: 0;
-                                            width: 4px;
-                                            height: 100%;
-                                            background: #f59e0b;
-                                        "></div>
-                                        <div class="detail-icon date-icon" style="
-                                            color: #f59e0b;
-                                            font-size: 24px;
-                                            margin-bottom: 12px;
-                                        ">
-                                            <i class="fas fa-calendar-alt"></i>
-                                        </div>
-                                        <div class="detail-content">
-                                            <label style="
-                                                color: #6b7280;
-                                                font-size: 14px;
-                                                font-weight: 500;
-                                                display: block;
-                                                margin-bottom: 6px;
-                                                text-transform: uppercase;
-                                                letter-spacing: 0.5px;
-                                            ">Next Exam Date</label>
-                                            <strong style="
-                                                color: #1f2937;
-                                                font-size: 16px;
-                                                font-weight: 600;
-                                            ">${formatDate(examDetails.nextExamDate || "To be announced")}</strong>
-                                        </div>
+                            ` : ''}
+
+                            <!-- Written Exam Time (only if scheduled and not passed yet) -->
+                            ${!hasPassed && examDetails.writtenExamTime ? `
+                                <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border-left: 4px solid #f59e0b;">
+                                    <div style="color: #f59e0b; font-size: 24px; margin-bottom: 12px;">
+                                        <i class="fas fa-clock"></i>
                                     </div>
-                                ` : ""}
+                                    <div>
+                                        <label style="color: #6b7280; font-size: 14px; font-weight: 500; display: block; margin-bottom: 6px; text-transform: uppercase;">
+                                            Written Exam Time
+                                        </label>
+                                        <strong style="color: #1f2937; font-size: 16px; font-weight: 600;">
+                                            ${examDetails.writtenExamTime}
+                                        </strong>
+                                    </div>
+                                </div>
+                            ` : ''}
+
+                            <!-- Written Exam Location (only if scheduled and not passed yet) -->
+                            ${!hasPassed && examDetails.writtenExamLocation ? `
+                                <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border-left: 4px solid #dc2626; grid-column: 1 / -1;">
+                                    <div style="color: #dc2626; font-size: 24px; margin-bottom: 12px;">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                    </div>
+                                    <div>
+                                        <label style="color: #6b7280; font-size: 14px; font-weight: 500; display: block; margin-bottom: 6px; text-transform: uppercase;">
+                                            Written Exam Location
+                                        </label>
+                                        <strong style="color: #1f2937; font-size: 16px; font-weight: 600;">
+                                            ${examDetails.writtenExamLocation}
+                                        </strong>
+                                    </div>
+                                </div>
+                            ` : ''}
+
+                            <!-- Next Exam Date (only if failed) -->
+                            ${hasFailed && examDetails.nextExamDate ? `
+                                <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border-left: 4px solid #f59e0b;">
+                                    <div style="color: #f59e0b; font-size: 24px; margin-bottom: 12px;">
+                                        <i class="fas fa-calendar-alt"></i>
+                                    </div>
+                                    <div>
+                                        <label style="color: #6b7280; font-size: 14px; font-weight: 500; display: block; margin-bottom: 6px; text-transform: uppercase;">
+                                            Next Exam Date
+                                        </label>
+                                        <strong style="color: #1f2937; font-size: 16px; font-weight: 600;">
+                                            ${formatDate(examDetails.nextExamDate)}
+                                        </strong>
+                                    </div>
+                                </div>
                             ` : ''}
                             
-                            <div class="exam-detail-card full-width" style="
-                                background: white;
-                                border-radius: 12px;
-                                padding: 20px;
-                                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-                                border: 1px solid #e5e7eb;
-                                grid-column: 1 / -1;
-                                transition: all 0.3s ease;
-                                position: relative;
-                                overflow: hidden;
-                            " onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 12px 24px rgba(0, 0, 0, 0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(0, 0, 0, 0.05)';">
-                                <div style="
-                                    position: absolute;
-                                    top: 0;
-                                    left: 0;
-                                    width: 4px;
-                                    height: 100%;
-                                    background: #facc15;
-                                "></div>
-                                <div class="detail-icon notebook-icon" style="
-                                    color: #facc15;
-                                    font-size: 24px;
-                                    margin-bottom: 12px;
-                                ">
-                                    <i class="fas fa-sticky-note"></i>
+                            <!-- Notes -->
+                            ${examDetails.note ? `
+                                <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border-left: 4px solid #facc15; grid-column: 1 / -1;">
+                                    <div style="color: #facc15; font-size: 24px; margin-bottom: 12px;">
+                                        <i class="fas fa-sticky-note"></i>
+                                    </div>
+                                    <div>
+                                        <label style="color: #6b7280; font-size: 14px; font-weight: 500; display: block; margin-bottom: 6px; text-transform: uppercase;">
+                                            Notes
+                                        </label>
+                                        <strong style="color: #1f2937; font-size: 16px; font-weight: 600; line-height: 1.5;">
+                                            ${examDetails.note}
+                                        </strong>
+                                    </div>
                                 </div>
-                                <div class="detail-content">
-                                    <label style="
-                                        color: #6b7280;
-                                        font-size: 14px;
-                                        font-weight: 500;
-                                        display: block;
-                                        margin-bottom: 6px;
-                                        text-transform: uppercase;
-                                        letter-spacing: 0.5px;
-                                    ">Notes</label>
-                                    <strong style="
-                                        color: #1f2937;
-                                        font-size: 16px;
-                                        font-weight: 600;
-                                        line-height: 1.5;
-                                    ">${examDetails.note || "No additional notes"}</strong>
-                                </div>
-                            </div>
+                            ` : ''}
                             
+                            <!-- Exam Result (only if available) -->
                             ${examDetails.writtenExamResult ? `
-                                <div class="exam-detail-card full-width result-card" style="
+                                <div style="
                                     background: ${examDetails.writtenExamResult === "PASS" ? 
                                         "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)" : 
                                         examDetails.writtenExamResult === "FAIL" ? 
@@ -3305,241 +3135,75 @@ function getStatusSpecificContent(application, additionalInfo) {
                                     grid-column: 1 / -1;
                                     display: flex;
                                     align-items: center;
-                                    position: relative;
-                                    overflow: hidden;
                                 ">
-                                    <div style="
-                                        position: absolute;
-                                        top: -30px;
-                                        right: -30px;
-                                        width: 150px;
-                                        height: 150px;
-                                        background: ${examDetails.writtenExamResult === "PASS" ? "rgba(22, 163, 74, 0.1)" : examDetails.writtenExamResult === "FAIL" ? "rgba(220, 38, 38, 0.1)" : "rgba(245, 158, 11, 0.1)"};
-                                        border-radius: 50%;
-                                        z-index: 0;
-                                    "></div>
-                                    
-                                    <div class="detail-icon result-icon" style="
-                                        font-size: 48px;
-                                        color: ${examDetails.writtenExamResult === "PASS" ? "#16a34a" : examDetails.writtenExamResult === "FAIL" ? "#dc2626" : "#f59e0b"};
-                                        margin-right: 20px;
-                                        z-index: 1;
-                                        position: relative;
-                                    ">
+                                    <div style="font-size: 48px; color: ${examDetails.writtenExamResult === "PASS" ? "#16a34a" : examDetails.writtenExamResult === "FAIL" ? "#dc2626" : "#f59e0b"}; margin-right: 20px;">
                                         <i class="fas fa-${examDetails.writtenExamResult === "PASS" ? "trophy" : examDetails.writtenExamResult === "FAIL" ? "times" : "clock"}"></i>
                                     </div>
-
-                                    <div class="detail-content" style="flex: 1; z-index: 1; position: relative;">
-                                        <label style="
-                                            display: block;
-                                            font-size: 14px;
-                                            color: #6b7280;
-                                            margin-bottom: 8px;
-                                            font-weight: 500;
-                                            text-transform: uppercase;
-                                            letter-spacing: 0.5px;
-                                        ">Exam Result</label>
-                                        <strong style="
-                                            font-size: 32px;
-                                            font-weight: 800;
-                                            color: ${examDetails.writtenExamResult === "PASS" ? "#16a34a" : examDetails.writtenExamResult === "FAIL" ? "#dc2626" : "#f59e0b"};
-                                            display: block;
-                                            margin-bottom: 10px;
-                                        ">${examDetails.writtenExamResult}</strong>
-                                        ${examDetails.note ? `
-                                            <p style="
-                                                margin: 0;
-                                                font-size: 14px;
-                                                color: #374151;
-                                                background: rgba(255, 255, 255, 0.8);
-                                                padding: 12px 16px;
-                                                border-radius: 8px;
-                                                backdrop-filter: blur(10px);
-                                                line-height: 1.6;
-                                            ">${examDetails.note}</p>
-                                        ` : ""}
+                                    <div style="flex: 1;">
+                                        <label style="display: block; font-size: 14px; color: #6b7280; margin-bottom: 8px; font-weight: 500; text-transform: uppercase;">
+                                            Written Exam Result
+                                        </label>
+                                        <strong style="font-size: 32px; font-weight: 800; color: ${examDetails.writtenExamResult === "PASS" ? "#16a34a" : examDetails.writtenExamResult === "FAIL" ? "#dc2626" : "#f59e0b"}; display: block; margin-bottom: 10px;">
+                                            ${examDetails.writtenExamResult}
+                                        </strong>
                                     </div>
                                 </div>
                             ` : ""}
                         </div>
                         
+                        <!-- Trial Exam Application Section -->
                         ${hasPassed && !hasTrialExams ? `
-                            <div class="trial-application-prompt" style="
-                                background: linear-gradient(135deg, #e0f2fe 0%, #b3e5fc 100%);
-                                border: 2px solid #29b6f6;
-                                border-radius: 16px;
-                                padding: 24px;
-                                margin-bottom: 20px;
-                                position: relative;
-                                z-index: 1;
-                                overflow: hidden;
-                            ">
-                                <div style="
-                                    position: absolute;
-                                    top: -20px;
-                                    left: -20px;
-                                    width: 100px;
-                                    height: 100px;
-                                    background: rgba(41, 182, 246, 0.2);
-                                    border-radius: 50%;
-                                    z-index: 0;
-                                "></div>
-                                
-                                <div style="position: relative; z-index: 1;">
-                                    <div style="
-                                        display: flex;
-                                        align-items: center;
-                                        margin-bottom: 16px;
-                                        color: #0277bd;
-                                    ">
-                                        <i class="fas fa-info-circle" style="font-size: 24px; margin-right: 12px;"></i>
-                                        <strong style="font-size: 18px; font-weight: 700;">You've passed the written exam!</strong>
-                                    </div>
-                                    
-                                    <div style="
-                                        background: white;
-                                        border-radius: 12px;
-                                        padding: 16px;
-                                        margin-bottom: 20px;
-                                        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-                                    ">
-                                        <p style="margin: 0 0 8px 0; color: #374151; font-weight: 600;">
-                                            <i class="fas fa-calendar" style="margin-right: 8px; color: #3b82f6;"></i>
-                                            <b>Trial Date:</b> <span class="trial-date-placeholder" style="color: #6b7280;">${examDetails.trialDate || 'Loading...'}</span>
-                                        </p>
-                                        <p style="margin: 0 0 8px 0; color: #374151; font-weight: 600;">
-                                            <i class="fas fa-clock" style="margin-right: 8px; color: #f59e0b;"></i>
-                                            <b>Trial Time:</b> <span class="trial-time-placeholder" style="color: #6b7280;">Loading...</span>
-                                        </p>
-                                        <p style="margin: 0; color: #374151; font-weight: 600;">
-                                            <i class="fas fa-map-marker-alt" style="margin-right: 8px; color: #dc2626;"></i>
-                                            <b>Trial Location:</b> <span class="trial-location-placeholder" style="color: #6b7280;">Loading...</span>
-                                        </p>
-                                    </div>
-                                    
-                                    <button onclick="applyForTrialExam(${examDetails.id})" style="
-                                        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-                                        border: none;
-                                        color: white;
-                                        padding: 14px 28px;
-                                        border-radius: 12px;
-                                        font-weight: 700;
-                                        font-size: 16px;
-                                        cursor: pointer;
-                                        transition: all 0.3s ease;
-                                        box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
-                                        display: flex;
-                                        align-items: center;
-                                        justify-content: center;
-                                        width: 100%;
-                                    " onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 12px 24px rgba(59, 130, 246, 0.5)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 6px 16px rgba(59, 130, 246, 0.4)';">
-                                        <i class="fas fa-car" style="margin-right: 10px; font-size: 18px;"></i>
-                                        Apply for Trial Exam
-                                    </button>
+                            <div style="background: linear-gradient(135deg, #e0f2fe 0%, #b3e5fc 100%); border: 2px solid #29b6f6; border-radius: 16px; padding: 24px; margin-bottom: 20px;">
+                                <div style="display: flex; align-items: center; margin-bottom: 16px; color: #0277bd;">
+                                    <i class="fas fa-info-circle" style="font-size: 24px; margin-right: 12px;"></i>
+                                    <strong style="font-size: 18px; font-weight: 700;">You've passed the written exam!</strong>
                                 </div>
+                                
+                                <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
+                                    <p style="margin: 0 0 8px 0; color: #374151; font-weight: 600;">
+                                        <i class="fas fa-calendar" style="margin-right: 8px; color: #3b82f6;"></i>
+                                        <b>Trial Date:</b> <span class="trial-date-placeholder" style="color: #6b7280;">${examDetails.trialDate || 'Loading...'}</span>
+                                    </p>
+                                    <p style="margin: 0 0 8px 0; color: #374151; font-weight: 600;">
+                                        <i class="fas fa-clock" style="margin-right: 8px; color: #f59e0b;"></i>
+                                        <b>Trial Time:</b> <span class="trial-time-placeholder" style="color: #6b7280;">Loading...</span>
+                                    </p>
+                                    <p style="margin: 0; color: #374151; font-weight: 600;">
+                                        <i class="fas fa-map-marker-alt" style="margin-right: 8px; color: #dc2626;"></i>
+                                        <b>Trial Location:</b> <span class="trial-location-placeholder" style="color: #6b7280;">Loading...</span>
+                                    </p>
+                                </div>
+                                
+                                <button onclick="applyForTrialExam(${examDetails.id})" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border: none; color: white; padding: 14px 28px; border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4); display: flex; align-items: center; justify-content: center; width: 100%;">
+                                    <i class="fas fa-car" style="margin-right: 10px; font-size: 18px;"></i>
+                                    Apply for Trial Exam
+                                </button>
                             </div>
                         ` : ''}
                         
+                        <!-- Trial Retry Section -->
                         ${hasTrialExams && !hasPassedTrial ? `
-                            <div class="trial-retry-prompt" style="
-                                background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
-                                border: 2px solid #fbbf24;
-                                border-radius: 16px;
-                                padding: 24px;
-                                margin-bottom: 20px;
-                                position: relative;
-                                z-index: 1;
-                                overflow: hidden;
-                            ">
-                                <div style="
-                                    position: absolute;
-                                    top: -15px;
-                                    right: -15px;
-                                    width: 80px;
-                                    height: 80px;
-                                    background: rgba(251, 191, 36, 0.2);
-                                    border-radius: 50%;
-                                    z-index: 0;
-                                "></div>
-                                
-                                <div style="position: relative; z-index: 1;">
-                                    <div style="
-                                        display: flex;
-                                        align-items: center;
-                                        margin-bottom: 16px;
-                                        color: #d97706;
-                                    ">
-                                        <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-right: 12px;"></i>
-                                        <strong style="font-size: 18px; font-weight: 700;">You didn't pass the practical exam. You can apply for another trial exam.</strong>
-                                    </div>
-                                    
-                                    <button onclick="applyForTrialExam(${examDetails.id})" style="
-                                        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-                                        border: none;
-                                        color: white;
-                                        padding: 14px 28px;
-                                        border-radius: 12px;
-                                        font-weight: 700;
-                                        font-size: 16px;
-                                        cursor: pointer;
-                                        transition: all 0.3s ease;
-                                        box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
-                                        display: flex;
-                                        align-items: center;
-                                        justify-content: center;
-                                        width: 100%;
-                                    " onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 12px 24px rgba(245, 158, 11, 0.5)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 6px 16px rgba(245, 158, 11, 0.4)';">
-                                        <i class="fas fa-redo" style="margin-right: 10px; font-size: 18px;"></i>
-                                        Apply for Retry
-                                    </button>
+                            <div style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 2px solid #fbbf24; border-radius: 16px; padding: 24px; margin-bottom: 20px;">
+                                <div style="display: flex; align-items: center; margin-bottom: 16px; color: #d97706;">
+                                    <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-right: 12px;"></i>
+                                    <strong style="font-size: 18px; font-weight: 700;">You didn't pass the practical exam. You can apply for another trial exam.</strong>
                                 </div>
+                                
+                                <button onclick="applyForTrialExam(${examDetails.id})" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: none; color: white; padding: 14px 28px; border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4); display: flex; align-items: center; justify-content: center; width: 100%;">
+                                    <i class="fas fa-redo" style="margin-right: 10px; font-size: 18px;"></i>
+                                    Apply for Retry
+                                </button>
                             </div>
                         ` : ''}
                         
-                        <div class="approval-actions" style="
-                            display: flex;
-                            gap: 16px;
-                            flex-wrap: wrap;
-                            justify-content: center;
-                            position: relative;
-                            z-index: 1;
-                        ">
-                            <button onclick="Swal.close(); showExamDetails(${JSON.stringify(examDetails).replace(/"/g, "&quot;")});" style="
-                                background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-                                border: none;
-                                color: white;
-                                padding: 12px 24px;
-                                border-radius: 10px;
-                                font-weight: 600;
-                                cursor: pointer;
-                                transition: all 0.3s ease;
-                                box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-                                display: flex;
-                                align-items: center;
-                                font-size: 14px;
-                                min-width: 180px;
-                                justify-content: center;
-                            " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(59, 130, 246, 0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(59, 130, 246, 0.3)';">
+                        <!-- Action Buttons -->
+                        <div style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;">
+                            <button onclick="Swal.close(); showExamDetails(${JSON.stringify(examDetails).replace(/"/g, "&quot;")});" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border: none; color: white; padding: 12px 24px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); display: flex; align-items: center; font-size: 14px; min-width: 180px; justify-content: center;">
                                 <i class="fas fa-info-circle" style="margin-right: 8px;"></i>Full Exam Details
                             </button>
                             
                             ${!hasPassed ? `
-                                <button onclick="Swal.close(); showPaymentForm();" style="
-                                    background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
-                                    border: none;
-                                    color: white;
-                                    padding: 12px 24px;
-                                    border-radius: 10px;
-                                    font-weight: 600;
-                                    cursor: pointer;
-                                    transition: all 0.3s ease;
-                                    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
-                                    display: flex;
-                                    align-items: center;
-                                    font-size: 14px;
-                                    min-width: 180px;
-                                    justify-content: center;
-                                " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(22, 163, 74, 0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(22, 163, 74, 0.3)';">
+                                <button onclick="Swal.close(); showPaymentForm();" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); border: none; color: white; padding: 12px 24px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3); display: flex; align-items: center; font-size: 14px; min-width: 180px; justify-content: center;">
                                     <i class="fas fa-credit-card" style="margin-right: 8px;"></i>Make Payment
                                 </button>
                             ` : ''}

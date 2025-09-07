@@ -38,7 +38,7 @@ public class TrialExamController {
                 return ResponseEntity.badRequest().body("Trial date is required");
             }
 
-            if (trialExamDTO.getTrialResult() == null || trialExamDTO.getTrialResult().trim().isEmpty()) {
+            if (trialExamDTO.getTrialResult() == null || trialExamDTO.getTrialResult().isEmpty()) {
                 log.warn("Trial result is null or empty in request");
                 return ResponseEntity.badRequest().body("Trial result is required");
             }

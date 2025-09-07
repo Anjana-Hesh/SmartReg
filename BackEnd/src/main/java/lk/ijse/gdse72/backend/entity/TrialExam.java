@@ -30,7 +30,6 @@ public class TrialExam {
     private LocalTime trialTime;
     private String trialLocation;
 
-    @Column(nullable = false)
     private String trialResult;
 
     @Column(columnDefinition = "TEXT")
