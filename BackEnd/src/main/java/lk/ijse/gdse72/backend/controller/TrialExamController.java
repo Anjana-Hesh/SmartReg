@@ -102,4 +102,73 @@ public class TrialExamController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> updateTrialExamResult(
+            @PathVariable Long id,
+            @Valid @RequestBody TrialExamDTO trialExamDTO) {
+        try {
+            log.info("Updating trial exam with ID: {}", id);
+
+            // Validate that the ID in path matches the ID in body (if provided)
+            if (trialExamDTO.getId() != null && !trialExamDTO.getId().equals(id)) {
+                log.warn("ID mismatch in update request. Path ID: {}, Body ID: {}", id, trialExamDTO.getId());
+                return ResponseEntity.badRequest().body("ID in path does not match ID in request body");
+            }
+
+            TrialExamDTO updatedTrialExam = trialExamService.updateTrialExamResult(id, trialExamDTO);
+            log.info("Trial exam updated successfully with ID: {}", updatedTrialExam.getId());
+            return ResponseEntity.ok(updatedTrialExam);
+
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid request to update trial exam: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (RuntimeException e) {
+            log.error("Error updating trial exam result: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        } catch (Exception e) {
+            log.error("Unexpected error updating trial exam result", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Internal server error occurred: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DRIVER')")
+    public ResponseEntity<?> getTrialExamById(@PathVariable Long id) {
+        try {
+            log.info("Fetching trial exam by ID: {}", id);
+
+            TrialExamDTO trialExam = trialExamService.getTrialExamById(id);
+            return ResponseEntity.ok(trialExam);
+        } catch (IllegalArgumentException e) {
+            log.warn("Trial exam not found with ID: {}", id);
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            log.error("Error fetching trial exam with ID: {}", id, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> deleteTrialExam(@PathVariable Long id) {
+        try {
+            log.info("Deleting trial exam with ID: {}", id);
+
+            trialExamService.deleteTrialExam(id);
+            return ResponseEntity.ok().body("Trial exam deleted successfully");
+        } catch (IllegalArgumentException e) {
+            log.warn("Trial exam not found with ID: {}", id);
+            return ResponseEntity.notFound().build();
+        } catch (RuntimeException e) {
+            log.error("Error deleting trial exam: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        } catch (Exception e) {
+            log.error("Unexpected error deleting trial exam", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Internal server error occurred: " + e.getMessage());
+        }
+    }
 }

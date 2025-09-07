@@ -149,6 +149,138 @@ public class TrialExamServiceImpl implements TrialExamService {
         return hasPassed;
     }
 
+    @Override
+    @Transactional
+    public TrialExamDTO updateTrialExamResult(Long id, TrialExamDTO trialExamDTO) {
+        log.info("Updating trial exam with ID: {}", id);
+
+        // Validate input
+        if (id == null) {
+            log.error("Trial exam ID is null");
+            throw new IllegalArgumentException("Trial exam ID is required");
+        }
+
+        if (trialExamDTO.getTrialResult() == null || trialExamDTO.getTrialResult().trim().isEmpty()) {
+            log.error("Trial result is null or empty");
+            throw new IllegalArgumentException("Trial result is required");
+        }
+
+        // Validate trial result values
+        String normalizedResult = trialExamDTO.getTrialResult().toUpperCase().trim();
+        if (!normalizedResult.equals("PASS") && !normalizedResult.equals("FAIL") &&
+                !normalizedResult.equals("ABSENT") && !normalizedResult.equals("PENDING")) {
+            log.error("Invalid trial result: {}", trialExamDTO.getTrialResult());
+            throw new IllegalArgumentException("Trial result must be PASS, FAIL, ABSENT or PENDING");
+        }
+
+        try {
+            // Find existing trial exam
+            TrialExam existingTrialExam = trialExamRepository.findById(id)
+                    .orElseThrow(() -> {
+                        log.error("Trial exam not found with ID: {}", id);
+                        return new IllegalArgumentException("Trial exam not found with ID: " + id);
+                    });
+
+            log.info("Found existing trial exam: {}", existingTrialExam.getId());
+
+            // Store old result for status update logic
+            String oldResult = existingTrialExam.getTrialResult();
+
+            // Update fields
+            existingTrialExam.setTrialDate(trialExamDTO.getTrialDate() != null ?
+                    trialExamDTO.getTrialDate() : existingTrialExam.getTrialDate());
+
+            existingTrialExam.setTrialTime(trialExamDTO.getTrialTime() != null ?
+                    trialExamDTO.getTrialTime() : existingTrialExam.getTrialTime());
+
+            existingTrialExam.setTrialLocation(trialExamDTO.getTrialLocation() != null ?
+                    trialExamDTO.getTrialLocation() : existingTrialExam.getTrialLocation());
+
+            existingTrialExam.setTrialResult(normalizedResult);
+
+            existingTrialExam.setExaminerNotes(trialExamDTO.getExaminerNotes());
+
+            TrialExam updatedTrialExam = trialExamRepository.save(existingTrialExam);
+            log.info("Trial exam updated successfully with ID: {}", updatedTrialExam.getId());
+
+            // Handle application status update if result changed to/from PASS
+            if (!normalizedResult.equals(oldResult)) {
+                handleApplicationStatusUpdate(updatedTrialExam, normalizedResult, oldResult);
+            }
+
+            return convertToDTO(updatedTrialExam);
+
+        } catch (Exception e) {
+            log.error("Error updating trial exam result", e);
+            throw new RuntimeException("Failed to update trial exam result: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public TrialExamDTO getTrialExamById(Long id) {
+        log.info("Fetching trial exam by ID: {}", id);
+
+        if (id == null) {
+            throw new IllegalArgumentException("Trial exam ID cannot be null");
+        }
+
+        return trialExamRepository.findById(id)
+                .map(this::convertToDTO)
+                .orElseThrow(() -> {
+                    log.error("Trial exam not found with ID: {}", id);
+                    return new IllegalArgumentException("Trial exam not found with ID: " + id);
+                });
+    }
+
+    @Override
+    @Transactional
+    public void deleteTrialExam(Long id) {
+        log.info("Deleting trial exam with ID: {}", id);
+
+        if (id == null) {
+            throw new IllegalArgumentException("Trial exam ID cannot be null");
+        }
+
+        if (!trialExamRepository.existsById(id)) {
+            log.error("Trial exam not found with ID: {}", id);
+            throw new IllegalArgumentException("Trial exam not found with ID: " + id);
+        }
+
+        try {
+            trialExamRepository.deleteById(id);
+            log.info("Trial exam deleted successfully with ID: {}", id);
+        } catch (Exception e) {
+            log.error("Error deleting trial exam with ID: {}", id, e);
+            throw new RuntimeException("Failed to delete trial exam: " + e.getMessage(), e);
+        }
+    }
+
+    private void handleApplicationStatusUpdate(TrialExam trialExam, String newResult, String oldResult) {
+        try {
+            WrittenExam writtenExam = trialExam.getWrittenExam();
+            if (writtenExam != null && writtenExam.getApplication() != null) {
+                Application application = writtenExam.getApplication();
+
+                // If result changed to PASS, update application status to COMPLETED
+                if ("PASS".equalsIgnoreCase(newResult)) {
+                    application.setStatus("COMPLETED");
+                    applicationRepository.save(application);
+                    log.info("Application status updated to COMPLETED for application ID: {}", application.getId());
+                }
+                // If result changed from PASS to something else, revert status to APPROVED
+                else if ("PASS".equalsIgnoreCase(oldResult)) {
+                    application.setStatus("APPROVED");
+                    applicationRepository.save(application);
+                    log.info("Application status reverted to APPROVED for application ID: {}", application.getId());
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error handling application status update: {}", e.getMessage(), e);
+            // Don't fail the main transaction for status update errors
+        }
+    }
+
     private TrialExamDTO convertToDTO(TrialExam trialExam) {
         if (trialExam == null) {
             return null;

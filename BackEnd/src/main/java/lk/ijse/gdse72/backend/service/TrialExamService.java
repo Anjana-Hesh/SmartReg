@@ -14,4 +14,13 @@ public interface TrialExamService {
     TrialExamDTO getLatestTrialExam(Long writtenExamId);
 
     boolean hasPassedTrialExam(Long writtenExamId);
+
+    @Transactional
+    TrialExamDTO updateTrialExamResult(Long id, TrialExamDTO trialExamDTO);
+
+    @Transactional(readOnly = true)
+    TrialExamDTO getTrialExamById(Long id);
+
+    @Transactional
+    void deleteTrialExam(Long id);
 }
