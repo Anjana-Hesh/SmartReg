@@ -1,6 +1,7 @@
 package lk.ijse.gdse72.backend.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import lk.ijse.gdse72.backend.dto.PayHereCallbackDTO;
 import lk.ijse.gdse72.backend.dto.PaymentRequestDTO;
@@ -19,8 +20,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -46,6 +50,8 @@ public class PayHereServiceImpl implements PayHereService {
 
     @Value("${app.base-url}")
     private String appBaseUrl;
+
+    // UPDATE YOUR PayHereServiceImpl.java initializePayment method
 
     @Override
     public PaymentResponseDTO initializePayment(PaymentRequestDTO requestDTO) {
@@ -73,7 +79,7 @@ public class PayHereServiceImpl implements PayHereService {
 
             // Generate unique transaction ID with better format
             String transactionId = generateTransactionId();
-            String payhereOrderId = "LP_" + System.currentTimeMillis(); // Changed prefix
+            String payhereOrderId = "LP_" + System.currentTimeMillis();
 
             // Create payment record
             Payment.PaymentBuilder paymentBuilder = Payment.builder()
@@ -96,8 +102,24 @@ public class PayHereServiceImpl implements PayHereService {
             Payment payment = paymentBuilder.build();
             payment = paymentRepository.save(payment);
 
-            // Build PayHere parameters (not URL for now)
-            Map<String, String> paymentParams = buildPayHereParameters(payment);
+            // Generate hash using the corrected method
+            String hash = generatePayHereCheckoutHash(
+                    merchantId,
+                    payment.getPayhereOrderId(),
+                    payment.getAmount(),
+                    "LKR",
+                    merchantSecret
+            );
+
+            // Log debug information
+            log.info("=== Payment Initialization Debug ===");
+            log.info("Payment ID: {}", payment.getId());
+            log.info("Transaction ID: {}", transactionId);
+            log.info("PayHere Order ID: {}", payhereOrderId);
+            log.info("Amount: {}", amount);
+            log.info("Merchant ID: {}", merchantId);
+            log.info("Generated Hash: {}", hash);
+            log.info("===================================");
 
             return PaymentResponseDTO.builder()
                     .paymentId(payment.getId())
@@ -109,10 +131,10 @@ public class PayHereServiceImpl implements PayHereService {
                     .status(PaymentStatus.PENDING)
                     .createdDate(payment.getCreatedDate())
                     .merchantId(merchantId)
-                    .merchantSecret(merchantSecret) // Remove this in production
+                    .hash(hash) // IMPORTANT: Include the generated hash
                     .returnUrl(appBaseUrl + "/payment/success")
                     .cancelUrl(appBaseUrl + "/payment/cancel")
-                    .notifyUrl(appBaseUrl + "/api/payment/callback")
+                    .notifyUrl(appBaseUrl + "/api/v1/payment/callback") // Make sure path matches controller
                     .build();
 
         } catch (IllegalArgumentException e) {
@@ -124,11 +146,14 @@ public class PayHereServiceImpl implements PayHereService {
         }
     }
 
+
     private Map<String, String> buildPayHereParameters(Payment payment) {
         Map<String, String> params = new HashMap<>();
 
-        // Format amount properly
-        String formattedAmount = payment.getAmount().setScale(2, BigDecimal.ROUND_HALF_UP).toString();
+        // CRITICAL: Use DecimalFormat instead of setScale for PHP compatibility
+        DecimalFormat df = new DecimalFormat("0.00");
+        df.setGroupingUsed(false);
+        String formattedAmount = df.format(payment.getAmount());
 
         // Split name properly
         String[] nameParts = payment.getDriverName().trim().split("\\s+", 2);
@@ -139,7 +164,7 @@ public class PayHereServiceImpl implements PayHereService {
         params.put("merchant_id", merchantId);
         params.put("return_url", appBaseUrl + "/payment/success");
         params.put("cancel_url", appBaseUrl + "/payment/cancel");
-        params.put("notify_url", appBaseUrl + "/api/payment/callback");
+        params.put("notify_url", appBaseUrl + "/api/v1/payment/callback"); // Make sure this matches your controller
         params.put("order_id", payment.getPayhereOrderId());
         params.put("items", "Driving License Exam Fee - " + payment.getLicenseType());
         params.put("currency", "LKR");
@@ -148,8 +173,8 @@ public class PayHereServiceImpl implements PayHereService {
         // Customer details (required by PayHere)
         params.put("first_name", firstName);
         params.put("last_name", lastName);
-        params.put("email", "customer@licensepro.lk"); // Default email
-        params.put("phone", "0771234567"); // Default phone
+        params.put("email", "customer@licensepro.lk");
+        params.put("phone", "0771234567");
         params.put("address", "Colombo");
         params.put("city", "Colombo");
         params.put("country", "Sri Lanka");
@@ -158,23 +183,14 @@ public class PayHereServiceImpl implements PayHereService {
         params.put("custom_1", payment.getTransactionId());
         params.put("custom_2", payment.getApplicationId().toString());
 
-        // Generate hash
-        String hashInput = merchantId + payment.getPayhereOrderId() +
-                formattedAmount + "LKR" + merchantSecret;
-        String hash = generateMD5Hash(hashInput).toUpperCase();
+        // Generate hash using the CORRECTED method
+        String hash = generatePayHereCheckoutHash(merchantId, payment.getPayhereOrderId(),
+                payment.getAmount(), "LKR", merchantSecret);
         params.put("hash", hash);
-
-        // Debug logging
-        log.info("=== PayHere Parameters ===");
-        log.info("Merchant ID: {}", merchantId);
-        log.info("Order ID: {}", payment.getPayhereOrderId());
-        log.info("Amount: {}", formattedAmount);
-        log.info("Hash Input: {}", hashInput);
-        log.info("Generated Hash: {}", hash);
-        log.info("========================");
 
         return params;
     }
+
 
     // Validation method for payment requests
     private void validatePaymentRequest(PaymentRequestDTO requestDTO) {
@@ -199,24 +215,31 @@ public class PayHereServiceImpl implements PayHereService {
     }
 
     public String generatePayHereForm(String transactionId) {
-        Optional<Payment> paymentOpt = paymentRepository.findByTransactionId(transactionId);
-        if (!paymentOpt.isPresent()) {
-            throw new GlobelExceptionHandler.PaymentNotFoundException("Payment not found");
-        }
+        Payment payment = paymentRepository.findByTransactionId(transactionId)
+                .orElseThrow(() -> new RuntimeException("Payment not found"));
 
-        Payment payment = paymentOpt.get();
-        Map<String, String> params = buildPayHereParameters(payment);
+        Map<String, String> params = new HashMap<>();
+        params.put("merchant_id", merchantId);
+        params.put("return_url", appBaseUrl + "/payment/success");
+        params.put("cancel_url", appBaseUrl + "/payment/cancel");
+        params.put("notify_url", appBaseUrl + "/api/v1/payment/callback");
+        params.put("order_id", payment.getPayhereOrderId());
+        params.put("items", "Driving License Exam Fee - " + payment.getLicenseType());
+        params.put("currency", "LKR");
+        params.put("amount", payment.getAmount().setScale(2, RoundingMode.HALF_UP).toString());
+        params.put("first_name", payment.getDriverName().split(" ")[0]);
+        params.put("last_name", payment.getDriverName().split(" ").length > 1 ? payment.getDriverName().split(" ")[1] : "");
+        params.put("email", "customer@licensepro.lk");
+        params.put("phone", "0771234567");
+        params.put("custom_1", payment.getTransactionId());
+        params.put("custom_2", payment.getApplicationId().toString());
 
-        StringBuilder formHtml = new StringBuilder();
-        formHtml.append("<form method='post' action='").append(payhereBaseUrl).append("/pay/checkout' id='payhere-form'>\n");
+        // Server-side hash
+        params.put("hash", generatePayHereCheckoutHash(merchantId, payment.getPayhereOrderId(), payment.getAmount(), "LKR", merchantSecret));
 
-        for (Map.Entry<String, String> entry : params.entrySet()) {
-            formHtml.append("  <input type='hidden' name='").append(entry.getKey())
-                    .append("' value='").append(entry.getValue()).append("'>\n");
-        }
-
-        formHtml.append("  <input type='submit' value='Pay Now' class='btn btn-primary'>\n");
-        formHtml.append("</form>\n");
+        StringBuilder formHtml = new StringBuilder("<form id='payhere-form' method='post' action='" + payhereBaseUrl + "/pay/checkout'>");
+        params.forEach((k, v) -> formHtml.append("<input type='hidden' name='").append(k).append("' value='").append(v).append("'>"));
+        formHtml.append("<input type='submit' value='Pay Now'></form>");
         formHtml.append("<script>document.getElementById('payhere-form').submit();</script>");
 
         return formHtml.toString();
@@ -287,6 +310,89 @@ public class PayHereServiceImpl implements PayHereService {
         }
     }
 
+    private String generatePayHereCallbackHash(String merchantId, String orderId, String payhereAmount,
+                                               String payhereCurrency, String statusCode, String merchantSecret) {
+        try {
+            // Step 1: Hash the merchant secret and convert to uppercase
+            String hashedSecret = generateMD5Hash(merchantSecret).toUpperCase();
+
+            // Step 2: Build hash string for callback verification
+            // Note: Use payhereAmount directly as received from PayHere
+            String hashInput = merchantId + orderId + payhereAmount + payhereCurrency + statusCode + hashedSecret;
+
+            // Step 3: Generate final hash and convert to uppercase
+            String finalHash = generateMD5Hash(hashInput).toUpperCase();
+
+            log.info("=== PayHere Callback Hash Debug ===");
+            log.info("Merchant ID: {}", merchantId);
+            log.info("Order ID: {}", orderId);
+            log.info("PayHere Amount: {}", payhereAmount);
+            log.info("PayHere Currency: {}", payhereCurrency);
+            log.info("Status Code: {}", statusCode);
+            log.info("Hashed Secret: {}", hashedSecret);
+            log.info("Hash Input: {}", hashInput);
+            log.info("Final Hash: {}", finalHash);
+            log.info("==================================");
+
+            return finalHash;
+
+        } catch (Exception e) {
+            log.error("Error generating PayHere callback hash: ", e);
+            throw new RuntimeException("Failed to generate PayHere callback hash", e);
+        }
+    }
+
+    private String generatePayHereCheckoutHash(String merchantId, String orderId, BigDecimal amount, String currency, String merchantSecret) {
+        try {
+            // 1️⃣ Format amount exactly like PHP number_format($amount, 2, '.', '')
+            DecimalFormat df = new DecimalFormat("0.00");
+            df.setGroupingUsed(false); // no commas
+            String formattedAmount = df.format(amount);
+
+            // 2️⃣ Hash the merchant secret first (uppercase)
+            String hashedSecret = generateMD5Hash(merchantSecret).toUpperCase();
+
+            // 3️⃣ Concatenate values exactly as in PHP
+            String hashInput = merchantId + orderId + formattedAmount + currency + hashedSecret;
+
+            // 4️⃣ Generate final MD5 hash and convert to uppercase
+            String finalHash = generateMD5Hash(hashInput).toUpperCase();
+
+            // Debug logging
+            log.info("=== PayHere Checkout Hash Debug ===");
+            log.info("Merchant ID: {}", merchantId);
+            log.info("Order ID: {}", orderId);
+            log.info("Formatted Amount: {}", formattedAmount);
+            log.info("Currency: {}", currency);
+            log.info("Hashed Merchant Secret: {}", hashedSecret);
+            log.info("Hash Input String: {}", hashInput);
+            log.info("Final Hash: {}", finalHash);
+            log.info("==================================");
+
+            return finalHash;
+
+        } catch (Exception e) {
+            log.error("Error generating PayHere checkout hash", e);
+            throw new RuntimeException("Failed to generate PayHere checkout hash", e);
+        }
+    }
+
+    private String generateMD5Hash(String input) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            byte[] digest = md.digest(input.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : digest) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            throw new RuntimeException("MD5 hash generation failed", e);
+        }
+    }
+
+
+
     @Override
     public PaymentStatusDTO getPaymentStatus(String transactionId) {
         Optional<Payment> paymentOpt = paymentRepository.findByTransactionId(transactionId);
@@ -317,20 +423,26 @@ public class PayHereServiceImpl implements PayHereService {
     @Override
     public boolean verifyPayHereSignature(PayHereCallbackDTO callbackDTO) {
         try {
-            String hashString = merchantId + callbackDTO.getOrder_id() +
-                    callbackDTO.getPayhere_amount() + callbackDTO.getPayhere_currency() +
-                    callbackDTO.getStatus_code() + merchantSecret;
+            // Generate expected signature using the callback-specific hash method
+            String expectedSignature = generatePayHereCallbackHash(
+                    merchantId,
+                    callbackDTO.getOrder_id(),
+                    callbackDTO.getPayhere_amount(),
+                    callbackDTO.getPayhere_currency(),
+                    callbackDTO.getStatus_code(),
+                    merchantSecret
+            );
 
-            String expectedSignature = generateMD5Hash(hashString).toUpperCase();
+            boolean signaturesMatch = expectedSignature.equals(callbackDTO.getMd5sig());
 
-            log.info("=== Signature Verification Debug ===");
-            log.info("Hash String: {}", hashString);
+            log.info("=== Callback Signature Verification ===");
             log.info("Expected Signature: {}", expectedSignature);
             log.info("Received Signature: {}", callbackDTO.getMd5sig());
-            log.info("Signatures Match: {}", expectedSignature.equals(callbackDTO.getMd5sig()));
-            log.info("===================================");
+            log.info("Signatures Match: {}", signaturesMatch);
+            log.info("=====================================");
 
-            return expectedSignature.equals(callbackDTO.getMd5sig());
+            return signaturesMatch;
+
         } catch (Exception e) {
             log.error("Error verifying PayHere signature: ", e);
             return false;
@@ -384,7 +496,7 @@ public class PayHereServiceImpl implements PayHereService {
 
     @Override
     public boolean isApplicationPaid(Long applicationId) {
-        return paymentRepository.findCompletedPaymentByApplicationId(applicationId).isPresent();
+        return paymentRepository.findCompletedPaymentByApplicationId(applicationId , PaymentStatus.COMPLETED).isPresent();
     }
 
     @Override
@@ -528,25 +640,21 @@ public class PayHereServiceImpl implements PayHereService {
                 .build();
     }
 
-    private String generateMD5Hash(String input) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            byte[] hash = md.digest(input.getBytes("UTF-8"));
-            StringBuilder hexString = new StringBuilder();
+//    String merchant_id = "1231944";
+//    String order_id = "LP_1616161616";
+//    String currency = "LKR";
+//    String merchant_secret = "MzU3ODUyMDM3NTM0NTgwMDMxNTkxNDEyOTY1MTEyNTYzNDE3NDk5";
+//
+//    $hash = strtoupper(
+//            md5(
+//            $merchant_id .
+//                    $order_id .
+//                    number_format($amount, 2, '.', '') .
+//            $currency .
+//                    strtoupper(md5($merchant_secret))
+//            )
+//            );
 
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) {
-                    hexString.append('0');
-                }
-                hexString.append(hex);
-            }
-
-            return hexString.toString();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to generate MD5 hash", e);
-        }
-    }
 
     private String objectToJson(Object obj) {
         try {
@@ -614,6 +722,22 @@ public class PayHereServiceImpl implements PayHereService {
         if (!issues.isEmpty()) {
             throw new IllegalStateException("Merchant configuration issues: " + String.join(", ", issues));
         }
+    }
+
+    @PostConstruct
+    public void validateConfiguration() {
+        log.info("=== PayHere Configuration Validation ===");
+        log.info("Merchant ID: {}", merchantId);
+        log.info("Merchant Secret: {}", merchantSecret != null ? "SET (length: " + merchantSecret.length() + ")" : "NOT SET");
+        log.info("PayHere Base URL: {}", payhereBaseUrl);
+        log.info("App Base URL: {}", appBaseUrl);
+
+        if (merchantId == null || merchantSecret == null) {
+            throw new IllegalStateException("PayHere merchant credentials not properly configured!");
+        }
+
+        log.info("✅ PayHere configuration validated successfully");
+        log.info("=======================================");
     }
 
 }

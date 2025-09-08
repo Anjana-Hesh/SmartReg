@@ -23,8 +23,9 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     List<Payment> findByApplicationIdAndStatus(Long applicationId, PaymentStatus status);
 
-    @Query("SELECT p FROM Payment p WHERE p.applicationId = :applicationId AND p.status = 'COMPLETED'")
-    Optional<Payment> findCompletedPaymentByApplicationId(@Param("applicationId") Long applicationId);
+    @Query("SELECT p FROM Payment p WHERE p.applicationId = :applicationId AND p.status = :status")
+    Optional<Payment> findCompletedPaymentByApplicationId(@Param("applicationId") Long applicationId,
+                                                          @Param("status") PaymentStatus status);
 
     @Query("SELECT p FROM Payment p WHERE p.driverId = :driverId AND p.status IN :statuses")
     List<Payment> findByDriverIdAndStatusIn(@Param("driverId") String driverId,

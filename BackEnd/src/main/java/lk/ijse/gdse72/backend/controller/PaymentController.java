@@ -1,5 +1,6 @@
 package lk.ijse.gdse72.backend.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lk.ijse.gdse72.backend.dto.*;
 import lk.ijse.gdse72.backend.exception.GlobelExceptionHandler;
@@ -59,8 +60,15 @@ public class PaymentController {
 
     @PostMapping("/callback")
     public ResponseEntity<String> handlePayHereCallback(
-            @RequestBody PayHereCallbackDTO callbackDTO) {
+            @ModelAttribute PayHereCallbackDTO callbackDTO,
+            HttpServletRequest request) {
         try {
+            log.info("Received PayHere callback: {}", callbackDTO);
+
+            // Log all request parameters for debugging
+            request.getParameterMap().forEach((key, values) ->
+                    log.info("Callback param: {} = {}", key, String.join(",", values)));
+
             payHereService.handlePayHereCallback(callbackDTO);
             return ResponseEntity.ok("OK");
         } catch (Exception e) {

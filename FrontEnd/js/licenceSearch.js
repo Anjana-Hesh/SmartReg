@@ -476,7 +476,7 @@
     let actions = "";
     const hasExam = application.examData && application.examData.id;
     const examResult = hasExam ? application.examData.writtenExamResult : null;
-    const hasResult = examResult && examResult !== "PENDING";
+    const hasResult = examResult && examResult !== "PENDING" && examResult !== "FAIL" && examResult !== "ABSENT" ;
 
     // Check trial exam data more thoroughly
     const hasTrialExam = application.trialExamData && 

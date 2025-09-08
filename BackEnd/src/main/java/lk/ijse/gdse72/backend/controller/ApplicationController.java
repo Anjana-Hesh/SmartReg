@@ -54,7 +54,7 @@ public class ApplicationController {
         return ResponseEntity.ok(updatedApplication);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DRIVER')")
     @GetMapping("/getall")
     public ResponseEntity<List<ApplicationDTO>> getAllApplications() {
         List<ApplicationDTO> applications = applicationService.getAllApplications();

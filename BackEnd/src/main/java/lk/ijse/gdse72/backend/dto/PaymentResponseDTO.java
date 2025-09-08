@@ -25,7 +25,7 @@ public class PaymentResponseDTO {
 
     // PayHere specific fields for frontend
     private String merchantId;
-    private String merchantSecret;
+    private String hash;
     private String returnUrl;
     private String cancelUrl;
     private String notifyUrl;
