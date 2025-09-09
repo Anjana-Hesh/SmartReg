@@ -472,11 +472,11 @@
         // <button class="btn btn-sm btn-warning" onclick="editApplication(${application.id})">
         //       <i class="fas fa-edit"></i> Edit
         //     </button>
-       function getAdminActions(application) {
+      function getAdminActions(application) {
     let actions = "";
     const hasExam = application.examData && application.examData.id;
     const examResult = hasExam ? application.examData.writtenExamResult : null;
-    const hasResult = examResult && examResult !== "PENDING" && examResult !== "FAIL" && examResult !== "ABSENT" ;
+    const hasResult = examResult && examResult !== "PENDING" && examResult !== "FAIL" && examResult !== "ABSENT";
 
     // Check trial exam data more thoroughly
     const hasTrialExam = application.trialExamData && 
@@ -485,6 +485,7 @@
     
     let trialResult = null;
     let hasTrialResult = false;
+    let hasPassedTrial = false;
     
     if (hasTrialExam) {
         // Get the latest trial exam
@@ -496,6 +497,7 @@
         
         trialResult = latestTrial.trialResult;
         hasTrialResult = trialResult && trialResult !== "PENDING" && trialResult !== null && trialResult !== "null";
+        hasPassedTrial = trialResult === "PASS";
     }
 
     // Add exam management actions
@@ -511,12 +513,23 @@
             // Trial exam button logic
             if (examResult === "PASS") {
                 if (hasTrialResult) {
-                    // Trial result is also submitted - show disabled button
-                    actions += `
-                        <button class="btn btn-sm btn-success" disabled title="Trial result already submitted">
-                            <i class="fas fa-check-circle"></i> Trial Result Submitted
-                        </button>
-                    `;
+                    if (hasPassedTrial) {
+                        // Trial passed - show license button
+                        actions += `
+                            <button class="btn btn-sm btn-success" onclick="viewLicenseDetails(${application.id})" title="View License Details">
+                                <i class="fas fa-id-card"></i> View License
+                            </button>
+                        `;
+                    } else {
+                        // Trial failed or other result
+                        actions += `
+                            <button class="btn btn-sm btn-warning" onclick="updateTrialResultModal(${application.id}, ${
+                                hasTrialExam ? application.trialExamData[0].id : "null"
+                            })">
+                                <i class="fas fa-clipboard-list"></i> Update Trial Result
+                            </button>
+                        `;
+                    }
                 } else {
                     // Written exam passed but no trial result yet - show active button
                     actions += `
@@ -548,6 +561,68 @@
     return actions;
 }
 
+function viewLicenseDetails(applicationId) {
+    Swal.fire({
+        title: "Loading License Details...",
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+    });
+    
+    getLicenseForApplication(applicationId)
+        .then((license) => {
+            if (license) {
+                const issueDate = new Date(license.issueDate).toLocaleDateString();
+                const expireDate = new Date(license.expireDate).toLocaleDateString();
+                const isExpired = new Date(license.expireDate) <= new Date();
+                
+                Swal.fire({
+                    title: "License Details",
+                    html: `
+                        <div class="text-start">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-id-card"></i> ${license.licenseNumber}
+                                        ${isExpired ? '<span class="badge bg-danger ms-2">EXPIRED</span>' : '<span class="badge bg-success ms-2">ACTIVE</span>'}
+                                    </h5>
+                                    <hr>
+                                    <p><strong>Driver Name:</strong> ${license.driverName || 'N/A'}</p>
+                                    <p><strong>NIC Number:</strong> ${license.nicNumber || 'N/A'}</p>
+                                    <p><strong>License Type:</strong> ${license.licenseType || 'N/A'}</p>
+                                    <p><strong>Vehicle Classes:</strong> ${license.vehicleClasses || 'N/A'}</p>
+                                    <p><strong>Issue Date:</strong> ${issueDate}</p>
+                                    <p><strong>Expire Date:</strong> ${expireDate}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `,
+                    icon: "info",
+                    confirmButtonText: "Close",
+                    width: 600
+                });
+            } else {
+                Swal.fire({
+                    title: "No License Found",
+                    text: "No license has been generated for this application yet.",
+                    icon: "info",
+                });
+            }
+        })
+        .catch((error) => {
+            console.error("Error fetching license details:", error);
+            Swal.fire({
+                title: "Error!",
+                text: "Failed to load license details. Please try again.",
+                icon: "error",
+            });
+        });
+}
+
+// Make the new functions globally accessible
+window.viewLicenseDetails = viewLicenseDetails;
+window.getLicenseForApplication = getLicenseForApplication;
 
         function getTrialExam(trialExamId) {
     return $.ajax({
@@ -652,9 +727,26 @@ function getTrialExamByWrittenExam(writtenExamId) {
         // Update existing trial exam
         updateTrialExam(trialExamId, trialResult, trialNotes)
             .then((response) => {
+                console.log("Trial result updated successfully");
+                
+                // If result is PASS, generate license automatically
+                if (trialResult === "PASS") {
+                    return generateLicenseForTrial(trialExamId);
+                }
+                
+                return Promise.resolve({ licenseGenerated: false });
+            })
+            .then((licenseResponse) => {
+                let successMessage = "Trial result updated successfully";
+                
+                if (licenseResponse.licenseGenerated) {
+                    successMessage += "\nDriving license generated successfully!";
+                    successMessage += `\nLicense Number: ${licenseResponse.licenseNumber}`;
+                }
+                
                 Swal.fire({
                     title: "Success!",
-                    text: "Trial result updated successfully",
+                    text: successMessage,
                     icon: "success",
                 }).then(() => {
                     $("#trialResultModal").modal("hide");
@@ -670,12 +762,29 @@ function getTrialExamByWrittenExam(writtenExamId) {
                 });
             });
     } else {
-        // Create new trial exam record with result as null initially for scheduling
-        createTrialExamRecordFromApplication(applicationId, null, trialNotes) // Pass null for result
+        // Create new trial exam record
+        createTrialExamRecordFromApplication(applicationId, trialResult, trialNotes)
             .then((response) => {
+                console.log("Trial exam created successfully");
+                
+                // If result is PASS and we have a trial exam ID, generate license
+                if (trialResult === "PASS" && response.id) {
+                    return generateLicenseForTrial(response.id);
+                }
+                
+                return Promise.resolve({ licenseGenerated: false });
+            })
+            .then((licenseResponse) => {
+                let successMessage = "Trial exam scheduled successfully";
+                
+                if (licenseResponse.licenseGenerated) {
+                    successMessage = "Trial exam completed and license generated successfully!";
+                    successMessage += `\nLicense Number: ${licenseResponse.licenseNumber}`;
+                }
+                
                 Swal.fire({
                     title: "Success!",
-                    text: "Trial exam scheduled successfully",
+                    text: successMessage,
                     icon: "success",
                 }).then(() => {
                     $("#trialResultModal").modal("hide");
@@ -692,7 +801,71 @@ function getTrialExamByWrittenExam(writtenExamId) {
             });
     }
 }
-
+function generateLicenseForTrial(trialExamId) {
+    return new Promise((resolve, reject) => {
+        // Check if license already exists for this trial
+        $.ajax({
+            url: `${API_BASE_URL}/licenses/exists/trial/${trialExamId}`,
+            method: "GET",
+            beforeSend: function (xhr) {
+                const token = authToken || localStorage.getItem("authToken");
+                if (token) {
+                    xhr.setRequestHeader("Authorization", "Bearer " + token);
+                }
+            },
+        })
+        .then((exists) => {
+            if (exists) {
+                // License already exists, get the existing license details
+                return $.ajax({
+                    url: `${API_BASE_URL}/licenses/trial/${trialExamId}`,
+                    method: "GET",
+                    beforeSend: function (xhr) {
+                        const token = authToken || localStorage.getItem("authToken");
+                        if (token) {
+                            xhr.setRequestHeader("Authorization", "Bearer " + token);
+                        }
+                    },
+                });
+            } else {
+                // Generate new license
+                return $.ajax({
+                    url: `${API_BASE_URL}/licenses/generate/${trialExamId}`,
+                    method: "POST",
+                    beforeSend: function (xhr) {
+                        const token = authToken || localStorage.getItem("authToken");
+                        if (token) {
+                            xhr.setRequestHeader("Authorization", "Bearer " + token);
+                        }
+                    },
+                });
+            }
+        })
+        .then((response) => {
+            let licenseData;
+            
+            // Handle response format
+            if (response.data) {
+                licenseData = response.data; // From API response
+            } else {
+                licenseData = response; // Direct license data
+            }
+            
+            resolve({
+                licenseGenerated: true,
+                licenseNumber: licenseData.licenseNumber,
+                licenseId: licenseData.id,
+                issueDate: licenseData.issueDate,
+                expireDate: licenseData.expireDate
+            });
+        })
+        .catch((error) => {
+            console.error("Error generating license:", error);
+            // Don't reject completely, just log the error and continue
+            resolve({ licenseGenerated: false });
+        });
+    });
+}
 function createTrialExamRecordFromApplication(applicationId, result, notes) {
     // First get the written exam data for this application
     return $.ajax({
@@ -707,10 +880,10 @@ function createTrialExamRecordFromApplication(applicationId, result, notes) {
     }).then((writtenExamData) => {
         const trialExamData = {
             writtenExamId: writtenExamData.id,
-            trialDate: writtenExamData.trialDate || new Date().toISOString().split("T")[0], // Use existing or current date
+            trialDate: writtenExamData.trialDate || new Date().toISOString().split("T")[0],
             trialTime: "09:00",
             trialLocation: "Colombo DMT",
-            trialResult: result, // This will be null for initial scheduling
+            trialResult: result, // Use the actual result (including PASS)
             examinerNotes: notes,
         };
 
@@ -728,26 +901,95 @@ function createTrialExamRecordFromApplication(applicationId, result, notes) {
         });
     });
 }
+function getLicenseForApplication(applicationId) {
+    return new Promise((resolve, reject) => {
+        // First get the trial exam for this application
+        $.ajax({
+            url: `${API_BASE_URL}/written-exams/application/${applicationId}`,
+            method: "GET",
+            beforeSend: function (xhr) {
+                const token = authToken || localStorage.getItem("authToken");
+                if (token) {
+                    xhr.setRequestHeader("Authorization", "Bearer " + token);
+                }
+            },
+        })
+        .then((writtenExamData) => {
+            if (!writtenExamData || !writtenExamData.id) {
+                resolve(null);
+                return;
+            }
+            
+            // Get trial exams for this written exam
+            return $.ajax({
+                url: `${API_BASE_URL}/trial-exams/written-exam/${writtenExamData.id}`,
+                method: "GET",
+                beforeSend: function (xhr) {
+                    const token = authToken || localStorage.getItem("authToken");
+                    if (token) {
+                        xhr.setRequestHeader("Authorization", "Bearer " + token);
+                    }
+                },
+            });
+        })
+        .then((trialExams) => {
+            if (!trialExams || trialExams.length === 0) {
+                resolve(null);
+                return;
+            }
+            
+            // Get the passed trial exam
+            const passedTrial = trialExams.find(trial => trial.trialResult === "PASS");
+            if (!passedTrial) {
+                resolve(null);
+                return;
+            }
+            
+            // Get license for this trial exam
+            return $.ajax({
+                url: `${API_BASE_URL}/licenses/trial/${passedTrial.id}`,
+                method: "GET",
+                beforeSend: function (xhr) {
+                    const token = authToken || localStorage.getItem("authToken");
+                    if (token) {
+                        xhr.setRequestHeader("Authorization", "Bearer " + token);
+                    }
+                },
+            });
+        })
+        .then((licenseResponse) => {
+            if (licenseResponse && licenseResponse.data) {
+                resolve(licenseResponse.data);
+            } else {
+                resolve(licenseResponse);
+            }
+        })
+        .catch((error) => {
+            console.error("Error getting license for application:", error);
+            resolve(null);
+        });
+    });
+}
 
         function updateTrialExam(trialExamId, result, notes) {
-          const updateData = {
-            trialResult: result,
-            examinerNotes: notes,
-          };
+    const updateData = {
+        trialResult: result,
+        examinerNotes: notes,
+    };
 
-          return $.ajax({
-            url: `${API_BASE_URL}/trial-exams/${trialExamId}`,
-            method: "PUT",
-            contentType: "application/json",
-            data: JSON.stringify(updateData),
-            beforeSend: function (xhr) {
-              const token = authToken || localStorage.getItem("authToken");
-              if (token) {
+    return $.ajax({
+        url: `${API_BASE_URL}/trial-exams/${trialExamId}`,
+        method: "PUT",
+        contentType: "application/json",
+        data: JSON.stringify(updateData),
+        beforeSend: function (xhr) {
+            const token = authToken || localStorage.getItem("authToken");
+            if (token) {
                 xhr.setRequestHeader("Authorization", "Bearer " + token);
-              }
-            },
-          });
-        }
+            }
+        },
+    });
+}
 
         // =================== MODAL FUNCTIONS ===================
         function viewApplicationDetails(applicationId) {
@@ -967,6 +1209,7 @@ function createTrialExamRecordFromApplication(applicationId, result, notes) {
                   .then((response) => {
                     // If result is PASS, create trial exam record
                     if (result === "PASS" && trialDate) {
+                      
                       return createTrialExamRecord(
                         examId,
                         trialDate,
@@ -1147,85 +1390,85 @@ function createTrialExamRecordFromApplication(applicationId, result, notes) {
           });
         }
 
-        function saveExamSchedule(examId, result, trialDate, nextExamDate) {
-          // Prepare exam schedule data
-          const examScheduleData = {
-            writtenExamId: examId,
-            trialDate: result === "PASS" ? trialDate : null,
-            nextExamDate:
-              result === "FAIL" || result === "ABSENT" ? nextExamDate : null,
-          };
+        // function saveExamSchedule(examId, result, trialDate, nextExamDate) {
+        //   // Prepare exam schedule data
+        //   const examScheduleData = {
+        //     writtenExamId: examId,
+        //     trialDate: result === "PASS" ? trialDate : null,
+        //     nextExamDate:
+        //       result === "FAIL" || result === "ABSENT" ? nextExamDate : null,
+        //   };
 
-          console.log("Saving exam schedule:", examScheduleData);
+        //   console.log("Saving exam schedule:", examScheduleData);
 
-          // Check if exam schedule already exists
-          return $.ajax({
-            url: `${API_BASE_URL}/exam-schedules/written-exam/${examId}`,
-            method: "GET",
-            beforeSend: function (xhr) {
-              if (authToken) {
-                xhr.setRequestHeader("Authorization", "Bearer " + authToken);
-              }
-            },
-          })
-            .then(function (existingSchedule) {
-              if (existingSchedule && existingSchedule.id) {
-                // Update existing schedule
-                examScheduleData.id = existingSchedule.id;
-                return $.ajax({
-                  url: `${API_BASE_URL}/exam-schedules/${existingSchedule.id}`,
-                  method: "PUT",
-                  contentType: "application/json",
-                  data: JSON.stringify(examScheduleData),
-                  beforeSend: function (xhr) {
-                    if (authToken) {
-                      xhr.setRequestHeader(
-                        "Authorization",
-                        "Bearer " + authToken
-                      );
-                    }
-                  },
-                });
-              } else {
-                // Create new schedule
-                return $.ajax({
-                  url: `${API_BASE_URL}/exam-schedules`,
-                  method: "POST",
-                  contentType: "application/json",
-                  data: JSON.stringify(examScheduleData),
-                  beforeSend: function (xhr) {
-                    if (authToken) {
-                      xhr.setRequestHeader(
-                        "Authorization",
-                        "Bearer " + authToken
-                      );
-                    }
-                  },
-                });
-              }
-            })
-            .catch(function (error) {
-              console.error(
-                "Error checking existing schedule, trying to create new:",
-                error
-              );
-              // If check fails, try to create new schedule
-              return $.ajax({
-                url: `${API_BASE_URL}/exam-schedules`,
-                method: "POST",
-                contentType: "application/json",
-                data: JSON.stringify(examScheduleData),
-                beforeSend: function (xhr) {
-                  if (authToken) {
-                    xhr.setRequestHeader(
-                      "Authorization",
-                      "Bearer " + authToken
-                    );
-                  }
-                },
-              });
-            });
-        }
+        //   // Check if exam schedule already exists
+        //   return $.ajax({
+        //     url: `${API_BASE_URL}/exam-schedules/written-exam/${examId}`,
+        //     method: "GET",
+        //     beforeSend: function (xhr) {
+        //       if (authToken) {
+        //         xhr.setRequestHeader("Authorization", "Bearer " + authToken);
+        //       }
+        //     },
+        //   })
+        //     .then(function (existingSchedule) {
+        //       if (existingSchedule && existingSchedule.id) {
+        //         // Update existing schedule
+        //         examScheduleData.id = existingSchedule.id;
+        //         return $.ajax({
+        //           url: `${API_BASE_URL}/exam-schedules/${existingSchedule.id}`,
+        //           method: "PUT",
+        //           contentType: "application/json",
+        //           data: JSON.stringify(examScheduleData),
+        //           beforeSend: function (xhr) {
+        //             if (authToken) {
+        //               xhr.setRequestHeader(
+        //                 "Authorization",
+        //                 "Bearer " + authToken
+        //               );
+        //             }
+        //           },
+        //         });
+        //       } else {
+        //         // Create new schedule
+        //         return $.ajax({
+        //           url: `${API_BASE_URL}/exam-schedules`,
+        //           method: "POST",
+        //           contentType: "application/json",
+        //           data: JSON.stringify(examScheduleData),
+        //           beforeSend: function (xhr) {
+        //             if (authToken) {
+        //               xhr.setRequestHeader(
+        //                 "Authorization",
+        //                 "Bearer " + authToken
+        //               );
+        //             }
+        //           },
+        //         });
+        //       }
+        //     })
+        //     .catch(function (error) {
+        //       console.error(
+        //         "Error checking existing schedule, trying to create new:",
+        //         error
+        //       );
+        //       // If check fails, try to create new schedule
+        //       return $.ajax({
+        //         url: `${API_BASE_URL}/exam-schedules`,
+        //         method: "POST",
+        //         contentType: "application/json",
+        //         data: JSON.stringify(examScheduleData),
+        //         beforeSend: function (xhr) {
+        //           if (authToken) {
+        //             xhr.setRequestHeader(
+        //               "Authorization",
+        //               "Bearer " + authToken
+        //             );
+        //           }
+        //         },
+        //       });
+        //     });
+        // }
 
         function scheduleExamModal(applicationId) {
           Swal.fire({

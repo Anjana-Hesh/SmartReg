@@ -1877,7 +1877,7 @@ function showPayHerePaymentForm(paymentData) {
                       <strong>#${paymentData.paymentId}</strong>
                   </div>
                   <div class="detail-item">
-                      <span>License Type:</span>
+                      <span>Payment For:</span>
                       <strong>Driving License Exam</strong>
                   </div>
                   <div class="detail-item">
@@ -2021,7 +2021,7 @@ function executePayHerePayment(paymentData, firstName, lastName) {
 
   // Enhanced PayHere payment configuration
   const payment = {
-    "sandbox": true, // Change to false for production
+    "sandbox": true,
     "merchant_id": paymentData.merchantId,
     "return_url": paymentData.returnUrl || `${window.location.origin}/payment/success`,
     "cancel_url": paymentData.cancelUrl || `${window.location.origin}/payment/cancel`,
@@ -2030,11 +2030,11 @@ function executePayHerePayment(paymentData, firstName, lastName) {
     "items": `Driving License Exam Fee - Application #${paymentData.paymentId}`,
     "amount": parseFloat(paymentData.amount).toFixed(2),
     "currency": paymentData.currency || "LKR",
-    "hash": paymentData.hash, // CRITICAL: Use hash from backend
+    "hash": paymentData.hash,
     "first_name": firstName || "Customer",
     "last_name": lastName || "User",
-    "email": "customer@licensepro.lk",
-    "phone": "0771234567",
+    "email": "anjanaheshan676@gmail.com",
+    "phone": "0764810851",
     "address": "Colombo",
     "city": "Colombo",
     "country": "Sri Lanka",
@@ -2493,183 +2493,54 @@ window.contactSupport = function(transactionId) {
   });
 };
 
-function monitorPayHereIframe(transactionId) {
-  const checkInterval = 3000; // Check every 3 seconds
-  let checkCount = 0;
-  const maxChecks = 100; // Maximum 5 minutes
-
-  const statusInterval = setInterval(async () => {
-    checkCount++;
-    
-    try {
-      const response = await fetch(`${API_BASE_URL}/payment/status/${transactionId}`, {
-        method: 'GET',
-        headers: {
-          Authorization: "Bearer " + (localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token")),
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const statusData = await response.json();
-        
-        if (statusData.status === 200) {
-          const paymentStatus = statusData.data.status;
-          
-          if (paymentStatus === 'COMPLETED') {
-            clearInterval(statusInterval);
-            Swal.close(); // Close iframe modal
-            showPaymentSuccessModal(statusData.data);
-          } else if (paymentStatus === 'FAILED' || paymentStatus === 'CANCELLED') {
-            clearInterval(statusInterval);
-            Swal.close(); // Close iframe modal
-            showPaymentFailedModal(statusData.data);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error checking payment status:', error);
-    }
-
-    // Stop checking after max attempts
-    if (checkCount >= maxChecks) {
-      clearInterval(statusInterval);
-    }
-  }, checkInterval);
-}
-
-function handlePayHerePaymentWithPostMessage(paymentData) {
-  Swal.close();
+function monitorPaymentStatus(transactionId, options = {}) {
+  const {
+    checkInterval = 3000,
+    maxChecks = 100,
+    showModal = true
+  } = options;
   
-  // Listen for messages from PayHere iframe
-  window.addEventListener('message', function(event) {
-    // Make sure it's from PayHere domain
-    if (event.origin === 'https://sandbox.payhere.lk' || event.origin === 'https://www.payhere.lk') {
-      console.log('PayHere message received:', event.data);
-      
-      // Handle different message types
-      if (event.data.type === 'payment_success') {
-        Swal.close();
-        startPaymentStatusMonitoring(paymentData.transactionId);
-      } else if (event.data.type === 'payment_failed') {
-        Swal.close();
-        showAlert('Payment Failed', 'Payment was not completed successfully.', 'error');
-      }
-    }
-  });
-  
-  Swal.fire({
-    title: 'Complete Your Payment',
-    html: `
-      <div class="payhere-embedded-container">
-          <div class="payment-info-card">
-              <h6><i class="fas fa-info-circle me-2"></i>Payment Details</h6>
-              <div class="info-row">
-                  <span>Application:</span>
-                  <strong>#${paymentData.paymentId}</strong>
-              </div>
-              <div class="info-row">
-                  <span>Amount:</span>
-                  <strong>Rs. ${paymentData.amount.toLocaleString()}</strong>
-              </div>
-              <div class="info-row">
-                  <span>Transaction ID:</span>
-                  <strong>${paymentData.transactionId}</strong>
-              </div>
-          </div>
-          
-          <div class="payhere-embed-frame">
-              <iframe 
-                  id="payhere-payment-iframe" 
-                  src="${paymentData.checkoutUrl}" 
-                  width="100%" 
-                  height="650px" 
-                  frameborder="0"
-                  style="border: none; border-radius: 8px;">
-              </iframe>
-          </div>
-          
-          <div class="payment-instructions">
-              <div class="instruction-item">
-                  <i class="fas fa-credit-card text-primary me-2"></i>
-                  <span>Select your preferred payment method (Visa, MasterCard, etc.)</span>
-              </div>
-              <div class="instruction-item">
-                  <i class="fas fa-keyboard text-success me-2"></i>
-                  <span>Enter your card details securely</span>
-              </div>
-              <div class="instruction-item">
-                  <i class="fas fa-lock text-warning me-2"></i>
-                  <span>Complete the payment process</span>
-              </div>
-          </div>
-      </div>
-      
-      <style>
-          .payhere-embedded-container {
-              text-align: left;
-              max-width: 100%;
-          }
-          .payment-info-card {
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              color: white;
-              padding: 20px;
-              border-radius: 12px;
-              margin-bottom: 20px;
-          }
-          .payment-info-card h6 {
-              color: white;
-              margin-bottom: 15px;
-          }
-          .info-row {
-              display: flex;
-              justify-content: space-between;
-              margin-bottom: 8px;
-              padding: 5px 0;
-          }
-          .payhere-embed-frame {
-              background: white;
-              border-radius: 12px;
-              padding: 10px;
-              box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-              margin-bottom: 20px;
-          }
-          .payment-instructions {
-              background: #f8f9fa;
-              padding: 20px;
-              border-radius: 10px;
-              border-left: 4px solid #007bff;
-          }
-          .instruction-item {
-              display: flex;
-              align-items: center;
-              margin-bottom: 10px;
-              font-size: 0.9rem;
-          }
-          
-          @media (max-width: 768px) {
-              .payhere-embed-frame iframe {
-                  height: 500px;
-              }
-          }
-      </style>
-    `,
-    showConfirmButton: false,
-    showCancelButton: true,
-    cancelButtonText: '<i class="fas fa-times me-2"></i>Close',
-    cancelButtonColor: '#6c757d',
-    allowOutsideClick: false,
-    width: '90%',
-    didOpen: () => {
-      monitorPayHereIframe(paymentData.transactionId);
-    }
-  });
-}
-
-function startPaymentStatusMonitoring(transactionId) {
-  const checkInterval = 5000; // Check every 5 seconds
   let checkCount = 0;
-  const maxChecks = 60; // Maximum 5 minutes
+
+  // Show monitoring modal if requested
+  if (showModal) {
+    Swal.fire({
+      title: 'Monitoring Payment...',
+      html: `
+        <div class="payment-monitoring">
+          <div class="monitoring-animation">
+            <div class="pulse-dot"></div>
+          </div>
+          <p>We're monitoring your payment status...</p>
+          <p><small>Please complete your payment on PayHere</small></p>
+          <div class="monitoring-info">
+            <div>Transaction ID: <strong>${transactionId}</strong></div>
+          </div>
+        </div>
+        <style>
+          .payment-monitoring { text-align: center; }
+          .monitoring-animation { margin: 20px 0; }
+          .pulse-dot {
+            width: 40px; height: 40px; background: #28a745;
+            border-radius: 50%; margin: 0 auto;
+            animation: pulse 2s infinite;
+          }
+          @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+          }
+          .monitoring-info {
+            background: #f8f9fa; padding: 15px; border-radius: 8px;
+            margin-top: 20px; font-size: 0.9rem;
+          }
+        </style>
+      `,
+      allowOutsideClick: false,
+      showConfirmButton: false,
+      showCloseButton: true
+    });
+  }
 
   const statusInterval = setInterval(async () => {
     checkCount++;
@@ -2689,15 +2560,17 @@ function startPaymentStatusMonitoring(transactionId) {
         const statusData = await response.json();
         console.log("Payment status response:", statusData);
         
-        if (statusData.code === 200) {
+        if (statusData.status === 200 || statusData.code === 200) {
           const paymentStatus = statusData.data.status;
           console.log("Payment status:", paymentStatus);
           
           if (paymentStatus === 'COMPLETED') {
             clearInterval(statusInterval);
+            Swal.close(); // Close any open modal
             showPaymentSuccessModal(statusData.data);
           } else if (paymentStatus === 'FAILED' || paymentStatus === 'CANCELLED') {
             clearInterval(statusInterval);
+            Swal.close(); // Close any open modal
             showPaymentFailedModal(statusData.data);
           }
         }
@@ -2715,42 +2588,136 @@ function startPaymentStatusMonitoring(transactionId) {
     }
   }, checkInterval);
 
-  // Show status checking modal
+  return statusInterval; // Return interval ID in case it needs to be cleared externally
+}
+
+// Updated handlePayHerePaymentWithPostMessage function
+function handlePayHerePaymentWithPostMessage(paymentData) {
+  Swal.close();
+  
+  // Listen for messages from PayHere iframe
+  window.addEventListener('message', function(event) {
+    // Make sure it's from PayHere domain
+    if (event.origin === 'https://sandbox.payhere.lk' || event.origin === 'https://www.payhere.lk') {
+      console.log('PayHere message received:', event.data);
+      
+      // Handle different message types
+      if (event.data.type === 'payment_success') {
+        Swal.close();
+        monitorPaymentStatus(paymentData.transactionId);
+      } else if (event.data.type === 'payment_failed') {
+        Swal.close();
+        showAlert('Payment Failed', 'Payment was not completed successfully.', 'error');
+      }
+    }
+  });
+  
   Swal.fire({
-    title: 'Monitoring Payment...',
+    title: 'Complete Your Payment',
     html: `
-      <div class="payment-monitoring">
-          <div class="monitoring-animation">
-              <div class="pulse-dot"></div>
+      <div class="payhere-embedded-container">
+        <div class="payment-info-card">
+          <h6><i class="fas fa-info-circle me-2"></i>Payment Details</h6>
+          <div class="info-row">
+            <span>Application:</span>
+            <strong>#${paymentData.paymentId}</strong>
           </div>
-          <p>We're monitoring your payment status...</p>
-          <p><small>Please complete your payment on PayHere</small></p>
-          <div class="monitoring-info">
-              <div>Transaction ID: <strong>${transactionId}</strong></div>
+          <div class="info-row">
+            <span>Amount:</span>
+            <strong>Rs. ${paymentData.amount.toLocaleString()}</strong>
           </div>
+          <div class="info-row">
+            <span>Transaction ID:</span>
+            <strong>${paymentData.transactionId}</strong>
+          </div>
+        </div>
+        
+        <div class="payhere-embed-frame">
+          <iframe 
+            id="payhere-payment-iframe" 
+            src="${paymentData.checkoutUrl}" 
+            width="100%" 
+            height="650px" 
+            frameborder="0"
+            style="border: none; border-radius: 8px;">
+          </iframe>
+        </div>
+        
+        <div class="payment-instructions">
+          <div class="instruction-item">
+            <i class="fas fa-credit-card text-primary me-2"></i>
+            <span>Select your preferred payment method (Visa, MasterCard, etc.)</span>
+          </div>
+          <div class="instruction-item">
+            <i class="fas fa-keyboard text-success me-2"></i>
+            <span>Enter your card details securely</span>
+          </div>
+          <div class="instruction-item">
+            <i class="fas fa-lock text-warning me-2"></i>
+            <span>Complete the payment process</span>
+          </div>
+        </div>
       </div>
+      
       <style>
-          .payment-monitoring { text-align: center; }
-          .monitoring-animation { margin: 20px 0; }
-          .pulse-dot {
-              width: 40px; height: 40px; background: #28a745;
-              border-radius: 50%; margin: 0 auto;
-              animation: pulse 2s infinite;
+        .payhere-embedded-container {
+          text-align: left;
+          max-width: 100%;
+        }
+        .payment-info-card {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          padding: 20px;
+          border-radius: 12px;
+          margin-bottom: 20px;
+        }
+        .payment-info-card h6 {
+          color: white;
+          margin-bottom: 15px;
+        }
+        .info-row {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 8px;
+          padding: 5px 0;
+        }
+        .payhere-embed-frame {
+          background: white;
+          border-radius: 12px;
+          padding: 10px;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+          margin-bottom: 20px;
+        }
+        .payment-instructions {
+          background: #f8f9fa;
+          padding: 20px;
+          border-radius: 10px;
+          border-left: 4px solid #007bff;
+        }
+        .instruction-item {
+          display: flex;
+          align-items: center;
+          margin-bottom: 10px;
+          font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+          .payhere-embed-frame iframe {
+            height: 500px;
           }
-          @keyframes pulse {
-              0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
-              70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
-              100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
-          }
-          .monitoring-info {
-              background: #f8f9fa; padding: 15px; border-radius: 8px;
-              margin-top: 20px; font-size: 0.9rem;
-          }
+        }
       </style>
     `,
-    allowOutsideClick: false,
     showConfirmButton: false,
-    showCloseButton: true
+    showCancelButton: true,
+    cancelButtonText: '<i class="fas fa-times me-2"></i>Close',
+    cancelButtonColor: '#6c757d',
+    allowOutsideClick: false,
+    width: '90%',
+    didOpen: () => {
+      // Start monitoring without showing the monitoring modal
+      monitorPaymentStatus(paymentData.transactionId, {showModal: false});
+    }
   });
 }
 
@@ -4345,16 +4312,15 @@ async function handleClickLicensePreviewBtn() {
     const smartUser = JSON.parse(smartUserString);
     const userId = smartUser.id;
 
+    // Get authentication token if available
+    const authToken = localStorage.getItem("auth_token") || smartUser.token;
+
     try {
         // Step 1: Get all applications
-        const applications = await new Promise((resolve, reject) => {
-            $.ajax({
-                url: `${API_BASE_URL}/applications/getall`,
-                method: 'GET',
-                dataType: 'json',
-                success: resolve,
-                error: reject
-            });
+        const applications = await makeAuthenticatedRequest({
+            url: `${API_BASE_URL}/applications/getall`,
+            method: 'GET',
+            token: authToken
         });
 
         console.log("All applications:", applications);
@@ -4374,14 +4340,10 @@ async function handleClickLicensePreviewBtn() {
         console.log("App Id: " + applicationId);
 
         // Step 2: Get written exam details
-        const exam = await new Promise((resolve, reject) => {
-            $.ajax({
-                url: `${API_BASE_URL}/written-exams/application/${applicationId}`,
-                method: 'GET',
-                dataType: 'json',
-                success: resolve,
-                error: reject
-            });
+        const exam = await makeAuthenticatedRequest({
+            url: `${API_BASE_URL}/written-exams/application/${applicationId}`,
+            method: 'GET',
+            token: authToken
         });
 
         console.log("Written Exam Data:", exam);
@@ -4396,15 +4358,31 @@ async function handleClickLicensePreviewBtn() {
 
         // Step 3: Get trial exam details
         const trialExamData = await getTrialExamDetails(writtenExamId);
-        hideLoadingSpinner();
         
         if (!trialExamData) {
+            hideLoadingSpinner();
             showAlert('warning', 'No trial exam data found. Please complete your trial exam first.');
             return;
         }
         
         console.log('Trial exam data:', trialExamData);
-        
+
+        // Step 4: Get license details with proper error handling
+        let licenseDetails = null;
+        try {
+            licenseDetails = await makeAuthenticatedRequest({
+                url: `${API_BASE_URL}/licenses/trial/${trialExamData.id}`,
+                method: 'GET',
+                token: authToken
+            });
+            console.log("License Details:", licenseDetails);
+        } catch (licenseError) {
+            console.warn("Could not fetch license details:", licenseError);
+            // Continue without license details - might not be generated yet
+        }
+
+        hideLoadingSpinner();
+
         // Handle multiple trial exams if it's an array
         let latestTrialExam = trialExamData;
         if (Array.isArray(trialExamData) && trialExamData.length > 0) {
@@ -4420,7 +4398,7 @@ async function handleClickLicensePreviewBtn() {
         switch (trialResult.toLowerCase()) {
             case 'pass':
             case 'passed':
-                showLicensePreviewModal(latestTrialExam , exam , userApplication);
+                showLicensePreviewModal(latestTrialExam, exam, userApplication, licenseDetails);
                 break;
                 
             case 'fail':
@@ -4441,18 +4419,77 @@ async function handleClickLicensePreviewBtn() {
     } catch (error) {
         hideLoadingSpinner();
         console.error('Error in handleClickLicensePreviewBtn:', error);
-        showAlert('error', 'Failed to retrieve exam information. Please try again.');
+        
+        // More specific error handling
+        if (error.status === 401 || error.status === 403) {
+            showAlert('error', 'Authorization failed. Please log in again.');
+        } else if (error.status === 404) {
+            showAlert('warning', 'Required information not found. Please complete all exam steps first.');
+        } else {
+            showAlert('error', 'Failed to retrieve exam information. Please try again.');
+        }
     }
 }
 
-// Function to show license preview modal (only when passed)
-function showLicensePreviewModal(trialExamData , exam , applications) {
-      const smartUser = JSON.parse(localStorage.getItem("smartreg_user"));
-       const issueDate = trialExamData.trialDate;
-      const expiryDate = new Date(issueDate);
-      expiryDate.setFullYear(expiryDate.getFullYear() + 8); 
-    
-      Swal.fire({
+// Helper function for authenticated requests
+async function makeAuthenticatedRequest({ url, method, token, data = null }) {
+    return new Promise((resolve, reject) => {
+        const ajaxConfig = {
+            url: url,
+            method: method,
+            dataType: 'json',
+            success: function(response) {
+                // Handle both direct data and wrapped responses
+                if (response && response.data) {
+                    resolve(response.data);
+                } else {
+                    resolve(response);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error(`Request failed: ${method} ${url}`, {
+                    status: xhr.status,
+                    statusText: xhr.statusText,
+                    response: xhr.responseText
+                });
+                reject({
+                    status: xhr.status,
+                    statusText: xhr.statusText,
+                    message: error,
+                    response: xhr.responseText
+                });
+            }
+        };
+
+        // Add authentication header if token is available
+        if (token) {
+            ajaxConfig.headers = {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            };
+        }
+
+        // Add data for POST/PUT requests
+        if (data && (method === 'POST' || method === 'PUT')) {
+            ajaxConfig.data = JSON.stringify(data);
+        }
+
+        $.ajax(ajaxConfig);
+    });
+}
+
+// Updated license preview modal function
+function showLicensePreviewModal(trialExamData, exam, applications, licenseDetails) {
+    const smartUser = JSON.parse(localStorage.getItem("smartreg_user"));
+    const issueDate = trialExamData.trialDate;
+    const expiryDate = new Date(issueDate);
+    expiryDate.setFullYear(expiryDate.getFullYear() + 8);
+
+    // Handle case where license details might not be available
+    const licenseNumber = licenseDetails?.licenseNumber || 'Pending Generation';
+    const showActions = licenseDetails && licenseDetails.licenseNumber;
+
+    Swal.fire({
         title: '🎉 License Preview',
         html: `
             <div class="license-preview-modal">
@@ -4472,12 +4509,12 @@ function showLicensePreviewModal(trialExamData , exam , applications) {
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="detail-group">
-                                    <label>Name:</label>
-                                    <span>${smartUser.fullName || 'N/A'}</span>
+                                    <label>License Number:</label>
+                                    <span class="${licenseDetails ? 'badge-success' : 'badge-pending'}">${licenseNumber}</span>
                                 </div>
                                 <div class="detail-group">
-                                    <label>Result:</label>
-                                    <span class="badge-success">PASSED ✅</span>
+                                    <label>Name:</label>
+                                    <span>${smartUser.fullName || 'N/A'}</span>
                                 </div>
                                 <div class="detail-group">
                                     <label>Issue Date:</label>
@@ -4501,14 +4538,23 @@ function showLicensePreviewModal(trialExamData , exam , applications) {
                         </div>
                     </div>
                     
+                    ${showActions ? `
                     <div class="license-actions">
-                        <button class="btn btn-success me-2" onclick="generateLicense()">
+                        <button class="btn btn-success me-2" onclick="generateLicense(${trialExamData.id})">
                             <i class="fas fa-download me-1"></i> Generate License
                         </button>
-                        <button class="btn btn-primary" onclick="printLicense()">
+                        <button class="btn btn-primary" onclick="printLicense(${licenseDetails.id})">
                             <i class="fas fa-print me-1"></i> Print Preview
                         </button>
                     </div>
+                    ` : `
+                    <div class="license-actions">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            License is being processed. Please contact the office for physical license collection.
+                        </div>
+                    </div>
+                    `}
                 </div>
             </div>
             
@@ -4542,12 +4588,22 @@ function showLicensePreviewModal(trialExamData , exam , applications) {
                 .detail-group label { font-weight: 600; color: #495057; }
                 .detail-group span { color: #6c757d; }
                 .badge-success {
-                    background: #28a745; color: white; padding: 4px 8px;
+                    background: #fbfbfbff; color: white;
+                    border-radius: 12px; font-size: 0.85rem;
+                }
+                .badge-pending {
+                    background: #ffc107; color: #212529; padding: 4px 8px;
                     border-radius: 12px; font-size: 0.85rem;
                 }
                 .license-actions {
                     padding: 20px; background: white; text-align: center;
                     border-top: 1px solid #e9ecef;
+                }
+                .alert {
+                    padding: 12px; border-radius: 6px; margin: 0;
+                }
+                .alert-info {
+                    background-color: #d1ecf1; border-color: #bee5eb; color: #0c5460;
                 }
                 .btn {
                     padding: 10px 20px; border: none; border-radius: 6px;
