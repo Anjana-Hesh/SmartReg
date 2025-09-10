@@ -1,101 +1,232 @@
-
-:root {
-    --glass-bg: rgba(255, 255, 255, 0.1);
-    --glass-border: rgba(255, 255, 255, 0.2);
-    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-}
-
+/* ============================= */
+/* Global & Background */
+/* ============================= */
 body {
-    background: linear-gradient(135deg, #1a1a2e, #16213e);
-    color: white;
-    min-height: 100vh;
-    padding: 20px;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #1e1e1e, #2a2a2a);
+  color: #e0e0e0;
+  min-height: 100vh;
+  overflow-x: hidden;
 }
 
+/* ============================= */
+/* Glass Card */
 .glass-card {
-    background: var(--glass-bg);
-    backdrop-filter: blur(12px);
-    border-radius: 12px;
-    border: 1px solid var(--glass-border);
-    box-shadow: var(--glass-shadow);
-    padding: 25px;
-    margin-bottom: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border-radius: 15px;
+  padding: 20px;
+  margin-top: 80px; /* fixed back button space */
+  margin-left: auto;
+  margin-right: auto;
+  width: 95%;       /* mobile friendly */
+  max-width: 1200px; /* desktop max width */
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  transition: all 0.3s ease;
+}
+
+/* Optional: Adjust padding on small screens */
+@media (max-width: 768px) {
+  .glass-card {
+    padding: 15px;
+    margin-top: 70px;
+  }
+}
+
+/* ============================= */
+/* Fixed Back / Burger Button */
+.back-button-container {
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  z-index: 1100;
+}
+
+#backButton {
+  background-color: #444;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  color: #fff;
+  transition: background-color 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#backButton:hover {
+  background-color: #666;
+}
+
+.container .glass-card{
+    width: 100%;
+    margin-left: 10%;
+}
+
+/* ============================= */
+/* Glassy Buttons */
+.btn-glass, .btn-warning-glass, .btn-danger-glass {
+  backdrop-filter: blur(6px);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  transition: background 0.3s;
 }
 
 .btn-glass {
-    background: rgba(13, 110, 253, 0.7);
-    border: 1px solid var(--glass-border);
-    color: white;
-    transition: all 0.3s ease;
-}
-
-.btn-glass:hover {
-    background: rgba(13, 110, 253, 0.9);
-    transform: translateY(-2px);
-}
-
-.btn-danger-glass {
-    background: rgba(220, 53, 69, 0.7);
-    border: 1px solid var(--glass-border);
-    color: white;
+  background: rgba(0,123,255,0.2);
 }
 
 .btn-warning-glass {
-    background: rgba(255, 193, 7, 0.7);
-    border: 1px solid var(--glass-border);
-    color: white;
+  background: rgba(255,193,7,0.2);
 }
 
+.btn-danger-glass {
+  background: rgba(220,53,69,0.2);
+}
+
+.btn-glass:hover { background: rgba(0,123,255,0.4); }
+.btn-warning-glass:hover { background: rgba(255,193,7,0.4); }
+.btn-danger-glass:hover { background: rgba(220,53,69,0.4); }
+
+/* ============================= */
+/* Table Styles */
 .table {
-    color: white;
+  background: rgba(255,255,255,0.05);
+  color: #e0e0e0;
+  border-radius: 10px;
+  overflow: hidden;
+  width: 100%;
 }
 
-.table-dark {
-    background-color: rgba(33, 37, 41, 0.7) !important;
+.table thead th {
+  color: #fff;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
 }
 
-.table-hover tbody tr:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+/* ============================= */
+/* Responsive Table (Mobile) */
+@media (max-width: 768px) {
+  .table thead { display: none; }
+  .table tr {
+    display: block;
+    margin-bottom: 15px;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 10px;
+  }
+  .table td {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 10px;
+    border: none;
+  }
+  .table td::before {
+    content: attr(data-label);
+    font-weight: bold;
+    color: #aaa;
+  }
 }
 
-.modal-content {
-    background: var(--glass-bg);
-    backdrop-filter: blur(12px);
-    border: 1px solid var(--glass-border);
-    color: white;
+/* ============================= */
+/* Drawer / Mobile Nav */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 220ms ease;
+  z-index: 1090;
 }
 
-.form-control, .form-select {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid var(--glass-border);
-    color: white;
+.mobile-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 84%;
+  max-width: 320px;
+  height: 100vh;
+  background: linear-gradient(180deg, rgba(30,30,36,0.98), rgba(18,18,22,0.98));
+  backdrop-filter: blur(8px);
+  transform: translateX(-110%);
+  transition: transform 280ms cubic-bezier(.22,.9,.22,1);
+  box-shadow: 8px 0 30px rgba(0,0,0,0.5);
+  z-index: 1100;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
 }
 
-.form-control:focus, .form-select:focus {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.4);
-    color: white;
-    box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.25);
+.drawer-open .drawer-overlay { opacity: 1; visibility: visible; }
+.drawer-open .mobile-drawer { transform: translateX(0); }
+
+.drawer-header {
+  display: flex;
+  justify-content: flex-end;
+  padding-bottom: 6px;
 }
 
-.form-control::placeholder {
-    color: rgba(255, 255, 255, 0.6);
+.drawer-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
 }
 
-.btn-close-white {
-    filter: invert(1);
+.drawer-item, .drawer-body a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: #e9eef8;
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  text-align: left;
 }
 
+.drawer-item:hover, .drawer-body a:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+/* ============================= */
+/* Password Strength */
 .password-strength {
-    height: 5px;
-    margin-top: 5px;
-    border-radius: 5px;
-    transition: all 0.3s ease;
+  height: 5px;
+  width: 100%;
+  border-radius: 4px;
+  margin-top: 3px;
+  transition: all 0.3s;
+}
+.password-strength.strength-0 { background: #444; }
+.password-strength.strength-1 { background: #dc3545; }
+.password-strength.strength-2 { background: #ffc107; }
+.password-strength.strength-3 { background: #28a745; }
+.password-strength.strength-4 { background: #0ff; }
+
+/* ============================= */
+/* Modal Overrides for Dark Theme */
+.modal-content {
+  background: rgba(20,20,25,0.95);
+  color: #e0e0e0;
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
 }
 
-.strength-0 { width: 20%; background: #dc3545; }
-.strength-1 { width: 40%; background: #ffc107; }
-.strength-2 { width: 60%; background: #ffc107; }
-.strength-3 { width: 80%; background: #28a745; }
-.strength-4 { width: 100%; background: #28a745; }
+.modal-header, .modal-footer { border: none; }
+
+.btn-close {
+  filter: invert(1);
+}
+
+/* ============================= */
+/* Responsive Adjustments */
+@media (min-width: 768px) {
+  .mobile-drawer, .drawer-overlay { display: none; }
+  .back-button-container { left: 18px; top: 18px; }
+  .container { margin-left: 0; transition: margin 0.3s ease; }
+}

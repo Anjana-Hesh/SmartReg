@@ -8,370 +8,550 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="../css/staffManagement.css"/>
+    <link rel="stylesheet" href="../css/staffManagement.css">
 
 </head>
 <body>
 
-<div class="container glass-card">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3>Manage Staff Members</h3>
-        <button id="addStaffBtn" class="btn btn-primary btn-glass" data-bs-toggle="modal" data-bs-target="#staffModal">
-            <i class="fas fa-user-plus"></i> Add Staff
+    <div class="container">
+    <!-- Fixed Back/Burger Button -->
+    <div class="back-button-container">
+        <button class="btn btn-secondary d-flex align-items-center" id="backButton">
+            <i class="fas fa-arrow-left me-2 d-none d-md-inline"></i>
+            <span class="d-none d-md-inline">Back</span>
+            <i class="fas fa-bars d-md-none"></i>
         </button>
     </div>
 
-    <table class="table table-bordered table-hover text-center">
-        <thead class="table-dark">
-        <tr>
-            <th>#</th>
-            <th>Staff ID</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Status</th>
-            <th>Admin</th>
-            <th>Actions</th>
-        </tr>
-        </thead>
-        <tbody id="staffTable"></tbody>
-    </table>
-</div>
+    <!-- Mobile Sliding Drawer (hidden on desktop by CSS) -->
+    <div id="drawerOverlay" class="drawer-overlay" tabindex="-1" aria-hidden="true"></div>
 
-<!-- Modal -->
-<div class="modal fade" id="staffModal" tabindex="-1" aria-labelledby="staffModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <form id="staffForm" class="modal-content p-4">
-            <div class="modal-header">
-                <h5 class="modal-title" id="staffModalLabel">Add Staff Member</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+    <aside id="mobileDrawer" class="mobile-drawer" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Mobile menu">
+        <div class="drawer-header">
+            <button id="drawerClose" class="btn btn-light btn-sm" aria-label="Close menu"><i class="fas fa-times"></i></button>
+        </div>
+        <nav class="drawer-body">
+            <button class="drawer-item" id="drawerBack"><i class="fas fa-arrow-left me-2"></i>Back</button>
+            <a class="drawer-item" href="profile.html"><i class="fas fa-user me-2"></i>Profile</a>
+            <a class="drawer-item" href="settings.html"><i class="fas fa-cog me-2"></i>Settings</a>
+        </nav>
+    </aside>
+
+    <div class="container glass-card">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3>Manage Staff Members</h3>
+            <button id="addStaffBtn" class="btn btn-primary btn-glass" data-bs-toggle="modal" data-bs-target="#staffModal">
+                <i class="fas fa-user-plus"></i> Add Staff
+            </button>
+        </div>
+
+        <!-- Loading indicator -->
+        <div id="loading" class="loading">
+            <i class="fas fa-spinner fa-spin fa-2x"></i>
+            <p>Loading...</p>
+        </div>
+
+        <!-- Search and Filter -->
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <input type="text" class="form-control" id="searchInput" placeholder="Search by name...">
             </div>
-            <div class="modal-body">
-                <!-- Hidden field to hold edit index -->
-                <input type="hidden" id="editingIndex" value="">
-                <div class="mb-3">
-                    <label for="name" class="form-label">Name</label>
-                    <input type="text" class="form-control" id="name" placeholder="Enter full name" required />
-                </div>
-
-                <div class="mb-3">
-                    <label for="username" class="form-label">Username</label>
-                    <input type="text" class="form-control" id="username" placeholder="Enter username" required />
-                </div>
-
-                <div class="mb-3">
-                    <label for="password" class="form-label">Password</label>
-                    <input type="password" class="form-control" id="password" placeholder="Enter password" required />
-                    <div id="passwordStrength" class="password-strength strength-0"></div>
-                    <small id="passwordHelp" class="form-text text-muted"></small>
-                </div>
-
-                <div class="mb-3">
-                    <label for="email" class="form-label">Email</label>
-                    <input type="email" class="form-control" id="email" placeholder="Enter email" required />
-                </div>
-
-                <div class="mb-3">
-                    <label for="phone" class="form-label">Phone Number</label>
-                    <input type="tel" class="form-control" id="phone" placeholder="Enter phone number" required />
-                </div>
-
-                <div class="mb-3">
-                    <label for="status" class="form-label">Status</label>
-                    <select class="form-select" id="status" required>
-                        <option value="Active" selected>Active</option>
-                        <option value="Inactive">Inactive</option>
-                    </select>
-                </div>
-                <div class="mb-3 form-check form-switch">
-                    <input type="checkbox" class="form-check-input" id="isAdmin" />
-                    <label class="form-check-label" for="isAdmin">Make Admin</label>
-                </div>
+            <div class="col-md-3">
+                <select class="form-select" id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="ACTIVE">Active</option>
+                    <option value="INACTIVE">Inactive</option>
+                </select>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button id="saveBtn" type="submit" class="btn btn-primary">Save</button>
+            <div class="col-md-3">
+                <select class="form-select" id="departmentFilter">
+                    <option value="">All Departments</option>
+                    <option value="Licensing">Licensing</option>
+                    <option value="Vehicle Registration">Vehicle Registration</option>
+                    <option value="Driving Tests">Driving Tests</option>
+                    <option value="Customer Service">Customer Service</option>
+                    <option value="Records & Documentation">Records & Documentation</option>
+                    <option value="Traffic Violations">Traffic Violations</option>
+                </select>
             </div>
-        </form>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover text-center">
+                <thead class="table-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>Staff ID</th>
+                        <th>Name</th>
+                        <th>Department</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Status</th>
+                        <th>Admin</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="staffTable">
+                    <!-- Data will be populated here -->
+                </tbody>
+            </table>
+        </div>
     </div>
-</div>
+    </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-    const staffTable = document.getElementById('staffTable');
-    const staffForm = document.getElementById('staffForm');
-    const staffModalLabel = document.getElementById('staffModalLabel');
-    const saveBtn = document.getElementById('saveBtn');
-    const editingIndexInput = document.getElementById('editingIndex');
-    const addStaffBtn = document.getElementById('addStaffBtn');
-    const passwordInput = document.getElementById('password');
-    const passwordStrength = document.getElementById('passwordStrength');
-    const passwordHelp = document.getElementById('passwordHelp');
-
-    // Password validation state
-    let passwordAttempts = 0;
-    let isLocked = false;
-    let unlockTime = 0;
-
-    // Sample data
-    let staffList = [
-        { staffId: 'STF001', name: 'Jane Doe', username: 'jane.doe', password: 'SecurePass123!', email: 'jane@example.com', phone: '0771234567', status: 'Active', isAdmin: true },
-        { staffId: 'STF002', name: 'John Smith', username: 'john.smith', password: 'StrongPass456!', email: 'john@example.com', phone: '0777654321', status: 'Inactive', isAdmin: false },
-    ];
-
-    // Generate staff ID
-    function generateStaffId() {
-        const lastId = staffList.length > 0 ?
-            parseInt(staffList[staffList.length - 1].staffId.replace('STF', '')) : 0;
-        return 'STF' + (lastId + 1).toString().padStart(3, '0');
-    }
-
-    // Password strength checker
-    function checkPasswordStrength(password) {
-        let strength = 0;
-
-        // Length check
-        if (password.length >= 8) strength++;
-        if (password.length >= 12) strength++;
-
-        // Complexity checks
-        if (/[A-Z]/.test(password)) strength++;
-        if (/[0-9]/.test(password)) strength++;
-        if (/[^A-Za-z0-9]/.test(password)) strength++;
-
-        return Math.min(strength, 4);
-    }
-
-    // Update password strength meter
-    passwordInput.addEventListener('input', function() {
-        const password = this.value;
-        const strength = checkPasswordStrength(password);
-
-        // Update strength meter
-        passwordStrength.className = 'password-strength strength-' + strength;
-
-        // Update help text
-        if (password.length === 0) {
-            passwordHelp.textContent = '';
-        } else if (password.length < 8) {
-            passwordHelp.textContent = 'Password too short (min 8 characters)';
-            passwordHelp.style.color = '#dc3545';
-        } else if (strength < 3) {
-            passwordHelp.textContent = 'Weak password - include uppercase, numbers & symbols';
-            passwordHelp.style.color = '#ffc107';
-        } else {
-            passwordHelp.textContent = 'Strong password';
-            passwordHelp.style.color = '#28a745';
-        }
-    });
-
-    // Render staff table
-    function renderTable() {
-        staffTable.innerHTML = '';
-        staffList.forEach((staff, i) => {
-            staffTable.innerHTML += `
-                <tr>
-                    <td>${i + 1}</td>
-                    <td>${staff.staffId}</td>
-                    <td>${staff.name}</td>
-                    <td>${staff.email}</td>
-                    <td><span class="badge bg-${staff.status === 'Active' ? 'success' : 'secondary'}">${staff.status}</span></td>
-                    <td>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" ${staff.isAdmin ? 'checked' : ''}
-                                onchange="toggleAdmin(${i})" ${staff.staffId === 'STF001' ? 'disabled' : ''} />
+    <!-- Modal -->
+    <div class="modal fade" id="staffModal" tabindex="-1" aria-labelledby="staffModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <form id="staffForm" class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="staffModalLabel">Add Staff Member</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Hidden field to hold edit index -->
+                    <input type="hidden" id="editingId" value="">
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="staffId" class="form-label">Staff ID</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="staffId" readonly />
+                                <button type="button" class="btn btn-outline-primary" id="generateIdBtn">Generate</button>
+                            </div>
                         </div>
-                    </td>
-                    <td>
-                        <button class="btn btn-warning-glass btn-sm me-1" onclick="editStaff(${i})"
-                            data-bs-toggle="modal" data-bs-target="#staffModal">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-danger-glass btn-sm" onclick="confirmDeleteStaff(${i})"
-                            ${staff.staffId === 'STF001' ? 'disabled' : ''}>
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>`;
+                        <div class="col-md-6 mb-3">
+                            <label for="name" class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="name" placeholder="Enter full name" required />
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="department" class="form-label">Department</label>
+                            <select class="form-select" id="department" required>
+                                <option value="" disabled selected>Select Department</option>
+                                <option value="Licensing">Licensing</option>
+                                <option value="Vehicle Registration">Vehicle Registration</option>
+                                <option value="Driving Tests">Driving Tests</option>
+                                <option value="Customer Service">Customer Service</option>
+                                <option value="Records & Documentation">Records & Documentation</option>
+                                <option value="Traffic Violations">Traffic Violations</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" placeholder="Enter email" required />
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="phone" class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" id="phone" placeholder="Enter phone number" required />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" required>
+                                <option value="ACTIVE" selected>Active</option>
+                                <option value="INACTIVE">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 form-check form-switch">
+                        <input type="checkbox" class="form-check-input" id="isAdmin" />
+                        <label class="form-check-label" for="isAdmin">Make Admin</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button id="saveBtn" type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Configuration
+        const API_BASE_URL = 'http://localhost:8080/api/v1/staff';
+        let staffData = [];
+        let isEditing = false;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStaffData();
+            setupEventListeners();
+            generateStaffId();
         });
-    }
 
-    // Add or update staff
-    staffForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-
-        // Check if account is locked
-        if (isLocked) {
-            const remainingTime = Math.ceil((unlockTime - Date.now()) / 1000 / 60);
-            Swal.fire({
-                icon: 'error',
-                title: 'Account Locked',
-                text: `Too many failed attempts. Try again in ${remainingTime} minute(s).`,
+        // Setup event listeners
+        function setupEventListeners() {
+            document.getElementById('staffForm').addEventListener('submit', handleFormSubmit);
+            document.getElementById('generateIdBtn').addEventListener('click', generateStaffId);
+            document.getElementById('searchInput').addEventListener('input', filterStaff);
+            document.getElementById('statusFilter').addEventListener('change', filterStaff);
+            document.getElementById('departmentFilter').addEventListener('change', filterStaff);
+            
+            // Modal event listeners
+            document.getElementById('staffModal').addEventListener('show.bs.modal', function() {
+                if (!isEditing) {
+                    resetForm();
+                    generateStaffId();
+                }
             });
-            return;
+
+            document.getElementById('staffModal').addEventListener('hidden.bs.modal', function() {
+                resetForm();
+                isEditing = false;
+            });
+
+            // Back button functionality
+            document.getElementById("backButton").addEventListener("click", function () {
+                if (window.innerWidth < 768) {
+                    showMobileMenu();
+                } else {
+                    window.history.back();
+                }
+            });
+
+            // Drawer functionality
+            document.getElementById('drawerClose').addEventListener('click', closeMobileDrawer);
+            document.getElementById('drawerOverlay').addEventListener('click', closeMobileDrawer);
+            document.getElementById('drawerBack').addEventListener('click', function() {
+                window.history.back();
+            });
         }
 
-        // Validate password
-        const password = document.getElementById('password').value;
-        if (password.length < 8) {
-            passwordAttempts++;
-            if (passwordAttempts >= 3) {
-                lockAccount();
+        // API Functions
+        async function makeApiCall(url, options = {}) {
+            try {
+                const token = localStorage.getItem('smartreg_token') || sessionStorage.getItem('smartreg_token');
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    ...options.headers
+                };
+
+                const response = await fetch(url, {
+                    ...options,
+                    headers
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error('API call failed:', error);
+                throw error;
+            }
+        }
+
+        async function loadStaffData() {
+            showLoading(true);
+            try {
+                const response = await makeApiCall(API_BASE_URL);
+                if (response.success) {
+                    staffData = response.data;
+                    renderStaffTable(staffData);
+                } else {
+                    throw new Error(response.message || 'Failed to load staff data');
+                }
+            } catch (error) {
+                console.error('Error loading staff data:', error);
+                showError('Failed to load staff data. Please try again.');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function generateStaffId() {
+            try {
+                const response = await makeApiCall(`${API_BASE_URL}/generate-staff-id`);
+                if (response.success) {
+                    document.getElementById('staffId').value = response.data.staffId;
+                }
+            } catch (error) {
+                console.error('Error generating staff ID:', error);
+            }
+        }
+
+        async function saveStaff(staffData) {
+            const url = isEditing ? `${API_BASE_URL}/${document.getElementById('editingId').value}` : API_BASE_URL;
+            const method = isEditing ? 'PUT' : 'POST';
+
+            return await makeApiCall(url, {
+                method: method,
+                body: JSON.stringify(staffData)
+            });
+        }
+
+        async function deleteStaff(id) {
+            return await makeApiCall(`${API_BASE_URL}/${id}`, {
+                method: 'DELETE'
+            });
+        }
+
+        async function updateStaffStatus(id, status) {
+            return await makeApiCall(`${API_BASE_URL}/${id}/status?status=${status}`, {
+                method: 'PATCH'
+            });
+        }
+
+        async function updateAdminStatus(id, isAdmin) {
+            return await makeApiCall(`${API_BASE_URL}/${id}/admin?isAdmin=${isAdmin}`, {
+                method: 'PATCH'
+            });
+        }
+
+        // Form handling
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            const formData = {
+                staffId: document.getElementById('staffId').value,
+                name: document.getElementById('name').value,
+                department: document.getElementById('department').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                status: document.getElementById('status').value,
+                isAdmin: document.getElementById('isAdmin').checked
+            };
+
+            try {
+                showLoading(true);
+                const response = await saveStaff(formData);
+                
+                if (response.success) {
+                    showSuccess(response.message || `Staff ${isEditing ? 'updated' : 'created'} successfully!`);
+                    bootstrap.Modal.getInstance(document.getElementById('staffModal')).hide();
+                    await loadStaffData();
+                } else {
+                    throw new Error(response.message || `Failed to ${isEditing ? 'update' : 'create'} staff`);
+                }
+            } catch (error) {
+                console.error('Error saving staff:', error);
+                showError(error.message || `Failed to ${isEditing ? 'update' : 'create'} staff`);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('staffForm').reset();
+            document.getElementById('editingId').value = '';
+            document.getElementById('staffModalLabel').textContent = 'Add Staff Member';
+            isEditing = false;
+        }
+
+        // Table rendering
+        function renderStaffTable(data) {
+            const tbody = document.getElementById('staffTable');
+            tbody.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center">No staff members found</td></tr>';
                 return;
             }
+
+            data.forEach((staff, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${staff.staffId}</td>
+                    <td>${staff.name}</td>
+                    <td>${staff.department}</td>
+                    <td>${staff.email}</td>
+                    <td>${staff.phone}</td>
+                    <td><span class="status-${staff.status.toLowerCase()}">${staff.status}</span></td>
+                    <td>${staff.isAdmin ? '<span class="admin-badge">Admin</span>' : 'Staff'}</td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-sm btn-outline-warning" onclick="editStaff(${staff.id})" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-${staff.status === 'ACTIVE' ? 'secondary' : 'success'}" 
+                                    onclick="toggleStatus(${staff.id}, '${staff.status}')" 
+                                    title="${staff.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}">
+                                <i class="fas fa-${staff.status === 'ACTIVE' ? 'pause' : 'play'}"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-${staff.isAdmin ? 'secondary' : 'info'}" 
+                                    onclick="toggleAdmin(${staff.id}, ${staff.isAdmin})" 
+                                    title="${staff.isAdmin ? 'Remove Admin' : 'Make Admin'}">
+                                <i class="fas fa-${staff.isAdmin ? 'user-minus' : 'user-shield'}"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="confirmDelete(${staff.id})" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // CRUD operations
+        function editStaff(id) {
+            const staff = staffData.find(s => s.id === id);
+            if (!staff) return;
+
+            isEditing = true;
+            document.getElementById('editingId').value = id;
+            document.getElementById('staffModalLabel').textContent = 'Edit Staff Member';
+            
+            // Populate form
+            document.getElementById('staffId').value = staff.staffId;
+            document.getElementById('name').value = staff.name;
+            document.getElementById('department').value = staff.department;
+            document.getElementById('email').value = staff.email;
+            document.getElementById('phone').value = staff.phone;
+            document.getElementById('status').value = staff.status;
+            document.getElementById('isAdmin').checked = staff.isAdmin;
+
+            new bootstrap.Modal(document.getElementById('staffModal')).show();
+        }
+
+        async function toggleStatus(id, currentStatus) {
+            const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+            
+            try {
+                const response = await updateStaffStatus(id, newStatus);
+                if (response.success) {
+                    showSuccess(`Staff status updated to ${newStatus}`);
+                    await loadStaffData();
+                } else {
+                    throw new Error(response.message || 'Failed to update status');
+                }
+            } catch (error) {
+                console.error('Error updating status:', error);
+                showError(error.message || 'Failed to update status');
+            }
+        }
+
+        async function toggleAdmin(id, currentAdmin) {
+            const newAdmin = !currentAdmin;
+            
+            try {
+                const response = await updateAdminStatus(id, newAdmin);
+                if (response.success) {
+                    showSuccess(`Admin status ${newAdmin ? 'granted' : 'revoked'} successfully`);
+                    await loadStaffData();
+                } else {
+                    throw new Error(response.message || 'Failed to update admin status');
+                }
+            } catch (error) {
+                console.error('Error updating admin status:', error);
+                showError(error.message || 'Failed to update admin status');
+            }
+        }
+
+        async function confirmDelete(id) {
+            const staff = staffData.find(s => s.id === id);
+            if (!staff) return;
+
+            const result = await Swal.fire({
+                title: 'Are you sure?',
+                text: `This will permanently delete ${staff.name}.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it!',
+                background: '#2b2b2b',
+                color: '#e0e0e0'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const response = await deleteStaff(id);
+                    if (response.success) {
+                        showSuccess('Staff deleted successfully!');
+                        await loadStaffData();
+                    } else {
+                        throw new Error(response.message || 'Failed to delete staff');
+                    }
+                } catch (error) {
+                    console.error('Error deleting staff:', error);
+                    showError(error.message || 'Failed to delete staff');
+                }
+            }
+        }
+
+        // Filter and search
+        function filterStaff() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const departmentFilter = document.getElementById('departmentFilter').value;
+
+            let filteredData = staffData.filter(staff => {
+                const matchesSearch = staff.name.toLowerCase().includes(searchTerm) ||
+                                    staff.email.toLowerCase().includes(searchTerm) ||
+                                    staff.staffId.toLowerCase().includes(searchTerm);
+                
+                const matchesStatus = !statusFilter || staff.status === statusFilter;
+                const matchesDepartment = !departmentFilter || staff.department === departmentFilter;
+
+                return matchesSearch && matchesStatus && matchesDepartment;
+            });
+
+            renderStaffTable(filteredData);
+        }
+
+        // Utility functions
+        function showLoading(show) {
+            const loading = document.getElementById('loading');
+            loading.style.display = show ? 'block' : 'none';
+        }
+
+        function showSuccess(message) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: message,
+                background: '#2b2b2b',
+                color: '#e0e0e0',
+                confirmButtonColor: '#28a745'
+            });
+        }
+
+        function showError(message) {
             Swal.fire({
                 icon: 'error',
-                title: 'Weak Password',
-                text: 'Password must be at least 8 characters long.',
+                title: 'Error!',
+                text: message,
+                background: '#2b2b2b',
+                color: '#e0e0e0',
+                confirmButtonColor: '#dc3545'
             });
-            return;
         }
 
-        // Get form values
-        const staffId = generateStaffId();
-        const name = document.getElementById('name').value.trim();
-        const username = document.getElementById('username').value.trim();
-        const email = document.getElementById('email').value.trim();
-        const phone = document.getElementById('phone').value.trim();
-        const status = document.getElementById('status').value;
-        const isAdmin = document.getElementById('isAdmin').checked;
-        const editingIndex = editingIndexInput.value;
-
-        if (editingIndex === '') {
-            // Add new staff
-            staffList.push({ staffId, name, username, password, email, phone, status, isAdmin });
-            await Swal.fire({
-                icon: 'success',
-                title: 'Staff Added',
-                text: `${name} has been added successfully.`,
-                timer: 2000,
-                showConfirmButton: false
-            });
-        } else {
-            // Update existing staff
-            staffList[editingIndex] = { ...staffList[editingIndex], name, username, password, email, phone, status, isAdmin };
-            await Swal.fire({
-                icon: 'success',
-                title: 'Staff Updated',
-                text: `${name}'s details have been updated.`,
-                timer: 2000,
+        function showMobileMenu() {
+            Swal.fire({
+                title: "Menu",
+                html: `
+                    <button class="btn btn-secondary w-100 mb-2" onclick="window.history.back(); Swal.close();">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                    <button class="btn btn-primary w-100 mb-2" onclick="window.location.href='profile.html'; Swal.close();">
+                        <i class="fas fa-user"></i> Profile
+                    </button>
+                    <button class="btn btn-dark w-100" onclick="window.location.href='settings.html'; Swal.close();">
+                        <i class="fas fa-cog"></i> Settings
+                    </button>
+                `,
+                background: "#2b2b2b",
+                color: "#e0e0e0",
                 showConfirmButton: false
             });
         }
 
-        renderTable();
-        staffForm.reset();
-        editingIndexInput.value = '';
-        staffModalLabel.textContent = 'Add Staff Member';
-        saveBtn.textContent = 'Save';
-
-        // Hide modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('staffModal'));
-        modal.hide();
-
-        // Reset attempts on successful submission
-        passwordAttempts = 0;
-    });
-
-    // Lock account function
-    function lockAccount() {
-        isLocked = true;
-        unlockTime = Date.now() + 60000; // 1 minute lock
-
-        Swal.fire({
-            icon: 'error',
-            title: 'Too Many Attempts',
-            text: 'Your account has been locked for 1 minute due to multiple failed attempts.',
-            timer: 5000
-        });
-
-        // Unlock after 1 minute
-        setTimeout(() => {
-            isLocked = false;
-            passwordAttempts = 0;
-        }, 60000);
-    }
-
-    // Edit staff
-    function editStaff(index) {
-        const staff = staffList[index];
-        document.getElementById('name').value = staff.name;
-        document.getElementById('username').value = staff.username;
-        document.getElementById('password').value = staff.password;
-        document.getElementById('email').value = staff.email;
-        document.getElementById('phone').value = staff.phone;
-        document.getElementById('status').value = staff.status;
-        document.getElementById('isAdmin').checked = staff.isAdmin;
-        editingIndexInput.value = index;
-
-        staffModalLabel.textContent = 'Edit Staff Member';
-        saveBtn.textContent = 'Update';
-
-        // Trigger password strength update
-        const event = new Event('input');
-        passwordInput.dispatchEvent(event);
-    }
-
-    // Confirm delete staff
-    function confirmDeleteStaff(index) {
-        const staff = staffList[index];
-        Swal.fire({
-            title: 'Delete Staff Member?',
-            text: `Are you sure you want to delete ${staff.name}? This action cannot be undone.`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Yes, delete it!'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                deleteStaff(index);
-            }
-        });
-    }
-
-    // Delete staff
-    function deleteStaff(index) {
-        const staffName = staffList[index].name;
-        staffList.splice(index, 1);
-        renderTable();
-
-        Swal.fire({
-            icon: 'success',
-            title: 'Deleted!',
-            text: `${staffName} has been removed from the system.`,
-            timer: 2000,
-            showConfirmButton: false
-        });
-    }
-
-    // Toggle admin status
-    function toggleAdmin(index) {
-        staffList[index].isAdmin = !staffList[index].isAdmin;
-        const action = staffList[index].isAdmin ? 'granted' : 'revoked';
-
-        Swal.fire({
-            icon: 'success',
-            title: 'Admin Access Updated',
-            text: `Admin privileges ${action} for ${staffList[index].name}.`,
-            timer: 2000,
-            showConfirmButton: false
-        });
-    }
-
-    // Clear form when Add Staff button clicked
-    addStaffBtn.addEventListener('click', () => {
-        staffForm.reset();
-        editingIndexInput.value = '';
-        staffModalLabel.textContent = 'Add Staff Member';
-        saveBtn.textContent = 'Save';
-        passwordStrength.className = 'password-strength strength-0';
-        passwordHelp.textContent = '';
-    });
-
-    // Initial render
-    renderTable();
-</script>
-
+        function closeMobileDrawer() {
+            document.getElementById('mobileDrawer').classList.remove('open');
+            document.getElementById('drawerOverlay').style.display = 'none';
+        }
+    </script>
 </body>
 </html>

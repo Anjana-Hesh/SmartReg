@@ -666,6 +666,34 @@
       background: rgba(33, 150, 243, 0.1);
     }
 
+    /* Keep Back Button Fixed */
+.back-button-container {
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  z-index: 1050; /* above everything */
+}
+
+/* Button Styling */
+#backButton {
+  background-color: #555;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  color: #fff;
+  transition: background-color 0.3s;
+}
+
+#backButton:hover {
+  background-color: #666;
+}
+
+/* Burger button size tweak for mobile */
+#backButton .fa-bars {
+  font-size: 1.2rem;
+}
+
+
     /* Responsive Design */
     @media (max-width: 768px) {
       .header h1 {

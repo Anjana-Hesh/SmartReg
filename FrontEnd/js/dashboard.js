@@ -950,21 +950,24 @@ function formatTimeAgo(date) {
 // Refresh dashboard function
 window.refreshDashboard = function() {
     showLoading(true);
-    
-    loadDashboardData().then(() => {
-        Swal.fire({
-            title: "Dashboard Refreshed",
-            text: "All data has been updated successfully!",
-            icon: "success",
-            background: "#1a1a1a",
-            color: "#ffffff",
-            timer: 1500,
-            showConfirmButton: false
-        });
-    }).catch(error => {
-        showAlert("Refresh Failed", "Some data could not be updated. Please try again.", "warning");
+
+    Promise.all([
+        loadApplicationStatusCounts(),
+        loadRecentActivity(),
+        loadNotifications(),
+        loadSystemStatus()
+    ])
+    .then(() => {
+        showLoading(false);
+        showAlert("Dashboard Refreshed", "Latest data has been loaded successfully.", "success");
+    })
+    .catch(error => {
+        showLoading(false);
+        console.error("Error refreshing dashboard:", error);
+        showAlert("Refresh Failed", "Could not refresh dashboard data. Try again later.", "error");
     });
 };
+
 
 // IMPROVED: Auto-refresh with better performance
 let refreshInterval;

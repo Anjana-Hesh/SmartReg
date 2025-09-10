@@ -13,11 +13,14 @@
   </head>
   <body>
     <div class="container">
-      <div class="back-button-container mb-3">
-        <button class="btn btn-secondary" id="backButton">
-          <i class="fas fa-arrow-left"></i> Back
-        </button>
-      </div>
+      <div class="back-button-container">
+  <button class="btn btn-secondary d-flex align-items-center" id="backButton">
+    <i class="fas fa-arrow-left me-2 d-none d-md-inline"></i> 
+    <span class="d-none d-md-inline">Back</span>
+    <i class="fas fa-bars d-md-none"></i>
+  </button>
+</div>
+
 
       <!-- Header -->
       <div class="header">
@@ -368,5 +371,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <script src="../js/licenceSearch.js"> </script>
+
+    
   </body>
 </html>
