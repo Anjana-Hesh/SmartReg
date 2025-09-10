@@ -12,24 +12,12 @@ import java.util.Optional;
 @Repository
 public interface LicenseRepository extends JpaRepository<License, Long> {
 
-    /**
-     * Find license by trial exam ID
-     */
     Optional<License> findByTrialExamId(Long trialExamId);
 
-    /**
-     * Find license by license number
-     */
     Optional<License> findByLicenseNumber(String licenseNumber);
 
-    /**
-     * Check if license already exists for a trial exam
-     */
     boolean existsByTrialExamId(Long trialExamId);
 
-    /**
-     * Find all licenses for a specific driver based on NIC
-     */
     @Query("SELECT l FROM License l " +
             "JOIN l.trialExam te " +
             "JOIN te.writtenExam we " +
@@ -37,21 +25,12 @@ public interface LicenseRepository extends JpaRepository<License, Long> {
             "WHERE a.nicNumber = :nicNumber")
     List<License> findLicensesByDriverNic(@Param("nicNumber") String nicNumber);
 
-    /**
-     * Find all active licenses (not expired)
-     */
     @Query("SELECT l FROM License l WHERE l.expireDate > CURRENT_DATE")
     List<License> findAllActiveLicenses();
 
-    /**
-     * Find all expired licenses
-     */
     @Query("SELECT l FROM License l WHERE l.expireDate <= CURRENT_DATE")
     List<License> findAllExpiredLicenses();
 
-    /**
-     * Find license with driver details for comprehensive information
-     */
     @Query("SELECT l FROM License l " +
             "JOIN FETCH l.trialExam te " +
             "JOIN FETCH te.writtenExam we " +

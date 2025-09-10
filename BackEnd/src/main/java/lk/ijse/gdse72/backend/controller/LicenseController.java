@@ -16,9 +16,6 @@ public class LicenseController {
 
     private final LicenseService licenseService;
 
-    /**
-     * Generate license for passed trial exam (called automatically)
-     */
     @PostMapping("/generate/{trialExamId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse> generateLicense(@PathVariable Long trialExamId) {
@@ -26,19 +23,13 @@ public class LicenseController {
         return ResponseEntity.status(response.getCode()).body(response);
     }
 
-    /**
-     * Get license by ID
-     */
     @GetMapping("/{licenseId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DRIVER')")
     public ResponseEntity<ApiResponse> getLicenseById(@PathVariable Long licenseId) {
         ApiResponse response = licenseService.getLicenseById(licenseId);
         return ResponseEntity.status(response.getCode()).body(response);
     }
 
-    /**
-     * Get license by license number
-     */
     @GetMapping("/number/{licenseNumber}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('DRIVER')")
     public ResponseEntity<ApiResponse> getLicenseByNumber(@PathVariable String licenseNumber) {
@@ -46,9 +37,6 @@ public class LicenseController {
         return ResponseEntity.status(response.getCode()).body(response);
     }
 
-    /**
-     * Get all licenses for a driver by NIC
-     */
     @GetMapping("/driver/{nicNumber}")
     @PreAuthorize("hasRole('ADMIN') or (hasRole('DRIVER') and #nicNumber == authentication.principal.username)")
     public ResponseEntity<ApiResponse> getLicensesByDriverNic(@PathVariable String nicNumber) {
@@ -56,9 +44,6 @@ public class LicenseController {
         return ResponseEntity.status(response.getCode()).body(response);
     }
 
-    /**
-     * Get all active licenses
-     */
     @GetMapping("/active")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse> getAllActiveLicenses() {
@@ -66,9 +51,6 @@ public class LicenseController {
         return ResponseEntity.status(response.getCode()).body(response);
     }
 
-    /**
-     * Get all expired licenses
-     */
     @GetMapping("/expired")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse> getAllExpiredLicenses() {
@@ -76,9 +58,6 @@ public class LicenseController {
         return ResponseEntity.status(response.getCode()).body(response);
     }
 
-    /**
-     * Get all licenses
-     */
     @GetMapping("/all")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse> getAllLicenses() {
@@ -86,9 +65,6 @@ public class LicenseController {
         return ResponseEntity.status(response.getCode()).body(response);
     }
 
-    /**
-     * Update license details
-     */
     @PutMapping("/{licenseId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse> updateLicense(
@@ -98,9 +74,6 @@ public class LicenseController {
         return ResponseEntity.status(response.getCode()).body(response);
     }
 
-    /**
-     * Deactivate license (soft delete)
-     */
     @DeleteMapping("/{licenseId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse> deleteLicense(@PathVariable Long licenseId) {
@@ -108,9 +81,6 @@ public class LicenseController {
         return ResponseEntity.status(response.getCode()).body(response);
     }
 
-    /**
-     * Check if license exists for trial exam
-     */
     @GetMapping("/exists/trial/{trialExamId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Boolean> licenseExistsForTrial(@PathVariable Long trialExamId) {
@@ -118,9 +88,6 @@ public class LicenseController {
         return ResponseEntity.ok(exists);
     }
 
-    /**
-     * Get license by trial exam ID
-     */
     @GetMapping("/trial/{trialExamId}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('DRIVER')")
     public ResponseEntity<ApiResponse> getLicenseByTrialExamId(@PathVariable Long trialExamId) {

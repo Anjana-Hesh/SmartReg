@@ -3913,7 +3913,7 @@ async function calculateExamFeeFromBackend(licenseType, vehicleClasses) {
         statusBadge
           .removeClass("status-pending status-none status-rejected")
           .addClass("status-active")
-          .html('<i class="fas fa-check-circle me-1"></i> License Approved');
+          .html('<i class="fas fa-check-circle me-1"></i> Application Approved');
         break;
       case "PENDING":
         statusBadge
@@ -5045,6 +5045,31 @@ function printLicense() {
 function getStatusSpecificContent(application, additionalInfo) {
     const { declineReason, examDetails } = additionalInfo;
 
+    // Function to calculate date 8 months from trial date
+    const getNextTrialDate = (trialDate) => {
+        try {
+            // Convert trialDate to Date object if it's a string
+            const dateObj = typeof trialDate === 'string' ? new Date(trialDate) : trialDate;
+            
+            // Check if date is valid
+            if (isNaN(dateObj.getTime())) {
+                return 'To be announced';
+            }
+            
+            const nextDate = new Date(dateObj);
+            nextDate.setMonth(nextDate.getMonth() + 3);
+            
+            return nextDate.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        } catch (error) {
+            console.error('Error calculating next trial date:', error);
+            return 'To be announced';
+        }
+    };
+
     // Function to update content with trial data
     const updateTrialInfo = (trialDetails) => {
         console.log("Updating trial info:", trialDetails);
@@ -5052,8 +5077,18 @@ function getStatusSpecificContent(application, additionalInfo) {
         const trialDateElement = document.querySelector('.trial-date-placeholder');
         const trialLocationElement = document.querySelector('.trial-location-placeholder');
         const trialTimeElement = document.querySelector('.trial-time-placeholder');
+        const trialResultElement = document.querySelector('.trial-result-placeholder');
         
-        if (trialDetails) {
+        // Reset styles first
+        [trialDateElement, trialLocationElement, trialTimeElement, trialResultElement].forEach(el => {
+            if (el) {
+                el.style.color = '#6b7280';
+                el.style.fontWeight = '500';
+            }
+        });
+
+        if (trialDetails.trialResult === "PENDING") {
+            // PENDING - Show scheduled details
             if (trialDateElement) {
                 trialDateElement.textContent = trialDetails.trialDate || 'To be announced';
                 trialDateElement.style.color = '#16a34a';
@@ -5069,8 +5104,81 @@ function getStatusSpecificContent(application, additionalInfo) {
                 trialTimeElement.style.color = '#16a34a';
                 trialTimeElement.style.fontWeight = '600';
             }
+            if (trialResultElement) {
+                trialResultElement.textContent = 'Pending';
+                trialResultElement.style.color = '#f59e0b';
+                trialResultElement.style.fontWeight = '600';
+            }
+            
+        } else if (trialDetails.trialResult === "PASS") {
+            // PASS - Show success details
+            if (trialDateElement) {
+                trialDateElement.textContent = trialDetails.trialDate || 'Completed';
+                trialDateElement.style.color = '#16a34a';
+            }
+            if (trialLocationElement) {
+                trialLocationElement.textContent = trialDetails.trialLocation || 'Completed';
+                trialLocationElement.style.color = '#16a34a';
+            }
+            if (trialTimeElement) {
+                trialTimeElement.textContent = trialDetails.trialTime || 'Completed';
+                trialTimeElement.style.color = '#16a34a';
+            }
+            if (trialResultElement) {
+                trialResultElement.textContent = 'Passed ✓';
+                trialResultElement.style.color = '#16a34a';
+                trialResultElement.style.fontWeight = '600';
+            }
+            
+        } else if (trialDetails.trialResult === "FAIL") {
+            // FAIL - Show next trial date (8 months from trial date)
+            const nextTrialDate = getNextTrialDate(trialDetails.trialDate || trialDetails.trialExamData);
+            
+            if (trialDateElement) {
+                trialDateElement.textContent = `Next Trial: ${nextTrialDate}`;
+                trialDateElement.style.color = '#dc2626';
+                trialDateElement.style.fontWeight = '600';
+            }
+            if (trialLocationElement) {
+                trialLocationElement.textContent = trialDetails.trialLocation || 'To be announced';
+                trialLocationElement.style.color = '#dc2626';
+            }
+            if (trialTimeElement) {
+                trialTimeElement.textContent = trialDetails.trialTime || 'To be announced';
+                trialTimeElement.style.color = '#dc2626';
+            }
+            if (trialResultElement) {
+                trialResultElement.textContent = 'Failed Trial - Retry Available';
+                trialResultElement.style.color = '#dc2626';
+                trialResultElement.style.fontWeight = '600';
+            }
+            
+        } else if (trialDetails.trialResult === "ABSENT") {
+            // ABSENT - Show next trial date (8 months from trial date)
+            const nextTrialDate = getNextTrialDate(trialDetails.trialDate || trialDetails.trialExamData);
+            
+            if (trialDateElement) {
+                trialDateElement.textContent = `Next Trial: ${nextTrialDate}`;
+                trialDateElement.style.color = '#f59e0b';
+                trialDateElement.style.fontWeight = '600';
+            }
+            if (trialLocationElement) {
+                trialLocationElement.textContent = trialDetails.trialLocation || 'To be announced';
+                trialLocationElement.style.color = '#f59e0b';
+            }
+            if (trialTimeElement) {
+                trialTimeElement.textContent = trialDetails.trialTime || 'To be announced';
+                trialTimeElement.style.color = '#f59e0b';
+            }
+            if (trialResultElement) {
+                trialResultElement.textContent = 'Absent Trial - Retry Available';
+                trialResultElement.style.color = '#f59e0b';
+                trialResultElement.style.fontWeight = '600';
+            }
+            
         } else {
-            [trialDateElement, trialLocationElement, trialTimeElement].forEach(el => {
+            // Unknown status or no trial details
+            [trialDateElement, trialLocationElement, trialTimeElement, trialResultElement].forEach(el => {
                 if (el) {
                     el.textContent = 'To be announced';
                     el.style.color = '#6b7280';
@@ -5080,12 +5188,14 @@ function getStatusSpecificContent(application, additionalInfo) {
         }
     };
 
+
     // Fetch trial details in background and update UI
     if (examDetails && examDetails.id) {
         getTrialExamDetails(examDetails.id)
             .then(updateTrialInfo)
             .catch(error => {
                 console.error("Error fetching trial details:", error);
+                // updateTrialInfo(examDetails.trialDetails);
                 updateTrialInfo(null);
             });
     }
@@ -5289,6 +5399,38 @@ function getStatusSpecificContent(application, additionalInfo) {
                                     </div>
                                 </div>
                             ` : ""}
+                            
+                            <!-- Trial Exam Result (if available) -->
+                            ${hasTrialExams && latestTrialExam && latestTrialExam.trialResult ? `
+                                <div style="
+                                    background: ${latestTrialExam.trialResult === "PASS" ? 
+                                        "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)" : 
+                                        latestTrialExam.trialResult === "FAIL" || latestTrialExam.trialResult === "ABSENT" ? 
+                                        "linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)" : 
+                                        "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)"
+                                    };
+                                    border: 2px solid ${latestTrialExam.trialResult === "PASS" ? "#16a34a" : latestTrialExam.trialResult === "FAIL" || latestTrialExam.trialResult === "ABSENT" ? "#dc2626" : "#f59e0b"};
+                                    border-radius: 16px;
+                                    padding: 24px;
+                                    margin: 20px 0;
+                                    box-shadow: 0 8px 20px ${latestTrialExam.trialResult === "PASS" ? "rgba(22, 163, 74, 0.2)" : latestTrialExam.trialResult === "FAIL" || latestTrialExam.trialResult === "ABSENT" ? "rgba(220, 38, 38, 0.2)" : "rgba(245, 158, 11, 0.2)"};
+                                    grid-column: 1 / -1;
+                                    display: flex;
+                                    align-items: center;
+                                ">
+                                    <div style="font-size: 48px; color: ${latestTrialExam.trialResult === "PASS" ? "#16a34a" : latestTrialExam.trialResult === "FAIL" || latestTrialExam.trialResult === "ABSENT" ? "#dc2626" : "#f59e0b"}; margin-right: 20px;">
+                                        <i class="fas fa-${latestTrialExam.trialResult === "PASS" ? "trophy" : latestTrialExam.trialResult === "FAIL" || latestTrialExam.trialResult === "ABSENT" ? "times" : "clock"}"></i>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <label style="display: block; font-size: 14px; color: #6b7280; margin-bottom: 8px; font-weight: 500; text-transform: uppercase;">
+                                            Trial Exam Result
+                                        </label>
+                                        <strong style="font-size: 32px; font-weight: 800; color: ${latestTrialExam.trialResult === "PASS" ? "#16a34a" : latestTrialExam.trialResult === "FAIL" || latestTrialExam.trialResult === "ABSENT" ? "#dc2626" : "#f59e0b"}; display: block; margin-bottom: 10px;">
+                                            ${latestTrialExam.trialResult}
+                                        </strong>
+                                    </div>
+                                </div>
+                            ` : ""}
                         </div>
                         
                         <!-- Trial Exam Application Section -->
@@ -5308,9 +5450,13 @@ function getStatusSpecificContent(application, additionalInfo) {
                                         <i class="fas fa-clock" style="margin-right: 8px; color: #f59e0b;"></i>
                                         <b>Trial Time:</b> <span class="trial-time-placeholder" style="color: #6b7280;">Loading...</span>
                                     </p>
-                                    <p style="margin: 0; color: #374151; font-weight: 600;">
+                                    <p style="margin: 0 0 8px 0; color: #374151; font-weight: 600;">
                                         <i class="fas fa-map-marker-alt" style="margin-right: 8px; color: #dc2626;"></i>
                                         <b>Trial Location:</b> <span class="trial-location-placeholder" style="color: #6b7280;">Loading...</span>
+                                    </p>
+                                    <p style="margin: 0; color: #374151; font-weight: 600;">
+                                        <i class="fas fa-clipboard-check" style="margin-right: 8px; color: #16a34a;"></i>
+                                        <b>Trial Result:</b> <span class="trial-result-placeholder" style="color: #6b7280;">Loading...</span>
                                     </p>
                                 </div>
                                 
@@ -5327,6 +5473,25 @@ function getStatusSpecificContent(application, additionalInfo) {
                                 <div style="display: flex; align-items: center; margin-bottom: 16px; color: #d97706;">
                                     <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-right: 12px;"></i>
                                     <strong style="font-size: 18px; font-weight: 700;">You didn't pass the practical exam. You can apply for another trial exam.</strong>
+                                </div>
+                                
+                                <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
+                                    <p style="margin: 0 0 8px 0; color: #374151; font-weight: 600;">
+                                        <i class="fas fa-calendar" style="margin-right: 8px; color: #3b82f6;"></i>
+                                        <b>Next Trial Date:</b> <span class="trial-date-placeholder" style="color: #6b7280;">Loading...</span>
+                                    </p>
+                                    <p style="margin: 0 0 8px 0; color: #374151; font-weight: 600;">
+                                        <i class="fas fa-clock" style="margin-right: 8px; color: #f59e0b;"></i>
+                                        <b>Trial Time:</b> <span class="trial-time-placeholder" style="color: #6b7280;">Loading...</span>
+                                    </p>
+                                    <p style="margin: 0 0 8px 0; color: #374151; font-weight: 600;">
+                                        <i class="fas fa-map-marker-alt" style="margin-right: 8px; color: #dc2626;"></i>
+                                        <b>Trial Location:</b> <span class="trial-location-placeholder" style="color: #6b7280;">Loading...</span>
+                                    </p>
+                                    <p style="margin: 0; color: #374151; font-weight: 600;">
+                                        <i class="fas fa-clipboard-check" style="margin-right: 8px; color: #16a34a;"></i>
+                                        <b>Trial Result:</b> <span class="trial-result-placeholder" style="color: #6b7280;">Loading...</span>
+                                    </p>
                                 </div>
                                 
                                 <button onclick="applyForTrialExam(${examDetails.id})" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: none; color: white; padding: 14px 28px; border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4); display: flex; align-items: center; justify-content: center; width: 100%;">
