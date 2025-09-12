@@ -190,6 +190,67 @@ public class WrittenExamServiceImpl implements WrittenExamService {
         WrittenExam updatedExam = writtenExamRepository.save(existingExam);
         log.info("Written exam updated successfully with ID: {}", updatedExam.getId());
 
+        // Send update email to driver
+        try {
+            String driverName = updatedExam.getApplication().getDriver().getFullName();
+            String driverEmail = updatedExam.getApplication().getDriver().getEmail();
+
+            String subject = "Important Update: Your Written Exam Details Have Changed";
+            String body = "<!DOCTYPE html>" +
+                    "<html lang=\"en\">" +
+                    "<head>" +
+                    "    <meta charset=\"UTF-8\">" +
+                    "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" +
+                    "    <title>Exam Update</title>" +
+                    "</head>" +
+                    "<body style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; background-color: #f0f2f5; margin: 0; padding: 0;\">" +
+                    "    <div style=\"max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); overflow: hidden;\">" +
+                    "        " +
+                    "        <div style=\"background-color: #17a2b8; color: #ffffff; padding: 25px 20px; text-align: center;\">" +
+                    "            <h1 style=\"margin: 0; font-weight: 500;\">Exam Details Updated</h1>" +
+                    "        </div>" +
+                    "        " +
+                    "        <div style=\"padding: 20px 30px; line-height: 1.6;\">" +
+                    "            <p style=\"font-size: 16px; color: #333333;\">Hello " + driverName + ",</p>" +
+                    "            <p style=\"font-size: 16px; color: #555555;\">Please note that the details for your upcoming written exam have been updated. The new details are as follows:</p>" +
+                    "            <div style=\"background-color: #e2f2f5; padding: 20px; border-radius: 8px; margin: 25px 0; border: 1px solid #b8dae3;\">" +
+                    "                <h3 style=\"margin-top: 0; font-size: 18px; color: #0f5b66; border-bottom: 2px solid #b8dae3; padding-bottom: 10px;\">Updated Exam Details</h3>" +
+                    "                <table style=\"width: 100%; font-size: 15px;\">" +
+                    "                    <tr>" +
+                    "                        <td style=\"padding: 5px 0; font-weight: 600; color: #333;\">Date:</td>" +
+                    "                        <td style=\"padding: 5px 0; color: #555;\">" + updatedExam.getWrittenExamDate() + "</td>" +
+                    "                    </tr>" +
+                    "                    <tr>" +
+                    "                        <td style=\"padding: 5px 0; font-weight: 600; color: #333;\">Time:</td>" +
+                    "                        <td style=\"padding: 5px 0; color: #555;\">" + updatedExam.getWrittenExamTime() + "</td>" +
+                    "                    </tr>" +
+                    "                    <tr>" +
+                    "                        <td style=\"padding: 5px 0; font-weight: 600; color: #333;\">Location:</td>" +
+                    "                        <td style=\"padding: 5px 0; color: #555;\">" + updatedExam.getWrittenExamLocation() + "</td>" +
+                    "                    </tr>" +
+                    "                </table>" +
+                    "            </div>" +
+                    "            <p style=\"font-size: 15px; color: #666666; margin-top: 20px;\">" +
+                    "                <span style=\"font-weight: 600; color: #333333;\">Note:</span> " + updatedExam.getNote() +
+                    "            </p>" +
+                    "            <p style=\"font-size: 16px; color: #555555;\">Please make a note of the new details. If you have any questions, please feel free to contact our office.</p>" +
+                    "        </div>" +
+                    "        " +
+                    "        <div style=\"text-align: center; padding: 20px; font-size: 13px; color: #999999; border-top: 1px solid #eeeeee;\">" +
+                    "            <p style=\"margin: 0;\">Best regards,<br>Department of Motor Traffic</p>" +
+                    "            <p style=\"margin: 5px 0 0;\">This is an automated notification. Please do not reply.</p>" +
+                    "        </div>" +
+                    "    </div>" +
+                    "</body>" +
+                    "</html>";
+
+            emailService.sendHtmlEmail(driverEmail, subject, body);
+            log.info("Written exam update email sent to {}", driverEmail);
+
+        } catch (Exception e) {
+            log.warn("Failed to send exam update email: {}", e.getMessage());
+        }
+
         return convertToDto(updatedExam);
     }
 
