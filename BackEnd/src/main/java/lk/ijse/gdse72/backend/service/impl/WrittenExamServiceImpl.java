@@ -251,6 +251,7 @@ public class WrittenExamServiceImpl implements WrittenExamService {
         return writtenExamRepository.save(writtenExam);
     }
 
+
     @Override
     @Transactional
     public void updateExamResultWithDates(Long examId, String result, String note,
@@ -259,16 +260,116 @@ public class WrittenExamServiceImpl implements WrittenExamService {
                 .orElseThrow(() -> new RuntimeException("Written exam not found"));
 
         writtenExam.setWrittenExamResult(result);
-
-        if (note != null) {
-            writtenExam.setNote(note);
-        }
-
-        // Update the dates in WrittenExam entity
+        writtenExam.setNote(note);
         writtenExam.setTrialDate(trialDate);
         writtenExam.setNextExamDate(nextExamDate);
 
         writtenExamRepository.save(writtenExam);
+
+        String driverName = writtenExam.getApplication().getDriver().getFullName();
+        String driverEmail = writtenExam.getApplication().getDriver().getEmail();
+        String subject;
+        String body;
+
+        // Conditional logic to generate email content based on result
+        if ("Pass".equalsIgnoreCase(result)) {
+            subject = "Congratulations! Your Exam Result is a Pass";
+            body = "<!DOCTYPE html>" +
+                    "<html lang=\"en\">" +
+                    "<head>" +
+                    "    <meta charset=\"UTF-8\">" +
+                    "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" +
+                    "    <title>Exam Result: Pass</title>" +
+                    "</head>" +
+                    "<body style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 0;\">" +
+                    "    <div style=\"max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); overflow: hidden;\">" +
+                    "        <div style=\"background-color: #28a745; color: #ffffff; padding: 25px 20px; text-align: center;\">" +
+                    "            <h1 style=\"margin: 0; font-weight: 500;\">Congratulations!</h1>" +
+                    "        </div>" +
+                    "        <div style=\"padding: 20px 30px; line-height: 1.6;\">" +
+                    "            <p style=\"font-size: 16px; color: #333333;\">Hello " + driverName + ",</p>" +
+                    "            <p style=\"font-size: 16px; color: #555555;\">We are delighted to inform you that you have **successfully passed** your written exam. Great job!</p>" +
+                    "            <div style=\"background-color: #d4edda; padding: 20px; border-radius: 8px; margin: 25px 0; border: 1px solid #c3e6cb;\">" +
+                    "                <h3 style=\"margin-top: 0; font-size: 18px; color: #155724; border-bottom: 2px solid #c3e6cb; padding-bottom: 10px;\">Next Steps</h3>" +
+                    "                <p style=\"margin: 5px 0; font-weight: 600; color: #333;\">Result: <span style=\"color: #28a745; font-weight: bold;\">Pass</span></p>" +
+                    (note != null ? "<p style=\"margin: 5px 0; font-weight: 600; color: #333;\">Note: <span style=\"font-weight: normal; color: #555;\">" + note + "</span></p>" : "") +
+                    (trialDate != null ? "<p style=\"margin: 5px 0; font-weight: 600; color: #333;\">Trial Date: <span style=\"font-weight: normal; color: #555;\">" + trialDate + "</span></p>" : "") +
+                    "            </div>" +
+                    "            <p style=\"font-size: 16px; color: #555555;\">Please review the details above. We wish you the best for your next step.</p>" +
+                    "        </div>" +
+                    "        <div style=\"text-align: center; padding: 20px; font-size: 13px; color: #999999; border-top: 1px solid #eeeeee;\">" +
+                    "            <p style=\"margin: 0;\">Best regards,<br>Department of Motor Traffic</p>" +
+                    "        </div>" +
+                    "    </div>" +
+                    "</body>" +
+                    "</html>";
+
+        } else if ("Fail".equalsIgnoreCase(result)) {
+            subject = "Update on Your Exam Result";
+            body = "<!DOCTYPE html>" +
+                    "<html lang=\"en\">" +
+                    "<head>" +
+                    "    <meta charset=\"UTF-8\">" +
+                    "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" +
+                    "    <title>Exam Result: Fail</title>" +
+                    "</head>" +
+                    "<body style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 0;\">" +
+                    "    <div style=\"max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); overflow: hidden;\">" +
+                    "        <div style=\"background-color: #dc3545; color: #ffffff; padding: 25px 20px; text-align: center;\">" +
+                    "            <h1 style=\"margin: 0; font-weight: 500;\">Exam Result</h1>" +
+                    "        </div>" +
+                    "        <div style=\"padding: 20px 30px; line-height: 1.6;\">" +
+                    "            <p style=\"font-size: 16px; color: #333333;\">Hello " + driverName + ",</p>" +
+                    "            <p style=\"font-size: 16px; color: #555555;\">We regret to inform you that you were not successful on your recent written exam. Please don't be discouraged. You can re-attempt the exam.</p>" +
+                    "            <div style=\"background-color: #f8d7da; padding: 20px; border-radius: 8px; margin: 25px 0; border: 1px solid #f5c6cb;\">" +
+                    "                <h3 style=\"margin-top: 0; font-size: 18px; color: #721c24; border-bottom: 2px solid #f5c6cb; padding-bottom: 10px;\">Details</h3>" +
+                    "                <p style=\"margin: 5px 0; font-weight: 600; color: #333;\">Result: <span style=\"color: #dc3545; font-weight: bold;\">Fail</span></p>" +
+                    (note != null ? "<p style=\"margin: 5px 0; font-weight: 600; color: #333;\">Note: <span style=\"font-weight: normal; color: #555;\">" + note + "</span></p>" : "") +
+                    (nextExamDate != null ? "<p style=\"margin: 5px 0; font-weight: 600; color: #333;\">Next Exam Date: <span style=\"font-weight: normal; color: #555;\">" + nextExamDate + "</span></p>" : "") +
+                    "            </div>" +
+                    "            <p style=\"font-size: 16px; color: #555555;\">We hope to see you again soon. Best of luck on your next attempt!</p>" +
+                    "        </div>" +
+                    "        <div style=\"text-align: center; padding: 20px; font-size: 13px; color: #999999; border-top: 1px solid #eeeeee;\">" +
+                    "            <p style=\"margin: 0;\">Best regards,<br>Department of Motor Traffic</p>" +
+                    "        </div>" +
+                    "    </div>" +
+                    "</body>" +
+                    "</html>";
+
+        } else { // Absent or other status
+            subject = "Update on Your Written Exam Status";
+            body = "<!DOCTYPE html>" +
+                    "<html lang=\"en\">" +
+                    "<head>" +
+                    "    <meta charset=\"UTF-8\">" +
+                    "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" +
+                    "    <title>Exam Status: " + result + "</title>" +
+                    "</head>" +
+                    "<body style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 0;\">" +
+                    "    <div style=\"max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); overflow: hidden;\">" +
+                    "        <div style=\"background-color: #ffc107; color: #333; padding: 25px 20px; text-align: center;\">" +
+                    "            <h1 style=\"margin: 0; font-weight: 500;\">Exam Status</h1>" +
+                    "        </div>" +
+                    "        <div style=\"padding: 20px 30px; line-height: 1.6;\">" +
+                    "            <p style=\"font-size: 16px; color: #333333;\">Hello " + driverName + ",</p>" +
+                    "            <p style=\"font-size: 16px; color: #555555;\">Your written exam status has been updated. Please see the details below:</p>" +
+                    "            <div style=\"background-color: #fff3cd; padding: 20px; border-radius: 8px; margin: 25px 0; border: 1px solid #ffeeba;\">" +
+                    "                <h3 style=\"margin-top: 0; font-size: 18px; color: #664d03; border-bottom: 2px solid #ffeeba; padding-bottom: 10px;\">Details</h3>" +
+                    "                <p style=\"margin: 5px 0; font-weight: 600; color: #333;\">Result: <span style=\"color: #ffc107; font-weight: bold;\">" + result + "</span></p>" +
+                    (note != null ? "<p style=\"margin: 5px 0; font-weight: 600; color: #333;\">Note: <span style=\"font-weight: normal; color: #555;\">" + note + "</span></p>" : "") +
+                    (nextExamDate != null ? "<p style=\"margin: 5px 0; font-weight: 600; color: #333;\">Next Exam Date: <span style=\"font-weight: normal; color: #555;\">" + nextExamDate + "</span></p>" : "") +
+                    "            </div>" +
+                    "            <p style=\"font-size: 16px; color: #555555;\">For any questions, please contact our office.</p>" +
+                    "        </div>" +
+                    "        <div style=\"text-align: center; padding: 20px; font-size: 13px; color: #999999; border-top: 1px solid #eeeeee;\">" +
+                    "            <p style=\"margin: 0;\">Best regards,<br>Department of Motor Traffic</p>" +
+                    "        </div>" +
+                    "    </div>" +
+                    "</body>" +
+                    "</html>";
+        }
+
+        emailService.sendEmail(driverEmail, subject, body);
     }
 
     private WrittenExamDto convertToDto(WrittenExam writtenExam) {
