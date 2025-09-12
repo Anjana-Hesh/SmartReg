@@ -111,7 +111,6 @@ $(document).ready(function() {
     $('#confirmApproveBtn').on('click', handleApproveConfirm);
     $('#confirmDeclineBtn').on('click', handleDeclineConfirm);
     
-    // Status badge click handler for rejected applications
     $(document).on('click', '.status-rejected', function(e) {
         e.stopPropagation();
         const appId = $(this).data('app-id');
@@ -125,7 +124,6 @@ $(document).ready(function() {
         }
     });
     
-    // Toggle rejected applications button
     $('#toggleRejectedBtn').on('click', function() {
         showRejected = !showRejected;
         $(this).html(showRejected ? 
@@ -134,7 +132,6 @@ $(document).ready(function() {
         renderApplications();
     });
     
-    // Decline reason selection
     $('.decline-reason-item').on('click', function() {
         $('.decline-reason-item').removeClass('selected').css('background', 'rgba(255, 255, 255, 0.05)');
         $(this).addClass('selected').css('background', 'rgba(231, 76, 60, 0.2)');
@@ -149,20 +146,17 @@ $(document).ready(function() {
         }
     });
     
-    // Photo modal handler
     $(document).on('click', '.photo-thumbnail', function() {
         const photoUrl = $(this).data('photo');
         $('#enlargedPhoto').attr('src', photoUrl);
     });
     
-    // PDF modal handler  
     $(document).on('click', '.pdf-icon', function() {
         const pdfUrl = $(this).data('pdf');
         $('#pdfViewer').attr('src', pdfUrl);
         $('#pdfDownloadBtn').attr('href', pdfUrl);
     });
     
-    // Chevron click handler
     $(document).on('click', '.chevron-cell', function(e) {
         e.stopPropagation();
         $(this).find('.rotate-icon').toggleClass('rotated');
@@ -178,20 +172,16 @@ function checkAndApplyStatusFilter() {
             const currentTime = Date.now();
             const filterAge = currentTime - filterData.timestamp;
             
-            // Only apply filter if it's less than 5 minutes old (to prevent stale filters)
             if (filterAge < 5 * 60 * 1000 && filterData.fromDashboard) {
                 const status = filterData.status;
                 
-                // Update UI to show the active filter
                 updateFilterUI(status);
                 
-                // Apply the filter when applications are loaded
                 setTimeout(() => {
                     applyStatusFilter(status);
                     showFilterNotification(status);
                 }, 500);
                 
-                // Clear the filter from localStorage after applying
                 localStorage.removeItem('application_status_filter');
             }
         } catch (error) {
@@ -202,7 +192,7 @@ function checkAndApplyStatusFilter() {
 }
 
 function showFilterNotification(status) {
-    // Show a subtle notification that filter has been applied
+
     const notification = $(`
         <div class="filter-notification alert alert-info alert-dismissible fade show" role="alert">
             <i class="fas fa-filter me-2"></i>
@@ -213,7 +203,6 @@ function showFilterNotification(status) {
     
     $('.card-body').prepend(notification);
     
-    // Auto-dismiss after 5 seconds
     setTimeout(() => {
         notification.fadeOut();
     }, 5000);
@@ -228,7 +217,6 @@ function applyStatusFilter(status) {
         );
     }
     
-    // Handle special case for rejected applications visibility
     if (status === 'REJECTED') {
         showRejected = true;
         $('#toggleRejectedBtn').html('<i class="fas fa-eye-slash me-1"></i> Hide Rejected');
@@ -239,7 +227,7 @@ function applyStatusFilter(status) {
 }
 
 function updateFilterUI(status) {
-    // Update filter dropdown or buttons to show active filter
+
     const filterButtons = $('.filter-option[data-filter="status"]');
     filterButtons.removeClass('active');
     
@@ -248,7 +236,6 @@ function updateFilterUI(status) {
         activeButton.addClass('active');
     }
     
-    // Update page title or breadcrumb to show filter
     const pageTitle = $('.page-title, .card-title').first();
     if (pageTitle.length) {
         const originalTitle = pageTitle.data('original-title') || pageTitle.text();
@@ -262,7 +249,6 @@ function updateFilterUI(status) {
 async function loadApplications() {
     showLoading();
     try {
-        // Load applications
         const [applicationsResponse, declinesResponse] = await Promise.all([
             $.ajax({
                 url: `${API_BASE_URL}/applications/getall`,
@@ -282,7 +268,6 @@ async function loadApplications() {
             })
         ]);
         
-        // Map decline reasons to applications
         allApplications = applicationsResponse.map(app => {
             const declineInfo = declinesResponse.find(d => d.applicationId === app.id);
             if (declineInfo) {
@@ -362,7 +347,6 @@ function handleLoadError(error) {
       ? latestApplication.vehicleClasses.join(", ")
       : "N/A";
 
-    // Check if there are previous applications
     const hasPreviousApplications = applications.length > 1;
 
     licenseCard.html(`
@@ -431,7 +415,6 @@ function handleLoadError(error) {
       return;
     }
 
-    // Sort applications by date (newest first)
     const sortedApplications = [...currentApplications].sort((a, b) => 
       new Date(b.submittedDate) - new Date(a.submittedDate)
     );
@@ -526,7 +509,6 @@ function renderApplications() {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     
-    // Filter applications based on showRejected flag
     const visibleApplications = showRejected ? 
         filteredApplications : 
         filteredApplications.filter(app => app.status !== 'REJECTED');
@@ -747,14 +729,12 @@ function handleSearch() {
     
     let baseApplications = [...allApplications];
     
-    // Apply active filter first
     if (activeFilter && activeFilter !== 'all') {
         baseApplications = baseApplications.filter(app => 
             app.status && app.status.toUpperCase() === activeFilter.toUpperCase()
         );
     }
     
-    // Then apply search
     if (searchTerm === '') {
         filteredApplications = baseApplications;
     } else {
@@ -803,7 +783,6 @@ function handleFilter(e) {
         }
     }
     
-    // Handle rejected applications visibility
     if (filterValue === 'REJECTED') {
         showRejected = true;
         $('#toggleRejectedBtn').html('<i class="fas fa-eye-slash me-1"></i> Hide Rejected');
@@ -812,12 +791,11 @@ function handleFilter(e) {
     currentPage = 1;
     renderApplications();
     
-    // Update URL without page reload (optional)
     updateURLWithFilter(filterType, filterValue);
 }
 
 function updateURLWithFilter(filterType, filterValue) {
-    // Optional: Update URL parameters to reflect current filter
+   
     const url = new URL(window.location);
     if (filterValue === 'all') {
         url.searchParams.delete(filterType);
@@ -831,19 +809,16 @@ function clearAllFilters() {
     filteredApplications = [...allApplications];
     currentPage = 1;
     
-    // Reset UI
     $('.filter-option').removeClass('active');
     $('.filter-option[data-value="all"]').addClass('active');
     $('#searchInput').val('');
     
-    // Reset page title
     const pageTitle = $('.page-title, .card-title').first();
     const originalTitle = pageTitle.data('original-title');
     if (originalTitle) {
         pageTitle.text(originalTitle);
     }
     
-    // Clear URL parameters
     const url = new URL(window.location);
     url.searchParams.delete('status');
     url.searchParams.delete('license');
@@ -882,7 +857,6 @@ function handleDeclineClick(e) {
     declineModal.show();
 }
 
-// Updated handleApproveConfirm function in your frontend
 async function handleApproveConfirm() {
     const examDate = $('#examDate').val();
     const examTime = $('#examTime').val();
@@ -890,8 +864,7 @@ async function handleApproveConfirm() {
     const approvalNotes = $('#approvalNotes').val();
     
     let isValid = true;
-    
-    // Validation
+  
     if (!examDate) {
         $('#examDate').addClass('is-invalid');
         isValid = false;
@@ -922,7 +895,7 @@ async function handleApproveConfirm() {
     showLoading();
     
     try {
-        // First, approve the application
+        
         await $.ajax({
             url: `${API_BASE_URL}/applications/${currentApplicationId}/status?status=APPROVED`,
             method: 'PUT',
@@ -932,14 +905,13 @@ async function handleApproveConfirm() {
             }
         });
         
-        // Then, schedule the written exam
         const writtenExamData = {
             applicationId: currentApplicationId,
             writtenExamDate: examDate,
             writtenExamTime: examTime,
             writtenExamLocation: examLocation || 'Colombo Department of Motor Traffic',
             note: approvalNotes || 'Application approved and exam scheduled',
-            writtenExamResult: null // Will be updated after exam
+            writtenExamResult: null
         };
         
         await $.ajax({
@@ -951,11 +923,9 @@ async function handleApproveConfirm() {
                 'Content-Type': 'application/json'
             }
         });
-        
-        // Update local data
+
         updateApplicationStatus(currentApplicationId, 'APPROVED', examDate);
         
-        // Hide modal and refresh display
         const approveModal = bootstrap.Modal.getInstance(document.getElementById('approveModal'));
         approveModal.hide();
         
@@ -984,7 +954,7 @@ async function handleDeclineConfirm() {
     showLoading();
     
     try {
-        // Get decline notes and custom reason
+       
         const declineNotes = $('#declineNotes').val();
         let customReason = '';
         if (selectedDeclineReason === 'other') {
@@ -996,16 +966,14 @@ async function handleDeclineConfirm() {
             }
         }
 
-        // Prepare simple decline data
         const declineData = {
             applicationId: currentApplicationId,
             declineReason: selectedDeclineReason,
             declineNotes: declineNotes || customReason,
             declinedBy: userData.username || 'Admin'
-            // declinedAt will be set by backend
+           
         };
 
-        // First, update the application status to REJECTED
         await $.ajax({
             url: `${API_BASE_URL}/applications/${currentApplicationId}/status?status=REJECTED`,
             method: 'PUT',
@@ -1015,7 +983,6 @@ async function handleDeclineConfirm() {
             }
         });
 
-        // Then, save the simple decline details
         await $.ajax({
             url: `${API_BASE_URL}/declines/create-decline`,
             method: 'POST',
@@ -1026,7 +993,6 @@ async function handleDeclineConfirm() {
             }
         });
 
-        // Update local data with rejection reason
         updateApplicationStatus(
             currentApplicationId, 
             'REJECTED', 
@@ -1035,7 +1001,6 @@ async function handleDeclineConfirm() {
             declineNotes || customReason
         );
 
-        // Hide modal and refresh display
         const declineModal = bootstrap.Modal.getInstance(document.getElementById('declineModal'));
         declineModal.hide();
 

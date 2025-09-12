@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 public class StaffServiceImpl implements StaffService {
 
     private final StaffRepository staffRepository;
+    private final EmailServiceImpl emailService;
 
     @Override
     public StaffDTO createStaff(StaffDTO staffDTO) {
@@ -33,7 +34,6 @@ public class StaffServiceImpl implements StaffService {
                 throw new RuntimeException("Email already exists");
             }
 
-
             // Create Staff
             Staff staff = Staff.builder()
                     .staffId(staffDTO.getStaffId() != null ? staffDTO.getStaffId() : generateStaffId())
@@ -43,11 +43,51 @@ public class StaffServiceImpl implements StaffService {
                     .phone(staffDTO.getPhone())
                     .status(staffDTO.getStatus() != null ? staffDTO.getStatus() : StaffStatus.ACTIVE)
                     .isAdmin(staffDTO.isAdmin())
-//                    .user(user)
                     .build();
 
             Staff savedStaff = staffRepository.save(staff);
             log.info("Staff created successfully with ID: {}", savedStaff.getStaffId());
+
+            // ===== Send Congratulation Email =====
+            String subject = "Welcome to the Company!";
+            String body = "<!DOCTYPE html>" +
+                    "<html>" +
+                    "<head>" +
+                    "  <meta charset='UTF-8'>" +
+                    "  <meta name='viewport' content='width=device-width, initial-scale=1.0'>" +
+                    "  <style>" +
+                    "    body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }" +
+                    "    .container { max-width: 600px; margin: 30px auto; background-color: #ffffff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }" +
+                    "    h2 { color: #333333; }" +
+                    "    p { color: #555555; font-size: 16px; line-height: 1.5; }" +
+                    "    .footer { margin-top: 20px; font-size: 14px; color: #888888; }" +
+                    "    .btn { display: inline-block; padding: 10px 20px; margin-top: 15px; background-color: #007BFF; color: #ffffff; text-decoration: none; border-radius: 5px; }" +
+                    "  </style>" +
+                    "</head>" +
+                    "<body>" +
+                    "  <div class='container'>" +
+                    "    <h2>Welcome " + savedStaff.getName() + "!</h2>" +
+                    "    <p>Congratulations on joining our team! We are excited to have you onboard and look forward to working with you.</p>" +
+                    "    <p>Here are your details:</p>" +
+                    "    <ul>" +
+                    "      <li><strong>Staff ID:</strong> " + savedStaff.getStaffId() + "</li>" +
+                    "      <li><strong>Department:</strong> " + savedStaff.getDepartment() + "</li>" +
+                    "      <li><strong>Email:</strong> " + savedStaff.getEmail() + "</li>" +
+                    "    </ul>" +
+                    "    <a href='#' class='btn'>Get Started</a>" +
+                    "    <div class='footer'>" +
+                    "      <p>Best Regards,<br>Company HR</p>" +
+                    "    </div>" +
+                    "  </div>" +
+                    "</body>" +
+                    "</html>";
+
+            try {
+                emailService.sendHtmlEmail(savedStaff.getEmail(), subject, body);
+            } catch(Exception e) {
+                log.warn("Failed to send welcome email to {}: {}", savedStaff.getEmail(), e.getMessage());
+            }
+
 
             return mapToDTO(savedStaff);
         } catch (Exception e) {
@@ -55,6 +95,7 @@ public class StaffServiceImpl implements StaffService {
             throw new RuntimeException("Failed to create staff: " + e.getMessage());
         }
     }
+
 
     @Override
     public StaffDTO updateStaff(Long id, StaffDTO staffDTO) {
@@ -207,4 +248,6 @@ public class StaffServiceImpl implements StaffService {
 
         return dto;
     }
+
+
 }

@@ -119,13 +119,16 @@ async function handleFormSubmit(e) {
     try {
         showLoading(true);
         const response = await saveStaff(formData);
+       
         if (response.success) {
             showSuccess(response.message || `Staff ${isEditing ? 'updated' : 'created'} successfully!`);
             $('#staffModal').modal('hide');
             await loadStaffData();
+
         } else {
             throw new Error(response.message || `Failed to ${isEditing ? 'update' : 'create'} staff`);
         }
+   
     } catch (error) {
         console.error('Error saving staff:', error);
         showError(error.message || `Failed to ${isEditing ? 'update' : 'create'} staff`);
@@ -133,6 +136,7 @@ async function handleFormSubmit(e) {
         showLoading(false);
     }
 }
+
 
 function resetForm() {
     $('#staffForm')[0].reset();

@@ -26,33 +26,98 @@ public class WrittenExamServiceImpl implements WrittenExamService {
 
     private final WrittenExamRepository writtenExamRepository;
     private final ApplicationRepository applicationRepository;
+    private final EmailServiceImpl emailService;
 
     @Override
     public WrittenExamDto scheduleWrittenExam(WrittenExamRequestDto requestDto) {
         log.info("Scheduling written exam for application ID: {}", requestDto.getApplicationId());
 
-        // Check if application exists
         Application application = applicationRepository.findById(requestDto.getApplicationId())
                 .orElseThrow(() -> new RuntimeException("Application not found with ID: " + requestDto.getApplicationId()));
 
-        // Check if exam already exists for this application
         if (writtenExamRepository.existsByApplicationId(requestDto.getApplicationId())) {
             throw new RuntimeException("Written exam already scheduled for this application");
         }
 
-        // Create written exam entity
         WrittenExam writtenExam = WrittenExam.builder()
                 .writtenExamDate(requestDto.getWrittenExamDate())
                 .writtenExamTime(requestDto.getWrittenExamTime())
                 .writtenExamLocation(requestDto.getWrittenExamLocation() != null ?
                         requestDto.getWrittenExamLocation() : "Colombo Department of Motor Traffic")
                 .note(requestDto.getNote())
-                .writtenExamResult(requestDto.getWrittenExamResult()) // Usually null when scheduling
+                .writtenExamResult(requestDto.getWrittenExamResult())
                 .application(application)
                 .build();
 
         WrittenExam savedExam = writtenExamRepository.save(writtenExam);
         log.info("Written exam scheduled successfully with ID: {}", savedExam.getId());
+
+        // Send email to driver
+        try {
+            String driverName = application.getDriver().getFullName();
+            String driverEmail = application.getDriver().getEmail();
+
+            String subject = "Your Written Exam Has Been Scheduled";
+            String body = "<!DOCTYPE html>\n" +
+                    "<html lang=\"en\">\n" +
+                    "<head>\n" +
+                    "    <meta charset=\"UTF-8\">\n" +
+                    "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
+                    "    <title>Written Exam Scheduled</title>\n" +
+                    "</head>\n" +
+                    "<body style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; background-color: #f0f2f5; margin: 0; padding: 0;\">\n" +
+                    "    <div style=\"max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); overflow: hidden;\">\n" +
+                    "\n" +
+                    "        \n" +
+                    "        <div style=\"background-color: #007bff; color: #ffffff; padding: 25px 20px; text-align: center;\">\n" +
+                    "            <h1 style=\"margin: 0; font-weight: 500;\">Your Exam Has Been Scheduled</h1>\n" +
+                    "        </div>\n" +
+                    "\n" +
+                    "        \n" +
+                    "        <div style=\"padding: 20px 30px; line-height: 1.6;\">\n" +
+                    "            <p style=\"font-size: 16px; color: #333333;\">Hello " + driverName + ",</p>\n" +
+                    "            <p style=\"font-size: 16px; color: #555555;\">We are pleased to inform you that your written exam has been successfully scheduled. Below are the details for your exam:</p>\n" +
+                    "\n" +
+                    "            <div style=\"background-color: #e9ecef; padding: 20px; border-radius: 8px; margin: 25px 0;\">\n" +
+                    "                <h3 style=\"margin-top: 0; font-size: 18px; color: #007bff; border-bottom: 2px solid #ced4da; padding-bottom: 10px;\">Exam Details</h3>\n" +
+                    "                <table style=\"width: 100%; font-size: 15px;\">\n" +
+                    "                    <tr>\n" +
+                    "                        <td style=\"padding: 5px 0; font-weight: 600; color: #333;\">Date:</td>\n" +
+                    "                        <td style=\"padding: 5px 0; color: #555;\">" + savedExam.getWrittenExamDate() + "</td>\n" +
+                    "                    </tr>\n" +
+                    "                    <tr>\n" +
+                    "                        <td style=\"padding: 5px 0; font-weight: 600; color: #333;\">Time:</td>\n" +
+                    "                        <td style=\"padding: 5px 0; color: #555;\">" + savedExam.getWrittenExamTime() + "</td>\n" +
+                    "                    </tr>\n" +
+                    "                    <tr>\n" +
+                    "                        <td style=\"padding: 5px 0; font-weight: 600; color: #333;\">Location:</td>\n" +
+                    "                        <td style=\"padding: 5px 0; color: #555;\">" + savedExam.getWrittenExamLocation() + "</td>\n" +
+                    "                    </tr>\n" +
+                    "                </table>\n" +
+                    "            </div>\n" +
+                    "\n" +
+                    "            <p style=\"font-size: 15px; color: #666666; margin-top: 20px;\">\n" +
+                    "                <span style=\"font-weight: 600; color: #333333;\">Note:</span> " + savedExam.getNote() + "\n" +
+                    "            </p>\n" +
+                    "\n" +
+                    "            <p style=\"font-size: 16px; color: #555555;\">Please arrive at the location at least 15 minutes before your scheduled time. We wish you the best of luck!</p>\n" +
+                    "        </div>\n" +
+                    "\n" +
+                    "        \n" +
+                    "        <div style=\"text-align: center; padding: 20px; font-size: 13px; color: #999999; border-top: 1px solid #eeeeee;\">\n" +
+                    "            <p style=\"margin: 0;\">Department of Motor Traffic</p>\n" +
+                    "            <p style=\"margin: 5px 0 0;\">This is an automated email. Please do not reply.</p>\n" +
+                    "        </div>\n" +
+                    "    </div>\n" +
+                    "</body>\n" +
+                    "</html>";
+
+            emailService.sendHtmlEmail(driverEmail, subject, body);
+            log.info("Written exam schedule email sent to {}", driverEmail);
+
+        } catch (Exception e) {
+            log.warn("Failed to send exam schedule email: {}", e.getMessage());
+        }
 
         return convertToDto(savedExam);
     }

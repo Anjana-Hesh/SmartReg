@@ -32,4 +32,5 @@ public interface StaffService {
     void updateAdminStatus(Long id, boolean isAdmin);
 
     String generateStaffId();
+
 }
