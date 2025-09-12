@@ -1,6 +1,4 @@
-/* ============================= */
-/* Global & Background */
-/* ============================= */
+
 body {
   margin: 0;
   padding: 0;
@@ -12,22 +10,21 @@ body {
 }
 
 /* ============================= */
-/* Glass Card */
+
 .glass-card {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   border-radius: 15px;
   padding: 20px;
-  margin-top: 80px; /* fixed back button space */
+  margin-top: 80px;
   margin-left: auto;
   margin-right: auto;
-  width: 95%;       /* mobile friendly */
-  max-width: 1200px; /* desktop max width */
+  width: 95%;
+  max-width: 1200px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.4);
   transition: all 0.3s ease;
 }
 
-/* Optional: Adjust padding on small screens */
 @media (max-width: 768px) {
   .glass-card {
     padding: 15px;
@@ -36,7 +33,7 @@ body {
 }
 
 /* ============================= */
-/* Fixed Back / Burger Button */
+
 .back-button-container {
   position: fixed;
   top: 15px;
@@ -66,7 +63,7 @@ body {
 }
 
 /* ============================= */
-/* Glassy Buttons */
+
 .btn-glass, .btn-warning-glass, .btn-danger-glass {
   backdrop-filter: blur(6px);
   border: none;
@@ -92,7 +89,7 @@ body {
 .btn-danger-glass:hover { background: rgba(220,53,69,0.4); }
 
 /* ============================= */
-/* Table Styles */
+
 .table {
   background: rgba(255,255,255,0.05);
   color: #e0e0e0;
@@ -107,7 +104,7 @@ body {
 }
 
 /* ============================= */
-/* Responsive Table (Mobile) */
+
 @media (max-width: 768px) {
   .table thead { display: none; }
   .table tr {
@@ -131,7 +128,7 @@ body {
 }
 
 /* ============================= */
-/* Drawer / Mobile Nav */
+
 .drawer-overlay {
   position: fixed;
   inset: 0;
@@ -194,7 +191,7 @@ body {
 }
 
 /* ============================= */
-/* Password Strength */
+
 .password-strength {
   height: 5px;
   width: 100%;
@@ -209,7 +206,7 @@ body {
 .password-strength.strength-4 { background: #0ff; }
 
 /* ============================= */
-/* Modal Overrides for Dark Theme */
+
 .modal-content {
   background: rgba(20,20,25,0.95);
   color: #e0e0e0;
@@ -224,7 +221,7 @@ body {
 }
 
 /* ============================= */
-/* Responsive Adjustments */
+
 @media (min-width: 768px) {
   .mobile-drawer, .drawer-overlay { display: none; }
   .back-button-container { left: 18px; top: 18px; }

@@ -95,20 +95,17 @@ $(document).ready(function() {
         return;
     }
     
-    // Set minimum date for exam date to tomorrow
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     $('#examDate').attr('min', tomorrow.toISOString().split('T')[0]);
     
-    // Initialize
+    checkAndApplyStatusFilter();
     loadApplications();
     
-    // Event listeners
     $('#refreshBtn').on('click', loadApplications);
     $('#searchInput').on('input', handleSearch);
     $('.filter-option').on('click', handleFilter);
     
-    // Modal event listeners
     $(document).on('click', '.approve-btn:not(:disabled)', handleApproveClick);
     $(document).on('click', '.decline-btn:not(:disabled)', handleDeclineClick);
     $('#confirmApproveBtn').on('click', handleApproveConfirm);
@@ -171,6 +168,96 @@ $(document).ready(function() {
         $(this).find('.rotate-icon').toggleClass('rotated');
     });
 });
+
+function checkAndApplyStatusFilter() {
+    const storedFilter = localStorage.getItem('application_status_filter');
+    
+    if (storedFilter) {
+        try {
+            const filterData = JSON.parse(storedFilter);
+            const currentTime = Date.now();
+            const filterAge = currentTime - filterData.timestamp;
+            
+            // Only apply filter if it's less than 5 minutes old (to prevent stale filters)
+            if (filterAge < 5 * 60 * 1000 && filterData.fromDashboard) {
+                const status = filterData.status;
+                
+                // Update UI to show the active filter
+                updateFilterUI(status);
+                
+                // Apply the filter when applications are loaded
+                setTimeout(() => {
+                    applyStatusFilter(status);
+                    showFilterNotification(status);
+                }, 500);
+                
+                // Clear the filter from localStorage after applying
+                localStorage.removeItem('application_status_filter');
+            }
+        } catch (error) {
+            console.error('Error parsing stored filter:', error);
+            localStorage.removeItem('application_status_filter');
+        }
+    }
+}
+
+function showFilterNotification(status) {
+    // Show a subtle notification that filter has been applied
+    const notification = $(`
+        <div class="filter-notification alert alert-info alert-dismissible fade show" role="alert">
+            <i class="fas fa-filter me-2"></i>
+            Showing ${status.toLowerCase()} applications from dashboard navigation.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    
+    $('.card-body').prepend(notification);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        notification.fadeOut();
+    }, 5000);
+}
+
+function applyStatusFilter(status) {
+    if (status === 'ALL') {
+        filteredApplications = [...allApplications];
+    } else {
+        filteredApplications = allApplications.filter(app => 
+            app.status && app.status.toUpperCase() === status.toUpperCase()
+        );
+    }
+    
+    // Handle special case for rejected applications visibility
+    if (status === 'REJECTED') {
+        showRejected = true;
+        $('#toggleRejectedBtn').html('<i class="fas fa-eye-slash me-1"></i> Hide Rejected');
+    }
+    
+    currentPage = 1;
+    renderApplications();
+}
+
+function updateFilterUI(status) {
+    // Update filter dropdown or buttons to show active filter
+    const filterButtons = $('.filter-option[data-filter="status"]');
+    filterButtons.removeClass('active');
+    
+    const activeButton = $(`.filter-option[data-filter="status"][data-value="${status}"]`);
+    if (activeButton.length) {
+        activeButton.addClass('active');
+    }
+    
+    // Update page title or breadcrumb to show filter
+    const pageTitle = $('.page-title, .card-title').first();
+    if (pageTitle.length) {
+        const originalTitle = pageTitle.data('original-title') || pageTitle.text();
+        if (!pageTitle.data('original-title')) {
+            pageTitle.data('original-title', originalTitle);
+        }
+        pageTitle.text(`${originalTitle} - ${status.charAt(0) + status.slice(1).toLowerCase()} Applications`);
+    }
+}
 
 async function loadApplications() {
     showLoading();
@@ -656,12 +743,24 @@ function formatDate(dateString) {
 
 function handleSearch() {
     const searchTerm = $('#searchInput').val().toLowerCase().trim();
+    const activeFilter = $('.filter-option.active[data-filter="status"]').data('value');
     
+    let baseApplications = [...allApplications];
+    
+    // Apply active filter first
+    if (activeFilter && activeFilter !== 'all') {
+        baseApplications = baseApplications.filter(app => 
+            app.status && app.status.toUpperCase() === activeFilter.toUpperCase()
+        );
+    }
+    
+    // Then apply search
     if (searchTerm === '') {
-        filteredApplications = [...allApplications];
+        filteredApplications = baseApplications;
     } else {
-        filteredApplications = allApplications.filter(app => {
-            const driverName = app.driver ? (app.driver.firstName + ' ' + app.driver.lastName).toLowerCase() : '';
+        filteredApplications = baseApplications.filter(app => {
+            const driverName = app.driver ? 
+                (app.driver.firstName + ' ' + app.driver.lastName).toLowerCase() : '';
             return driverName.includes(searchTerm) ||
                    (app.nicNumber?.toLowerCase().includes(searchTerm)) ||
                    (app.driver?.email?.toLowerCase().includes(searchTerm)) ||
@@ -679,17 +778,77 @@ function handleFilter(e) {
     const filterType = $(this).data('filter');
     const filterValue = $(this).data('value');
     
+    // Update active state
+    $(`.filter-option[data-filter="${filterType}"]`).removeClass('active');
+    $(this).addClass('active');
+    
     if (filterValue === 'all') {
         filteredApplications = [...allApplications];
+        
+        // Reset page title if it was modified
+        const pageTitle = $('.page-title, .card-title').first();
+        const originalTitle = pageTitle.data('original-title');
+        if (originalTitle) {
+            pageTitle.text(originalTitle);
+        }
     } else {
         if (filterType === 'status') {
-            filteredApplications = allApplications.filter(app => app.status?.toUpperCase() === filterValue);
+            filteredApplications = allApplications.filter(app => 
+                app.status && app.status.toUpperCase() === filterValue.toUpperCase()
+            );
         } else if (filterType === 'license') {
-            filteredApplications = allApplications.filter(app => app.licenseType?.toUpperCase() === filterValue);
+            filteredApplications = allApplications.filter(app => 
+                app.licenseType && app.licenseType.toUpperCase() === filterValue.toUpperCase()
+            );
         }
     }
     
+    // Handle rejected applications visibility
+    if (filterValue === 'REJECTED') {
+        showRejected = true;
+        $('#toggleRejectedBtn').html('<i class="fas fa-eye-slash me-1"></i> Hide Rejected');
+    }
+    
     currentPage = 1;
+    renderApplications();
+    
+    // Update URL without page reload (optional)
+    updateURLWithFilter(filterType, filterValue);
+}
+
+function updateURLWithFilter(filterType, filterValue) {
+    // Optional: Update URL parameters to reflect current filter
+    const url = new URL(window.location);
+    if (filterValue === 'all') {
+        url.searchParams.delete(filterType);
+    } else {
+        url.searchParams.set(filterType, filterValue);
+    }
+    window.history.replaceState({}, '', url);
+}
+
+function clearAllFilters() {
+    filteredApplications = [...allApplications];
+    currentPage = 1;
+    
+    // Reset UI
+    $('.filter-option').removeClass('active');
+    $('.filter-option[data-value="all"]').addClass('active');
+    $('#searchInput').val('');
+    
+    // Reset page title
+    const pageTitle = $('.page-title, .card-title').first();
+    const originalTitle = pageTitle.data('original-title');
+    if (originalTitle) {
+        pageTitle.text(originalTitle);
+    }
+    
+    // Clear URL parameters
+    const url = new URL(window.location);
+    url.searchParams.delete('status');
+    url.searchParams.delete('license');
+    window.history.replaceState({}, '', url);
+    
     renderApplications();
 }
 
@@ -1034,3 +1193,37 @@ function showInfo(title, message) {
         confirmButtonColor: "#4e73df"
     });
 }
+
+$(document).keydown(function(e) {
+  
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey) {
+        switch(e.which) {
+            case 49: // 1 - Show all
+                e.preventDefault();
+                $('.filter-option[data-value="all"]').first().click();
+                break;
+            case 50: // 2 - Pending
+                e.preventDefault();
+                $('.filter-option[data-value="PENDING"]').click();
+                break;
+            case 51: // 3 - Approved
+                e.preventDefault();
+                $('.filter-option[data-value="APPROVED"]').click();
+                break;
+            case 52: // 4 - Rejected
+                e.preventDefault();
+                $('.filter-option[data-value="REJECTED"]').click();
+                break;
+            case 67: // C - Clear filters
+                e.preventDefault();
+                clearAllFilters();
+                break;
+        }
+    }
+});
+
+window.dashboardNavigation = {
+    addStatsCardClickHandlers,
+    navigateToApplications,
+    clearAllFilters
+};

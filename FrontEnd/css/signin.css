@@ -3,6 +3,7 @@ body {
   background: url("../assets/images/SigninBack.gif") no-repeat center center fixed;
   background-size: cover;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  
 }
 
 body::before {
@@ -22,7 +23,7 @@ body::before {
 }
 
 .card-glass {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(3, 3, 3, 0.15);
   backdrop-filter: blur(12px);
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.2);

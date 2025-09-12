@@ -191,10 +191,8 @@ checkPayHereLoaded().then((loaded) => {
     .then(function (examDetails) {
         console.log("Raw exam details response:", examDetails);
 
-        // Handle the response properly - check if it's a real exam or default response
         const isRealExam = examDetails && examDetails.id !== null && examDetails.id !== undefined;
 
-        // Normalize the response
         let normalizedResponse = {
             id: examDetails.id || null,
             writtenExamDate: examDetails.writtenExamDate || null,
@@ -209,10 +207,9 @@ checkPayHereLoaded().then((loaded) => {
             trialDate: examDetails.trialDate || null,
             nextExamDate:examDetails.nextExamDate || "3 Months again" || null,
             isScheduled: isRealExam,
-            trialExams: [] // Initialize empty array for trial exams
+            trialExams: []
         };
 
-        // If written exam result is PASS, fetch trial exam details
         if (examDetails.writtenExamResult === "PASS" && examDetails.id) {
             return getTrialExamDetails(examDetails.id).then(function(trialExams) {
                 normalizedResponse.trialExams = trialExams;
@@ -229,7 +226,6 @@ checkPayHereLoaded().then((loaded) => {
     .catch(function (error) {
         console.error("Failed to get written exam details:", error);
 
-        // Return a consistent error response
         return {
             id: null,
             writtenExamDate: null,
@@ -349,8 +345,8 @@ checkPayHereLoaded().then((loaded) => {
 
     switch (status) {
       case "PENDING":
-        // Basic pending notification
-        notifications.push({
+
+      notifications.push({
           id: `pending_${appId}`,
           message: `⏳ Application #${appId} is under review`,
           details: `Submitted ${daysSinceSubmission} day${
@@ -365,7 +361,6 @@ checkPayHereLoaded().then((loaded) => {
           applicationId: appId,
         });
 
-        // Delay warning if taking too long
         if (daysSinceSubmission > 7) {
           notifications.push({
             id: `pending_delay_${appId}`,
@@ -381,7 +376,6 @@ checkPayHereLoaded().then((loaded) => {
           });
         }
 
-        // Encouraging message
         if (daysSinceSubmission >= 3) {
           notifications.push({
             id: `pending_encourage_${appId}`,
@@ -420,7 +414,6 @@ checkPayHereLoaded().then((loaded) => {
             actionFunction: () => showRejectionDetails(appId, formattedReason),
           });
 
-          // Helpful reapplication guide
           notifications.push({
             id: `reapply_guide_${appId}`,
             message: `📝 Ready to reapply? Here's what you need to know`,
@@ -436,7 +429,6 @@ checkPayHereLoaded().then((loaded) => {
           });
         } catch (error) {
           console.error("Error processing rejection:", error);
-          // Fallback notification
           notifications.push({
             id: `rejected_generic_${appId}`,
             message: `❌ Application #${appId} was rejected`,
@@ -464,7 +456,6 @@ checkPayHereLoaded().then((loaded) => {
               (examDate - new Date()) / (1000 * 60 * 60 * 24)
             );
 
-            // Main approval notification
             notifications.push({
               id: `approved_${appId}`,
               message: `🎉 Congratulations! Application #${appId} has been approved!`,
@@ -485,7 +476,6 @@ checkPayHereLoaded().then((loaded) => {
               actionFunction: () => showPaymentForm(),
             });
 
-            // Exam reminder notifications based on proximity
             if (isUpcoming) {
               if (daysUntilExam <= 1) {
                 notifications.push({
@@ -544,7 +534,6 @@ checkPayHereLoaded().then((loaded) => {
               }
             }
 
-            // Exam result notification if available
             if (examDetails.writtenExamResult) {
               const resultIcon =
                 examDetails.writtenExamResult === "PASS"
@@ -586,7 +575,6 @@ checkPayHereLoaded().then((loaded) => {
               });
             }
           } else {
-            // Approved but no exam scheduled yet
             notifications.push({
               id: `approved_no_exam_${appId}`,
               message: `✅ Application #${appId} approved! Exam scheduling in progress`,
@@ -604,7 +592,6 @@ checkPayHereLoaded().then((loaded) => {
         } catch (error) {
           console.error("Failed to get exam details for app:", appId);
 
-          // Generic approval notification if exam details fetch fails
           notifications.push({
             id: `approved_generic_${appId}`,
             message: `✅ Application #${appId} has been approved!`,
@@ -624,7 +611,6 @@ checkPayHereLoaded().then((loaded) => {
         break;
     }
 
-    // Add helpful tips based on application status
     addContextualTips(app, notifications);
   }
 
@@ -633,7 +619,6 @@ checkPayHereLoaded().then((loaded) => {
       (new Date() - new Date(app.submittedDate)) / (1000 * 60 * 60 * 24)
     );
 
-    // Add tips based on status and time
     if (app.status === "PENDING" && daysSinceSubmission === 1) {
       notifications.push({
         id: `tip_documents_${app.id}`,
@@ -881,7 +866,7 @@ checkPayHereLoaded().then((loaded) => {
     });
   }
 
-async function showExamDetails(examDetails) {
+  async function showExamDetails(examDetails) {
 
     const examDate = new Date(examDetails.writtenExamDate);
     const isUpcoming = examDate > new Date();
@@ -894,15 +879,14 @@ async function showExamDetails(examDetails) {
     let latestTrialExam = null;
     let hasPassedTrial = false;
 
-    // If written exam is passed, fetch trial exam details
     if (examDetails.writtenExamResult === "PASS") {
         try {
             trialExamData = await getTrialExamDetails(examDetails.id);
             hasTrialExams = trialExamData && trialExamData.length > 0;
             
             if (hasTrialExams) {
-                // Get the latest trial exam
-                latestTrialExam = trialExamData.reduce((latest, current) => {
+
+              latestTrialExam = trialExamData.reduce((latest, current) => {
                     return new Date(current.trialDate) > new Date(latest.trialDate) ? current : latest;
                 }, trialExamData[0]);
                 
@@ -913,7 +897,6 @@ async function showExamDetails(examDetails) {
         }
     }
 
-    // Check completion status
     const isComplete = examDetails.writtenExamResult === "PASS" && hasPassedTrial;
 
     Swal.fire({
@@ -1208,10 +1191,9 @@ async function showExamDetails(examDetails) {
         confirmButtonColor: "#007bff",
         width: "700px",
     });
-}
+  }
 
-// Add this function to handle trial exam application
-window.applyForTrialExam = function(writtenExamId , trialDate) {
+  window.applyForTrialExam = function(writtenExamId , trialDate) {
     Swal.fire({
         title: 'Apply for Trial Exam',
         html: `
@@ -1244,10 +1226,9 @@ window.applyForTrialExam = function(writtenExamId , trialDate) {
             );
         }
     });
-};
+  };
 
-// Function to submit trial exam application
-function submitTrialExamApplication(writtenExamId) {
+  function submitTrialExamApplication(writtenExamId) {
     return $.ajax({
         url: `${API_BASE_URL}/trial-exams/apply`,
         method: "POST",
@@ -1257,85 +1238,84 @@ function submitTrialExamApplication(writtenExamId) {
             driverId: currentDriverId
         })
     });
-}
+  }
 
 
   // =================== ENHANCED PAYMENT SYSTEM ===================
 
-// Complete Frontend Payment Integration with Spring Boot Backend
+  window.showPaymentForm = function () {
+    showLoading(true);
 
+    loadDriverApplications()
+      .then(() => {
+        showLoading(false);
 
-window.showPaymentForm = function () {
-  showLoading(true);
+        const approvedApps = currentApplications.filter(
+          (app) => app.status === "APPROVED"
+        );
 
-  loadDriverApplications()
-    .then(() => {
-      showLoading(false);
+        if (approvedApps.length === 0) {
+          handleNoPaymentAvailable();
+          return;
+        }
 
-      const approvedApps = currentApplications.filter(
-        (app) => app.status === "APPROVED"
-      );
+        showEnhancedPaymentModal(approvedApps);
+      })
+      .catch((error) => {
+        showLoading(false);
+        showAlert("Error", "Failed to load applications for payment.", "error");
+      });
+  };
 
-      if (approvedApps.length === 0) {
-        handleNoPaymentAvailable();
-        return;
+  function handleNoPaymentAvailable() {
+    
+    const pendingApps = currentApplications.filter(
+      (app) => app.status === "PENDING"
+    );
+    
+    const rejectedApps = currentApplications.filter(
+      (app) => app.status === "REJECTED"
+    );
+
+    let message,
+      type,
+      showApplyButton = false;
+
+    if (pendingApps.length > 0) {
+      message =
+        "Your application is still under review. Payment will be available once approved.";
+      type = "info";
+    } else if (rejectedApps.length > 0) {
+      message =
+        "Your application was rejected. Please submit a new application first.";
+      type = "warning";
+      showApplyButton = true;
+    } else {
+      message =
+        "You don't have any applications yet. Please submit an application first.";
+      type = "info";
+      showApplyButton = true;
+    }
+
+    Swal.fire({
+      title: "💳 Payment Not Available",
+      text: message,
+      icon: type,
+      showCancelButton: showApplyButton,
+      cancelButtonText: showApplyButton
+        ? '<i class="fas fa-plus me-2"></i>Submit Application'
+        : null,
+      confirmButtonText: '<i class="fas fa-times me-2"></i>Close',
+      cancelButtonColor: "#28a745",
+      confirmButtonColor: "#6c757d",
+    }).then((result) => {
+      if (result.dismiss === Swal.DismissReason.cancel && showApplyButton) {
+        showLicenseForm();
       }
-
-      showEnhancedPaymentModal(approvedApps);
-    })
-    .catch((error) => {
-      showLoading(false);
-      showAlert("Error", "Failed to load applications for payment.", "error");
     });
-};
-
-function handleNoPaymentAvailable() {
-  const pendingApps = currentApplications.filter(
-    (app) => app.status === "PENDING"
-  );
-  const rejectedApps = currentApplications.filter(
-    (app) => app.status === "REJECTED"
-  );
-
-  let message,
-    type,
-    showApplyButton = false;
-
-  if (pendingApps.length > 0) {
-    message =
-      "Your application is still under review. Payment will be available once approved.";
-    type = "info";
-  } else if (rejectedApps.length > 0) {
-    message =
-      "Your application was rejected. Please submit a new application first.";
-    type = "warning";
-    showApplyButton = true;
-  } else {
-    message =
-      "You don't have any applications yet. Please submit an application first.";
-    type = "info";
-    showApplyButton = true;
   }
 
-  Swal.fire({
-    title: "💳 Payment Not Available",
-    text: message,
-    icon: type,
-    showCancelButton: showApplyButton,
-    cancelButtonText: showApplyButton
-      ? '<i class="fas fa-plus me-2"></i>Submit Application'
-      : null,
-    confirmButtonText: '<i class="fas fa-times me-2"></i>Close',
-    cancelButtonColor: "#28a745",
-    confirmButtonColor: "#6c757d",
-  }).then((result) => {
-    if (result.dismiss === Swal.DismissReason.cancel && showApplyButton) {
-      showLicenseForm();
-    }
-  });
-}
-
-async function showEnhancedPaymentModal(applications) {
+  async function showEnhancedPaymentModal(applications) {
   const applicationsList = await Promise.all(
     applications.map(async (app) => {
       const vehicleClasses = app.vehicleClasses
@@ -1344,7 +1324,6 @@ async function showEnhancedPaymentModal(applications) {
           : app.vehicleClasses
         : "N/A";
       
-      // Get fee from backend
       let examFee = 3000;
       try {
         const feeResponse = await fetch(`${API_BASE_URL}/payment/calculate-fee?licenseType=${app.licenseType}&vehicleClasses=${app.vehicleClasses || ''}`, {
@@ -1371,8 +1350,8 @@ async function showEnhancedPaymentModal(applications) {
         if (examDetails) {
           examInfo = `
             <div class="exam-info-mini">
-                <i class="fas fa-calendar me-1"></i>${formatDate(examDetails.examDate)} 
-                <i class="fas fa-clock ms-2 me-1"></i>${examDetails.examTime || "TBA"}
+                <i class="fas fa-calendar me-1"></i>${formatDate(examDetails.writtenExamDate)} 
+                <i class="fas fa-clock ms-2 me-1"></i>${examDetails.writtenExamTime || "TBA"}
                 ${examDetails.examLocation ? `<br><i class="fas fa-map-marker-alt me-1"></i>${examDetails.examLocation}` : ""}
             </div>
           `;
@@ -1628,9 +1607,9 @@ async function showEnhancedPaymentModal(applications) {
       processEnhancedPayment(result.value);
     }
   });
-}
+  }
 
-function checkPayHereLoaded() {
+  function checkPayHereLoaded() {
   return new Promise((resolve) => {
     if (typeof payhere !== 'undefined') {
       resolve(true);
@@ -1651,108 +1630,113 @@ function checkPayHereLoaded() {
       }
     }, 500);
   });
-}
-
-async function processEnhancedPayment(paymentData) {
-  
-   const payhereLoaded = await checkPayHereLoaded();
-  if (!payhereLoaded) {
-    Swal.fire({
-      title: 'Payment System Unavailable',
-      html: `
-        <div class="system-unavailable">
-          <i class="fas fa-exclamation-circle text-danger mb-3" style="font-size: 3rem;"></i>
-          <p>PayHere payment system could not be loaded.</p>
-          <div class="troubleshooting">
-            <h6>Possible solutions:</h6>
-            <ul class="text-start">
-              <li>Check your internet connection</li>
-              <li>Disable ad blockers temporarily</li>
-              <li>Try refreshing the page</li>
-              <li>Clear browser cache</li>
-            </ul>
-          </div>
-        </div>
-        <style>
-          .system-unavailable { text-align: center; }
-          .troubleshooting { 
-            background: #f8f9fa; padding: 15px; border-radius: 8px;
-            margin-top: 20px; text-align: left; 
-          }
-          .troubleshooting h6 { color: #495057; margin-bottom: 10px; }
-        </style>
-      `,
-      showCancelButton: true,
-      confirmButtonText: 'Refresh Page',
-      cancelButtonText: 'Close',
-      confirmButtonColor: '#28a745'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        location.reload();
-      }
-    });
-    return;
   }
 
-  Swal.fire({
-    title: "Initializing Payment...",
-    html: `
-      <div class="payment-initialization">
-        <div class="init-progress">
-          <div class="init-step active">
-            <i class="fas fa-check-circle"></i>
-            <span>Payment system loaded</span>
+  async function processEnhancedPayment(paymentData) {
+  
+   const payhereLoaded = await checkPayHereLoaded();
+    if (!payhereLoaded) {
+      Swal.fire({
+        title: 'Payment System Unavailable',
+        html: `
+          <div class="system-unavailable">
+            <i class="fas fa-exclamation-circle text-danger mb-3" style="font-size: 3rem;"></i>
+            <p>PayHere payment system could not be loaded.</p>
+            <div class="troubleshooting">
+              <h6>Possible solutions:</h6>
+              <ul class="text-start">
+                <li>Check your internet connection</li>
+                <li>Disable ad blockers temporarily</li>
+                <li>Try refreshing the page</li>
+                <li>Clear browser cache</li>
+              </ul>
+            </div>
           </div>
-          <div class="init-step loading">
-            <div class="init-spinner"></div>
-            <span>Setting up secure connection</span>
-          </div>
-          <div class="init-step">
-            <i class="fas fa-circle"></i>
-            <span>Preparing payment form</span>
+          
+          <style>
+            .system-unavailable { text-align: center; }
+            .troubleshooting { 
+              background: #f8f9fa; padding: 15px; border-radius: 8px;
+              margin-top: 20px; text-align: left; 
+            }
+            .troubleshooting h6 { color: #495057; margin-bottom: 10px; }
+          </style>
+        `,
+      
+        showCancelButton: true,
+        confirmButtonText: 'Refresh Page',
+        cancelButtonText: 'Close',
+        confirmButtonColor: '#28a745'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          location.reload();
+        }
+      });
+      
+      return;
+    }
+
+    Swal.fire({
+      title: "Initializing Payment...",
+      html: `
+        <div class="payment-initialization">
+          <div class="init-progress">
+            <div class="init-step active">
+              <i class="fas fa-check-circle"></i>
+              <span>Payment system loaded</span>
+            </div>
+            <div div class="init-step loading">
+              <div class="init-spinner"></div>
+              <span>Setting up secure connection</span>
+            </div>
+            <div class="init-step">
+              <i class="fas fa-circle"></i>
+              <span>Preparing payment form</span>
+            </div>
           </div>
         </div>
-      </div>
       
-      <style>
-        .payment-initialization { text-align: left; }
-        .init-progress { display: flex; flex-direction: column; gap: 15px; }
-        .init-step { 
-          display: flex; align-items: center; padding: 10px;
-          background: #f8f9fa; border-radius: 8px; transition: all 0.3s;
-        }
-        .init-step.active { 
-          background: #d4edda; color: #155724; 
-        }
-        .init-step.loading { 
-          background: #fff3cd; color: #856404; 
-        }
-        .init-step i, .init-spinner { 
-          margin-right: 12px; width: 20px; 
-        }
-        .init-spinner {
-          border: 2px solid #f3f3f3; border-top: 2px solid #007bff;
-          border-radius: 50%; animation: spin 1s linear infinite;
-          height: 16px;
-        }
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      </style>
-    `,
-    allowOutsideClick: false,
-    showConfirmButton: false,
-  });
+        <style>
+          .payment-initialization { text-align: left; }
+          .init-progress { display: flex; flex-direction: column; gap: 15px; }
+          .init-step { 
+            display: flex; align-items: center; padding: 10px;
+            background: #f8f9fa; border-radius: 8px; transition: all 0.3s;
+          }
+          .init-step.active { 
+            background: #d4edda; color: #155724; 
+          }
+          .init-step.loading { 
+            background: #fff3cd; color: #856404; 
+          }
+          .init-step i, .init-spinner { 
+            margin-right: 12px; width: 20px; 
+          }
+          .init-spinner {
+            border: 2px solid #f3f3f3; border-top: 2px solid #007bff;
+            border-radius: 50%; animation: spin 1s linear infinite;
+            height: 16px;
+          }
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        </style>
+      `,
+    
+      allowOutsideClick: false,
+      showConfirmButton: false,
+    });
 
-  Swal.fire({
-    title: "Setting Up Payment...",
-    html: `
-      <div class="payment-setup">
+    Swal.fire({
+      title: "Setting Up Payment...",
+      html: `
+        <div class="payment-setup">
           <div class="setup-spinner"></div>
           <p>Preparing secure payment form</p>
-      </div>
-      <style>
+        </div>
+      
+        <style>
           .setup-spinner {
               width: 40px; height: 40px;
               border: 3px solid #f3f3f3;
@@ -1765,104 +1749,102 @@ async function processEnhancedPayment(paymentData) {
               0% { transform: rotate(0deg); }
               100% { transform: rotate(360deg); }
           }
-      </style>
-    `,
-    allowOutsideClick: false,
-    showConfirmButton: false,
-  });
+        </style>
+      `,
+    
+      allowOutsideClick: false,
+      showConfirmButton: false,
+    });
 
-  try {
-    const selectedApp = currentApplications.find(
-      (app) => app.id == paymentData.applicationId
-    );
-
-    let writtenExamId = null;
     try {
-      const examDetails = await getWrittenExamDetails(selectedApp.id);
-      if (examDetails && examDetails.id) {
-        writtenExamId = examDetails.id;
+      const selectedApp = currentApplications.find(
+        (app) => app.id == paymentData.applicationId
+      );
+
+      let writtenExamId = null;
+      try {
+        const examDetails = await getWrittenExamDetails(selectedApp.id);
+        if (examDetails && examDetails.id) {
+          writtenExamId = examDetails.id;
+        }
+      } catch (error) {
+        console.log("No exam details found:", error);
       }
+
+      const paymentRequest = {
+        applicationId: parseInt(paymentData.applicationId),
+        paymentMethod: paymentData.method.toUpperCase(),
+        driverId: currentDriverId,
+        driverName: currentDriverName,
+        licenseType: selectedApp.licenseType || "",
+        writtenExamId: writtenExamId
+      };
+
+      console.log("Sending payment request:", paymentRequest);
+
+      const response = await fetch(`${API_BASE_URL}/payment/initialize`, {
+        method: 'POST',
+        headers: {
+          Authorization: "Bearer " + (localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token")),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(paymentRequest)
+      });
+
+      console.log("Payment response status:", response.status);
+    
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Payment response error:", errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const responseData = await response.json();
+      console.log("Payment response data:", responseData);
+
+      if (!responseData.data || !responseData.data.hash) {
+        console.error("Invalid response structure:", responseData);
+        throw new Error('Invalid response from payment service');
+      }
+
+      if (responseData.code !== 200) {
+        throw new Error(responseData.message || 'Payment initialization failed');
+      }
+
+      const paymentDataBackend = responseData.data;
+      console.log("Payment data from backend:", paymentDataBackend);
+    
+      if (!paymentDataBackend.hash || !paymentDataBackend.merchantId || !paymentDataBackend.payhereOrderId) {
+        console.error("Missing required fields in payment data:", paymentDataBackend);
+        throw new Error('Missing required payment configuration');
+      }
+    
+      setTimeout(() => {
+        showPayHerePaymentForm(paymentDataBackend);
+      }, 1500);
+
     } catch (error) {
-      console.log("No exam details found:", error);
+      console.error('Payment setup error:', error);
+      Swal.fire({
+        title: 'Payment Setup Failed',
+        text: error.message || 'Could not initialize payment. Please try again.',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
     }
-
-    const paymentRequest = {
-      applicationId: parseInt(paymentData.applicationId),
-      paymentMethod: paymentData.method.toUpperCase(),
-      driverId: currentDriverId,
-      driverName: currentDriverName,
-      licenseType: selectedApp.licenseType || "",
-      writtenExamId: writtenExamId
-    };
-
-    console.log("Sending payment request:", paymentRequest);
-
-    // Make sure the endpoint path matches your controller
-    const response = await fetch(`${API_BASE_URL}/payment/initialize`, {
-      method: 'POST',
-      headers: {
-        Authorization: "Bearer " + (localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token")),
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(paymentRequest)
-    });
-
-    console.log("Payment response status:", response.status);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Payment response error:", errorText);
-      throw new Error(`HTTP ${response.status}: ${errorText}`);
-    }
-
-    const responseData = await response.json();
-    console.log("Payment response data:", responseData);
-
-    // Check if response has the expected structure
-    if (!responseData.data || !responseData.data.hash) {
-      console.error("Invalid response structure:", responseData);
-      throw new Error('Invalid response from payment service');
-    }
-
-    if (responseData.code !== 200) {
-      throw new Error(responseData.message || 'Payment initialization failed');
-    }
-
-    const paymentDataBackend = responseData.data;
-    console.log("Payment data from backend:", paymentDataBackend);
-    
-    // Validate that we have all required fields
-    if (!paymentDataBackend.hash || !paymentDataBackend.merchantId || !paymentDataBackend.payhereOrderId) {
-      console.error("Missing required fields in payment data:", paymentDataBackend);
-      throw new Error('Missing required payment configuration');
-    }
-    
-    setTimeout(() => {
-      showPayHerePaymentForm(paymentDataBackend);
-    }, 1500);
-
-  } catch (error) {
-    console.error('Payment setup error:', error);
-    Swal.fire({
-      title: 'Payment Setup Failed',
-      text: error.message || 'Could not initialize payment. Please try again.',
-      icon: 'error',
-      confirmButtonText: 'OK'
-    });
   }
-}
 
-function showPayHerePaymentForm(paymentData) {
-  Swal.close();
+  function showPayHerePaymentForm(paymentData) {
+    Swal.close();
 
-  const nameParts = currentDriverName.split(' ');
-  const firstName = nameParts[0] || '';
-  const lastName = nameParts.slice(1).join(' ') || '';
+    const nameParts = currentDriverName.split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
 
-  Swal.fire({
-    title: 'Secure Payment',
-    html: `
-      <div class="payhere-form-container">
+    Swal.fire({
+      title: 'Secure Payment',
+      html: `
+        <div class="payhere-form-container">
           <div class="payment-header">
               <i class="fas fa-shield-alt text-success"></i>
               <h5>PayHere Secure Payment</h5>
@@ -1905,9 +1887,9 @@ function showPayHerePaymentForm(paymentData) {
                   <span>Mobile Payments</span>
               </div>
           </div>
-      </div>
+        </div>
       
-      <style>
+        <style>
           .payhere-form-container { text-align: center; }
           .payment-header {
               margin-bottom: 25px;
@@ -1965,396 +1947,390 @@ function showPayHerePaymentForm(paymentData) {
           .info-item i {
               margin-bottom: 5px;
           }
-      </style>
-    `,
-    showCancelButton: true,
-    confirmButtonText: '<i class="fas fa-credit-card me-2"></i>Pay Securely',
-    cancelButtonText: '<i class="fas fa-times me-2"></i>Cancel',
-    confirmButtonColor: '#28a745',
-    cancelButtonColor: '#6c757d',
-    allowOutsideClick: false,
-    width: '500px'
-  }).then((result) => {
-    if (result.isConfirmed) {
-      executePayHerePayment(paymentData, firstName, lastName);
-    }
-  });
-}
-
-function executePayHerePayment(paymentData, firstName, lastName) {
-  console.log("=== PayHere Payment Debug ===");
-  console.log("Payment data received:", paymentData);
-  console.log("First name:", firstName);
-  console.log("Last name:", lastName);
-  
-  // Enhanced validation
-  const requiredFields = ['hash', 'merchantId', 'payhereOrderId', 'amount', 'transactionId'];
-  const missingFields = requiredFields.filter(field => !paymentData[field]);
-  
-  if (missingFields.length > 0) {
-    console.error("Missing required payment fields:", missingFields);
-    Swal.fire({
-      title: 'Payment Configuration Error',
-      html: `
-        <div class="error-details">
-          <p>Payment setup incomplete. Missing:</p>
-          <ul>${missingFields.map(field => `<li>${field}</li>`).join('')}</ul>
-        </div>
+        </style>
       `,
-      icon: 'error',
-      confirmButtonText: 'Try Again'
-    });
-    return;
-  }
-
-  // Validate PayHere library
-  if (typeof payhere === 'undefined') {
-    console.error("PayHere library not loaded");
-    Swal.fire({
-      title: 'Payment System Error',
-      text: 'PayHere payment system not available. Please refresh and try again.',
-      icon: 'error',
-      confirmButtonText: 'Refresh'
-    }).then(() => location.reload());
-    return;
-  }
-
-  // Enhanced PayHere payment configuration
-  const payment = {
-    "sandbox": true,
-    "merchant_id": paymentData.merchantId,
-    "return_url": paymentData.returnUrl || `${window.location.origin}/payment/success`,
-    "cancel_url": paymentData.cancelUrl || `${window.location.origin}/payment/cancel`,
-    "notify_url": paymentData.notifyUrl || `${API_BASE_URL}/payment/callback`,
-    "order_id": paymentData.payhereOrderId,
-    "items": `Driving License Exam Fee - Application #${paymentData.paymentId}`,
-    "amount": parseFloat(paymentData.amount).toFixed(2),
-    "currency": paymentData.currency || "LKR",
-    "hash": paymentData.hash,
-    "first_name": firstName || "Customer",
-    "last_name": lastName || "User",
-    "email": "anjanaheshan676@gmail.com",
-    "phone": "0764810851",
-    "address": "Colombo",
-    "city": "Colombo",
-    "country": "Sri Lanka",
-    "custom_1": paymentData.transactionId,
-    "custom_2": paymentData.paymentId?.toString() || paymentData.applicationId?.toString()
-  };
-
-  console.log("Final PayHere payment object:", payment);
-  console.log("Hash from backend:", paymentData.hash);
-  console.log("============================");
-
-  // Enhanced PayHere callbacks
-  payhere.onCompleted = function onCompleted(orderId) {
-    console.log("Payment completed successfully! Order ID:", orderId);
+      showCancelButton: true,
+      confirmButtonText: '<i class="fas fa-credit-card me-2"></i>Pay Securely',
+      cancelButtonText: '<i class="fas fa-times me-2"></i>Cancel',
+      confirmButtonColor: '#28a745',
+      cancelButtonColor: '#6c757d',
+      allowOutsideClick: false,
+      width: '500px'
     
-    Swal.fire({
-      title: 'Payment Processing...',
-      html: `
-        <div class="payment-processing">
-          <div class="processing-spinner"></div>
-          <p>Verifying your payment...</p>
-          <p><strong>Order ID:</strong> ${orderId}</p>
-        </div>
-        <style>
-          .processing-spinner {
-            width: 40px; height: 40px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #28a745;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
+    }).then((result) => {
+      if (result.isConfirmed) {
+        executePayHerePayment(paymentData, firstName, lastName);
+      }
+    });
+  }
+
+  function executePayHerePayment(paymentData, firstName, lastName) {
+  
+    console.log("=== PayHere Payment Debug ===");
+    console.log("Payment data received:", paymentData);
+    console.log("First name:", firstName);
+    console.log("Last name:", lastName);
+  
+    const requiredFields = ['hash', 'merchantId', 'payhereOrderId', 'amount', 'transactionId'];
+    const missingFields = requiredFields.filter(field => !paymentData[field]);
+  
+    if (missingFields.length > 0) {
+      console.error("Missing required payment fields:", missingFields);
+      Swal.fire({
+        title: 'Payment Configuration Error',
+        html: `
+          <div class="error-details">
+            <p>Payment setup incomplete. Missing:</p>
+            <ul>${missingFields.map(field => `<li>${field}</li>`).join('')}</ul>
+          </div>
+        `,
+      
+        icon: 'error',
+        confirmButtonText: 'Try Again'
+      });
+  
+      return;
+    }
+
+    if (typeof payhere === 'undefined') {
+      console.error("PayHere library not loaded");
+      Swal.fire({
+        title: 'Payment System Error',
+        text: 'PayHere payment system not available. Please refresh and try again.',
+        icon: 'error',
+        confirmButtonText: 'Refresh'
+    
+      }).then(() => location.reload());
+      
+      return;
+    }
+
+    const payment = {
+      "sandbox": true,
+      "merchant_id": paymentData.merchantId,
+      "return_url": paymentData.returnUrl || `${window.location.origin}/payment/success`,
+      "cancel_url": paymentData.cancelUrl || `${window.location.origin}/payment/cancel`,
+      "notify_url": paymentData.notifyUrl || `${API_BASE_URL}/payment/callback`,
+      "order_id": paymentData.payhereOrderId,
+      "items": `Driving License Exam Fee - Application #${paymentData.paymentId}`,
+      "amount": parseFloat(paymentData.amount).toFixed(2),
+      "currency": paymentData.currency || "LKR",
+      "hash": paymentData.hash,
+      "first_name": firstName || "Customer",
+      "last_name": lastName || "User",
+      "email": "anjanaheshan676@gmail.com",
+      "phone": "0764810851",
+      "address": "Colombo",
+      "city": "Colombo",
+      "country": "Sri Lanka",
+      "custom_1": paymentData.transactionId,
+      "custom_2": paymentData.paymentId?.toString() || paymentData.applicationId?.toString()
+    };
+
+    console.log("Final PayHere payment object:", payment);
+    console.log("Hash from backend:", paymentData.hash);
+    console.log("============================");
+
+    payhere.onCompleted = function onCompleted(orderId) {
+      console.log("Payment completed successfully! Order ID:", orderId);
+      
+      Swal.fire({
+        title: 'Payment Processing...',
+        html: `
+          <div class="payment-processing">
+            <div class="processing-spinner"></div>
+            <p>Verifying your payment...</p>
+            <p><strong>Order ID:</strong> ${orderId}</p>
+          </div>
+          <style>
+            .processing-spinner {
+              width: 40px; height: 40px;
+              border: 4px solid #f3f3f3;
+              border-top: 4px solid #28a745;
+              border-radius: 50%;
+              animation: spin 1s linear infinite;
+              margin: 0 auto 15px;
+            }
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          </style>
+        `,
+        allowOutsideClick: false,
+        showConfirmButton: false
+      });
+      
+      setTimeout(() => {
+        startEnhancedPaymentStatusMonitoring(paymentData.transactionId);
+      }, 3000);
+    };
+
+    payhere.onDismissed = function onDismissed() {
+      console.log("PayHere payment window dismissed");
+      Swal.fire({
+        title: 'Payment Cancelled',
+        html: `
+          <div class="payment-cancelled">
+            <i class="fas fa-times-circle text-warning mb-3" style="font-size: 3rem;"></i>
+            <p>Payment was cancelled or the window was closed.</p>
+            <p>Your application is still saved and you can complete payment later.</p>
+          </div>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Try Again',
+        cancelButtonText: 'Close',
+        confirmButtonColor: '#28a745'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          showPaymentForm();
+        }
+      });
+    };
+
+    payhere.onError = function onError(error) {
+      console.error("PayHere payment error:", error);
+      
+      let errorMessage = 'Payment processing failed';
+      let suggestions = [];
+      
+      if (typeof error === 'string') {
+        if (error.includes('Invalid hash')) {
+          errorMessage = 'Payment security validation failed';
+          suggestions = ['Please try again', 'Contact support if issue persists'];
+        } else if (error.includes('network')) {
+          errorMessage = 'Network connection error';
+          suggestions = ['Check your internet connection', 'Try again in a moment'];
+        } else if (error.includes('card')) {
+          errorMessage = 'Card processing error';
+          suggestions = ['Verify your card details', 'Try a different card', 'Contact your bank'];
+        }
+      }
+      
+      Swal.fire({
+        title: 'Payment Error',
+        html: `
+          <div class="payment-error-detailed">
+            <i class="fas fa-exclamation-triangle text-danger mb-3" style="font-size: 3rem;"></i>
+            <p><strong>${errorMessage}</strong></p>
+            <p class="error-code">Error: ${error || 'Unknown error'}</p>
+            
+            ${suggestions.length > 0 ? `
+              <div class="error-suggestions">
+                <h6>Suggestions:</h6>
+                <ul class="text-start">
+                  ${suggestions.map(s => `<li>${s}</li>`).join('')}
+                </ul>
+              </div>
+            ` : ''}
+            
+            <div class="support-info mt-3">
+              <p><small>Need help? Contact: support@licensepro.lk</small></p>
+            </div>
+          </div>
+          <style>
+            .payment-error-detailed { text-align: center; }
+            .error-code { 
+              background: #f8f9fa; padding: 8px; border-radius: 4px; 
+              font-family: monospace; color: #dc3545; margin: 15px 0;
+            }
+            .error-suggestions { 
+              background: #fff3cd; padding: 15px; border-radius: 8px; 
+              margin: 15px 0; 
+            }
+            .error-suggestions h6 { color: #856404; }
+            .error-suggestions ul { margin: 0; }
+            .support-info { color: #6c757d; }
+          </style>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Try Again',
+        cancelButtonText: 'Close',
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          showPaymentForm();
+        }
+      });
+    };
+
+    try {
+      console.log("Starting PayHere payment...");
+      payhere.startPayment(payment);
+    } catch (error) {
+      console.error("Error starting PayHere payment:", error);
+      Swal.fire({
+        title: 'Payment Initialization Error',
+        text: 'Could not start payment process. Please refresh the page and try again.',
+        icon: 'error',
+        confirmButtonText: 'Refresh Page'
+      }).then(() => location.reload());
+    }
+  }
+
+
+  function startEnhancedPaymentStatusMonitoring(transactionId) {
+    const checkInterval = 4000;
+    let checkCount = 0;
+    const maxChecks = 45;
+    let consecutiveFailures = 0;
+    const maxFailures = 3;
+
+    console.log(`Starting payment status monitoring for: ${transactionId}`);
+
+    const statusInterval = setInterval(async () => {
+      checkCount++;
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/payment/status/${transactionId}`, {
+          method: 'GET',
+          headers: {
+            Authorization: "Bearer " + (localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token")),
+            'Content-Type': 'application/json'
           }
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const statusData = await response.json();
+        console.log(`Status check ${checkCount}:`, statusData);
+        
+        consecutiveFailures = 0;
+        
+        if (statusData.code === 200) {
+          const paymentStatus = statusData.data.status;
+          
+          switch (paymentStatus) {
+            case 'COMPLETED':
+              clearInterval(statusInterval);
+              showPaymentSuccessModal(statusData.data);
+              return;
+              
+            case 'FAILED':
+            case 'CANCELLED':
+              clearInterval(statusInterval);
+              showPaymentFailedModal(statusData.data);
+              return;
+              
+            case 'PROCESSING':
+            case 'PENDING':
+              console.log(`Payment still ${paymentStatus.toLowerCase()}...`);
+              break;
+              
+            default:
+              console.warn(`Unknown payment status: ${paymentStatus}`);
+          }
+        }
+      } catch (error) {
+        consecutiveFailures++;
+        console.error(`Status check ${checkCount} failed:`, error);
+        
+        if (consecutiveFailures >= maxFailures) {
+          clearInterval(statusInterval);
+          showPaymentMonitoringError(transactionId, error);
+          return;
+        }
+      }
+
+      if (checkCount >= maxChecks) {
+        clearInterval(statusInterval);
+        showPaymentTimeoutModal(transactionId);
+      }
+    }, checkInterval);
+
+    Swal.fire({
+      title: 'Verifying Payment...',
+      html: `
+        <div class="payment-verification">
+          <div class="verification-animation">
+            <div class="pulse-ring"></div>
+            <div class="pulse-dot"></div>
+          </div>
+          <p>Please wait while we confirm your payment...</p>
+          <div class="verification-details">
+            <div class="detail-row">
+              <span>Transaction ID:</span>
+              <code>${transactionId}</code>
+            </div>
+            <div class="detail-row">
+              <span>Status:</span>
+              <span class="status-indicator">Checking...</span>
+            </div>
+          </div>
+          <div class="verification-progress">
+            <div class="progress-bar">
+              <div class="progress-fill" id="verificationProgress"></div>
+            </div>
+          </div>
+          <p class="verification-note">
+            <small>This usually takes 10-30 seconds. Please don't close this window.</small>
+          </p>
+        </div>
+        
+        <style>
+          .payment-verification { text-align: center; }
+          .verification-animation {
+            position: relative; width: 80px; height: 80px;
+            margin: 20px auto;
+          }
+          .pulse-ring {
+            width: 80px; height: 80px; border: 2px solid #28a745;
+            border-radius: 50%; position: absolute;
+            animation: pulse-ring 2s infinite;
+          }
+          .pulse-dot {
+            width: 20px; height: 20px; background: #28a745;
+            border-radius: 50%; position: absolute;
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+          }
+          @keyframes pulse-ring {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+          }
+          .verification-details {
+            background: #f8f9fa; padding: 15px; border-radius: 8px;
+            margin: 20px 0; text-align: left;
+          }
+          .detail-row {
+            display: flex; justify-content: space-between;
+            margin-bottom: 8px; align-items: center;
+          }
+          .detail-row code {
+            background: #e9ecef; padding: 2px 6px; border-radius: 4px;
+            font-size: 0.85rem;
+          }
+          .status-indicator {
+            color: #ffc107; font-weight: 500;
+          }
+          .verification-progress {
+            width: 100%; background: #e9ecef; height: 4px;
+            border-radius: 2px; margin: 15px 0; overflow: hidden;
+          }
+          .progress-fill {
+            height: 100%; background: #28a745; width: 0%;
+            animation: progressFill 180s linear; /* 3 minutes */
+          }
+          @keyframes progressFill {
+            0% { width: 0%; }
+            100% { width: 100%; }
+          }
+          .verification-note {
+            color: #6c757d; margin-top: 15px;
           }
         </style>
       `,
       allowOutsideClick: false,
-      showConfirmButton: false
+      showConfirmButton: false,
+      showCloseButton: false,
+      width: '500px'
     });
-    
-    // Start monitoring with delay
-    setTimeout(() => {
-      startEnhancedPaymentStatusMonitoring(paymentData.transactionId);
-    }, 3000);
-  };
-
-  payhere.onDismissed = function onDismissed() {
-    console.log("PayHere payment window dismissed");
-    Swal.fire({
-      title: 'Payment Cancelled',
-      html: `
-        <div class="payment-cancelled">
-          <i class="fas fa-times-circle text-warning mb-3" style="font-size: 3rem;"></i>
-          <p>Payment was cancelled or the window was closed.</p>
-          <p>Your application is still saved and you can complete payment later.</p>
-        </div>
-      `,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Try Again',
-      cancelButtonText: 'Close',
-      confirmButtonColor: '#28a745'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        showPaymentForm();
-      }
-    });
-  };
-
-  payhere.onError = function onError(error) {
-    console.error("PayHere payment error:", error);
-    
-    let errorMessage = 'Payment processing failed';
-    let suggestions = [];
-    
-    // Enhanced error handling based on error type
-    if (typeof error === 'string') {
-      if (error.includes('Invalid hash')) {
-        errorMessage = 'Payment security validation failed';
-        suggestions = ['Please try again', 'Contact support if issue persists'];
-      } else if (error.includes('network')) {
-        errorMessage = 'Network connection error';
-        suggestions = ['Check your internet connection', 'Try again in a moment'];
-      } else if (error.includes('card')) {
-        errorMessage = 'Card processing error';
-        suggestions = ['Verify your card details', 'Try a different card', 'Contact your bank'];
-      }
-    }
-    
-    Swal.fire({
-      title: 'Payment Error',
-      html: `
-        <div class="payment-error-detailed">
-          <i class="fas fa-exclamation-triangle text-danger mb-3" style="font-size: 3rem;"></i>
-          <p><strong>${errorMessage}</strong></p>
-          <p class="error-code">Error: ${error || 'Unknown error'}</p>
-          
-          ${suggestions.length > 0 ? `
-            <div class="error-suggestions">
-              <h6>Suggestions:</h6>
-              <ul class="text-start">
-                ${suggestions.map(s => `<li>${s}</li>`).join('')}
-              </ul>
-            </div>
-          ` : ''}
-          
-          <div class="support-info mt-3">
-            <p><small>Need help? Contact: support@licensepro.lk</small></p>
-          </div>
-        </div>
-        <style>
-          .payment-error-detailed { text-align: center; }
-          .error-code { 
-            background: #f8f9fa; padding: 8px; border-radius: 4px; 
-            font-family: monospace; color: #dc3545; margin: 15px 0;
-          }
-          .error-suggestions { 
-            background: #fff3cd; padding: 15px; border-radius: 8px; 
-            margin: 15px 0; 
-          }
-          .error-suggestions h6 { color: #856404; }
-          .error-suggestions ul { margin: 0; }
-          .support-info { color: #6c757d; }
-        </style>
-      `,
-      showCancelButton: true,
-      confirmButtonText: 'Try Again',
-      cancelButtonText: 'Close',
-      confirmButtonColor: '#28a745',
-      cancelButtonColor: '#6c757d'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        showPaymentForm();
-      }
-    });
-  };
-
-  // Start the payment with error handling
-  try {
-    console.log("Starting PayHere payment...");
-    payhere.startPayment(payment);
-  } catch (error) {
-    console.error("Error starting PayHere payment:", error);
-    Swal.fire({
-      title: 'Payment Initialization Error',
-      text: 'Could not start payment process. Please refresh the page and try again.',
-      icon: 'error',
-      confirmButtonText: 'Refresh Page'
-    }).then(() => location.reload());
   }
-}
 
-
-function startEnhancedPaymentStatusMonitoring(transactionId) {
-  const checkInterval = 4000; // Check every 4 seconds
-  let checkCount = 0;
-  const maxChecks = 45; // Maximum 3 minutes
-  let consecutiveFailures = 0;
-  const maxFailures = 3;
-
-  console.log(`Starting payment status monitoring for: ${transactionId}`);
-
-  const statusInterval = setInterval(async () => {
-    checkCount++;
-    
-    try {
-      const response = await fetch(`${API_BASE_URL}/payment/status/${transactionId}`, {
-        method: 'GET',
-        headers: {
-          Authorization: "Bearer " + (localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token")),
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const statusData = await response.json();
-      console.log(`Status check ${checkCount}:`, statusData);
-      
-      // Reset failure count on successful response
-      consecutiveFailures = 0;
-      
-      if (statusData.code === 200) {
-        const paymentStatus = statusData.data.status;
-        
-        switch (paymentStatus) {
-          case 'COMPLETED':
-            clearInterval(statusInterval);
-            showPaymentSuccessModal(statusData.data);
-            return;
-            
-          case 'FAILED':
-          case 'CANCELLED':
-            clearInterval(statusInterval);
-            showPaymentFailedModal(statusData.data);
-            return;
-            
-          case 'PROCESSING':
-          case 'PENDING':
-            console.log(`Payment still ${paymentStatus.toLowerCase()}...`);
-            break;
-            
-          default:
-            console.warn(`Unknown payment status: ${paymentStatus}`);
-        }
-      }
-    } catch (error) {
-      consecutiveFailures++;
-      console.error(`Status check ${checkCount} failed:`, error);
-      
-      // Stop monitoring after too many failures
-      if (consecutiveFailures >= maxFailures) {
-        clearInterval(statusInterval);
-        showPaymentMonitoringError(transactionId, error);
-        return;
-      }
-    }
-
-    // Stop after max attempts
-    if (checkCount >= maxChecks) {
-      clearInterval(statusInterval);
-      showPaymentTimeoutModal(transactionId);
-    }
-  }, checkInterval);
-
-  // Show enhanced monitoring modal
-  Swal.fire({
-    title: 'Verifying Payment...',
-    html: `
-      <div class="payment-verification">
-        <div class="verification-animation">
-          <div class="pulse-ring"></div>
-          <div class="pulse-dot"></div>
-        </div>
-        <p>Please wait while we confirm your payment...</p>
-        <div class="verification-details">
-          <div class="detail-row">
-            <span>Transaction ID:</span>
-            <code>${transactionId}</code>
-          </div>
-          <div class="detail-row">
-            <span>Status:</span>
-            <span class="status-indicator">Checking...</span>
-          </div>
-        </div>
-        <div class="verification-progress">
-          <div class="progress-bar">
-            <div class="progress-fill" id="verificationProgress"></div>
-          </div>
-        </div>
-        <p class="verification-note">
-          <small>This usually takes 10-30 seconds. Please don't close this window.</small>
-        </p>
-      </div>
-      
-      <style>
-        .payment-verification { text-align: center; }
-        .verification-animation {
-          position: relative; width: 80px; height: 80px;
-          margin: 20px auto;
-        }
-        .pulse-ring {
-          width: 80px; height: 80px; border: 2px solid #28a745;
-          border-radius: 50%; position: absolute;
-          animation: pulse-ring 2s infinite;
-        }
-        .pulse-dot {
-          width: 20px; height: 20px; background: #28a745;
-          border-radius: 50%; position: absolute;
-          top: 50%; left: 50%; transform: translate(-50%, -50%);
-        }
-        @keyframes pulse-ring {
-          0% { transform: scale(1); opacity: 1; }
-          100% { transform: scale(1.5); opacity: 0; }
-        }
-        .verification-details {
-          background: #f8f9fa; padding: 15px; border-radius: 8px;
-          margin: 20px 0; text-align: left;
-        }
-        .detail-row {
-          display: flex; justify-content: space-between;
-          margin-bottom: 8px; align-items: center;
-        }
-        .detail-row code {
-          background: #e9ecef; padding: 2px 6px; border-radius: 4px;
-          font-size: 0.85rem;
-        }
-        .status-indicator {
-          color: #ffc107; font-weight: 500;
-        }
-        .verification-progress {
-          width: 100%; background: #e9ecef; height: 4px;
-          border-radius: 2px; margin: 15px 0; overflow: hidden;
-        }
-        .progress-fill {
-          height: 100%; background: #28a745; width: 0%;
-          animation: progressFill 180s linear; /* 3 minutes */
-        }
-        @keyframes progressFill {
-          0% { width: 0%; }
-          100% { width: 100%; }
-        }
-        .verification-note {
-          color: #6c757d; margin-top: 15px;
-        }
-      </style>
-    `,
-    allowOutsideClick: false,
-    showConfirmButton: false,
-    showCloseButton: false,
-    width: '500px'
-  });
-}
-
-
-function showPaymentMonitoringError(transactionId, error) {
+  function showPaymentMonitoringError(transactionId, error) {
   Swal.fire({
     title: 'Payment Verification Issue',
     html: `
@@ -2418,729 +2394,719 @@ function showPaymentMonitoringError(transactionId, error) {
     confirmButtonColor: '#6c757d',
     allowOutsideClick: false
   });
-}
+  }
 
-// 4. Helper Functions
-window.recheckPaymentStatus = function(transactionId) {
-  Swal.close();
-  startEnhancedPaymentStatusMonitoring(transactionId);
-};
+  window.recheckPaymentStatus = function(transactionId) {
+    Swal.close();
+    startEnhancedPaymentStatusMonitoring(transactionId);
+  };
 
-window.contactSupport = function(transactionId) {
-  Swal.fire({
-    title: 'Contact Support',
-    html: `
-      <div class="support-contact">
-        <p>For assistance with transaction <code>${transactionId}</code>:</p>
-        
-        <div class="contact-methods">
-          <div class="contact-item">
-            <i class="fas fa-envelope text-primary"></i>
-            <div>
-              <strong>Email Support</strong>
-              <p>support@licensepro.lk</p>
-            </div>
-          </div>
-          
-          <div class="contact-item">
-            <i class="fas fa-phone text-success"></i>
-            <div>
-              <strong>Phone Support</strong>
-              <p>+94 11 123 4567</p>
-            </div>
-          </div>
-          
-          <div class="contact-item">
-            <i class="fas fa-comments text-info"></i>
-            <div>
-              <strong>Live Chat</strong>
-              <p>Available 9 AM - 6 PM</p>
-            </div>
-          </div>
-        </div>
-        
-        <div class="support-hours">
-          <h6>Support Hours:</h6>
-          <p>Monday - Friday: 9:00 AM - 6:00 PM<br>
-             Saturday: 9:00 AM - 1:00 PM<br>
-             Sunday: Closed</p>
-        </div>
-      </div>
-      
-      <style>
-        .support-contact { text-align: center; }
-        .contact-methods { 
-          display: grid; gap: 15px; margin: 20px 0; 
-        }
-        .contact-item {
-          display: flex; align-items: center; text-align: left;
-          background: #f8f9fa; padding: 15px; border-radius: 8px;
-        }
-        .contact-item i { 
-          font-size: 1.5rem; margin-right: 15px; 
-        }
-        .contact-item strong { display: block; margin-bottom: 5px; }
-        .contact-item p { margin: 0; color: #6c757d; }
-        .support-hours {
-          background: #e8f5e8; padding: 15px; border-radius: 8px;
-          border-left: 4px solid #28a745; text-align: left;
-        }
-        .support-hours h6 { color: #155724; margin-bottom: 10px; }
-      </style>
-    `,
-    confirmButtonText: 'Close',
-    confirmButtonColor: '#007bff'
-  });
-};
-
-function monitorPaymentStatus(transactionId, options = {}) {
-  const {
-    checkInterval = 3000,
-    maxChecks = 100,
-    showModal = true
-  } = options;
-  
-  let checkCount = 0;
-
-  // Show monitoring modal if requested
-  if (showModal) {
+  window.contactSupport = function(transactionId) {
     Swal.fire({
-      title: 'Monitoring Payment...',
+      title: 'Contact Support',
       html: `
-        <div class="payment-monitoring">
-          <div class="monitoring-animation">
-            <div class="pulse-dot"></div>
+        <div class="support-contact">
+          <p>For assistance with transaction <code>${transactionId}</code>:</p>
+          
+          <div class="contact-methods">
+            <div class="contact-item">
+              <i class="fas fa-envelope text-primary"></i>
+              <div>
+                <strong>Email Support</strong>
+                <p>support@licensepro.lk</p>
+              </div>
+            </div>
+            
+            <div class="contact-item">
+              <i class="fas fa-phone text-success"></i>
+              <div>
+                <strong>Phone Support</strong>
+                <p>+94 11 123 4567</p>
+              </div>
+            </div>
+            
+            <div class="contact-item">
+              <i class="fas fa-comments text-info"></i>
+              <div>
+                <strong>Live Chat</strong>
+                <p>Available 9 AM - 6 PM</p>
+              </div>
+            </div>
           </div>
-          <p>We're monitoring your payment status...</p>
-          <p><small>Please complete your payment on PayHere</small></p>
-          <div class="monitoring-info">
-            <div>Transaction ID: <strong>${transactionId}</strong></div>
+          
+          <div class="support-hours">
+            <h6>Support Hours:</h6>
+            <p>Monday - Friday: 9:00 AM - 6:00 PM<br>
+              Saturday: 9:00 AM - 1:00 PM<br>
+              Sunday: Closed</p>
           </div>
         </div>
+        
         <style>
-          .payment-monitoring { text-align: center; }
-          .monitoring-animation { margin: 20px 0; }
-          .pulse-dot {
-            width: 40px; height: 40px; background: #28a745;
-            border-radius: 50%; margin: 0 auto;
-            animation: pulse 2s infinite;
+          .support-contact { text-align: center; }
+          .contact-methods { 
+            display: grid; gap: 15px; margin: 20px 0; 
           }
-          @keyframes pulse {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
-          }
-          .monitoring-info {
+          .contact-item {
+            display: flex; align-items: center; text-align: left;
             background: #f8f9fa; padding: 15px; border-radius: 8px;
-            margin-top: 20px; font-size: 0.9rem;
+          }
+          .contact-item i { 
+            font-size: 1.5rem; margin-right: 15px; 
+          }
+          .contact-item strong { display: block; margin-bottom: 5px; }
+          .contact-item p { margin: 0; color: #6c757d; }
+          .support-hours {
+            background: #e8f5e8; padding: 15px; border-radius: 8px;
+            border-left: 4px solid #28a745; text-align: left;
+          }
+          .support-hours h6 { color: #155724; margin-bottom: 10px; }
+        </style>
+      `,
+      confirmButtonText: 'Close',
+      confirmButtonColor: '#007bff'
+    });
+  };
+
+  function monitorPaymentStatus(transactionId, options = {}) {
+    const {
+      checkInterval = 3000,
+      maxChecks = 100,
+      showModal = true
+    } = options;
+    
+    let checkCount = 0;
+
+    if (showModal) {
+      Swal.fire({
+        title: 'Monitoring Payment...',
+        html: `
+          <div class="payment-monitoring">
+            <div class="monitoring-animation">
+              <div class="pulse-dot"></div>
+            </div>
+            <p>We're monitoring your payment status...</p>
+            <p><small>Please complete your payment on PayHere</small></p>
+            <div class="monitoring-info">
+              <div>Transaction ID: <strong>${transactionId}</strong></div>
+            </div>
+          </div>
+          <style>
+            .payment-monitoring { text-align: center; }
+            .monitoring-animation { margin: 20px 0; }
+            .pulse-dot {
+              width: 40px; height: 40px; background: #28a745;
+              border-radius: 50%; margin: 0 auto;
+              animation: pulse 2s infinite;
+            }
+            @keyframes pulse {
+              0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+              70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
+              100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+            }
+            .monitoring-info {
+              background: #f8f9fa; padding: 15px; border-radius: 8px;
+              margin-top: 20px; font-size: 0.9rem;
+            }
+          </style>
+        `,
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        showCloseButton: true
+      });
+    }
+
+    const statusInterval = setInterval(async () => {
+      checkCount++;
+      
+      try {
+        console.log(`Checking payment status for transaction: ${transactionId} (attempt ${checkCount})`);
+        
+        const response = await fetch(`${API_BASE_URL}/payment/status/${transactionId}`, {
+          method: 'GET',
+          headers: {
+            Authorization: "Bearer " + (localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token")),
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const statusData = await response.json();
+          console.log("Payment status response:", statusData);
+          
+          if (statusData.status === 200 || statusData.code === 200) {
+            const paymentStatus = statusData.data.status;
+            console.log("Payment status:", paymentStatus);
+            
+            if (paymentStatus === 'COMPLETED') {
+              clearInterval(statusInterval);
+              Swal.close();
+              showPaymentSuccessModal(statusData.data);
+            } else if (paymentStatus === 'FAILED' || paymentStatus === 'CANCELLED') {
+              clearInterval(statusInterval);
+              Swal.close();
+              showPaymentFailedModal(statusData.data);
+            }
+          }
+        } else {
+          console.error("Error response:", response.status, response.statusText);
+        }
+      } catch (error) {
+        console.error('Error checking payment status:', error);
+      }
+
+      if (checkCount >= maxChecks) {
+        clearInterval(statusInterval);
+        showPaymentTimeoutModal(transactionId);
+      }
+    }, checkInterval);
+
+    return statusInterval;
+  }
+
+  function handlePayHerePaymentWithPostMessage(paymentData) {
+    Swal.close();
+    
+    window.addEventListener('message', function(event) {
+      if (event.origin === 'https://sandbox.payhere.lk' || event.origin === 'https://www.payhere.lk') {
+        console.log('PayHere message received:', event.data);
+        
+        if (event.data.type === 'payment_success') {
+          Swal.close();
+          monitorPaymentStatus(paymentData.transactionId);
+        } else if (event.data.type === 'payment_failed') {
+          Swal.close();
+          showAlert('Payment Failed', 'Payment was not completed successfully.', 'error');
+        }
+      }
+    });
+    
+    Swal.fire({
+      title: 'Complete Your Payment',
+      html: `
+        <div class="payhere-embedded-container">
+          <div class="payment-info-card">
+            <h6><i class="fas fa-info-circle me-2"></i>Payment Details</h6>
+            <div class="info-row">
+              <span>Application:</span>
+              <strong>#${paymentData.paymentId}</strong>
+            </div>
+            <div class="info-row">
+              <span>Amount:</span>
+              <strong>Rs. ${paymentData.amount.toLocaleString()}</strong>
+            </div>
+            <div class="info-row">
+              <span>Transaction ID:</span>
+              <strong>${paymentData.transactionId}</strong>
+            </div>
+          </div>
+          
+          <div class="payhere-embed-frame">
+            <iframe 
+              id="payhere-payment-iframe" 
+              src="${paymentData.checkoutUrl}" 
+              width="100%" 
+              height="650px" 
+              frameborder="0"
+              style="border: none; border-radius: 8px;">
+            </iframe>
+          </div>
+          
+          <div class="payment-instructions">
+            <div class="instruction-item">
+              <i class="fas fa-credit-card text-primary me-2"></i>
+              <span>Select your preferred payment method (Visa, MasterCard, etc.)</span>
+            </div>
+            <div class="instruction-item">
+              <i class="fas fa-keyboard text-success me-2"></i>
+              <span>Enter your card details securely</span>
+            </div>
+            <div class="instruction-item">
+              <i class="fas fa-lock text-warning me-2"></i>
+              <span>Complete the payment process</span>
+            </div>
+          </div>
+        </div>
+        
+        <style>
+          .payhere-embedded-container {
+            text-align: left;
+            max-width: 100%;
+          }
+          .payment-info-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+          }
+          .payment-info-card h6 {
+            color: white;
+            margin-bottom: 15px;
+          }
+          .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 5px 0;
+          }
+          .payhere-embed-frame {
+            background: white;
+            border-radius: 12px;
+            padding: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+          }
+          .payment-instructions {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #007bff;
+          }
+          .instruction-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+          }
+          
+          @media (max-width: 768px) {
+            .payhere-embed-frame iframe {
+              height: 500px;
+            }
           }
         </style>
       `,
-      allowOutsideClick: false,
       showConfirmButton: false,
-      showCloseButton: true
+      showCancelButton: true,
+      cancelButtonText: '<i class="fas fa-times me-2"></i>Close',
+      cancelButtonColor: '#6c757d',
+      allowOutsideClick: false,
+      width: '90%',
+      //The Alert Is Open When done of the moniring Payment Status
+      didOpen: () => {
+        monitorPaymentStatus(paymentData.transactionId, {showModal: false});
+      }
     });
   }
 
-  const statusInterval = setInterval(async () => {
-    checkCount++;
-    
+  function showPaymentSuccessModal(paymentStatusData) {
+    Swal.fire({
+      title: null,
+      html: `
+        <div class="payment-success-modal">
+            <div class="success-animation-container">
+                <div class="success-checkmark">
+                    <div class="success-checkmark-circle"></div>
+                    <div class="success-checkmark-stem"></div>
+                    <div class="success-checkmark-kick"></div>
+                </div>
+            </div>
+            
+            <h3 class="success-title">🎉 Payment Successful!</h3>
+            <p class="success-subtitle">Your exam fee has been processed successfully</p>
+            
+            <div class="payment-receipt-card">
+                <div class="receipt-header">
+                    <i class="fas fa-receipt me-2"></i>
+                    <span>Payment Receipt</span>
+                </div>
+                <div class="receipt-body">
+                    <div class="receipt-row">
+                        <span class="label">Transaction ID:</span>
+                        <span class="value">${paymentStatusData.transactionId}</span>
+                    </div>
+                    <div class="receipt-row">
+                        <span class="label">Status:</span>
+                        <span class="value">${paymentStatusData.statusMessage}</span>
+                    </div>
+                    <div class="receipt-row">
+                        <span class="label">Payment Method:</span>
+                        <span class="value">${paymentStatusData.paymentMethod}</span>
+                    </div>
+                    <div class="receipt-row">
+                        <span class="label">Date & Time:</span>
+                        <span class="value">${new Date(paymentStatusData.paymentDate).toLocaleString()}</span>
+                    </div>
+                    <div class="receipt-row total-row">
+                        <span class="label">Amount Paid:</span>
+                        <span class="value amount">Rs. ${paymentStatusData.amount.toLocaleString()}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="next-steps-card">
+                <h6><i class="fas fa-route me-2"></i>What Happens Next?</h6>
+                <div class="next-steps-timeline">
+                    <div class="timeline-step completed">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Payment Confirmed</span>
+                    </div>
+                    <div class="timeline-step next">
+                        <i class="fas fa-envelope"></i>
+                        <span>Exam confirmation via SMS/Email</span>
+                    </div>
+                    <div class="timeline-step future">
+                        <i class="fas fa-graduation-cap"></i>
+                        <span>Attend written examination</span>
+                    </div>
+                    <div class="timeline-step future">
+                        <i class="fas fa-car"></i>
+                        <span>Practical driving test (if passed)</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="important-reminders">
+                <h6><i class="fas fa-exclamation-circle me-2"></i>Important Reminders</h6>
+                <ul>
+                    <li>Save this receipt for your records</li>
+                    <li>Check your email/SMS for exam details</li>
+                    <li>Bring your NIC and this receipt to the exam</li>
+                    <li>Arrive 30 minutes before your exam time</li>
+                </ul>
+            </div>
+        </div>
+        
+        <style>
+            .payment-success-modal { text-align: center; }
+            .success-animation-container { margin: 20px 0; }
+            .success-checkmark {
+                width: 80px; height: 80px; border-radius: 50%;
+                display: block; stroke-width: 2; stroke: #28a745;
+                stroke-miterlimit: 10; margin: 0 auto;
+                box-shadow: inset 0px 0px 0px #28a745;
+                animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+                position: relative;
+            }
+            .success-checkmark-circle {
+                stroke-dasharray: 166; stroke-dashoffset: 166;
+                stroke-width: 2; stroke-miterlimit: 10;
+                stroke: #28a745; fill: none;
+                animation: stroke .6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+                width: 80px; height: 80px; border-radius: 50%;
+                background: #f0f8f0; border: 2px solid #28a745;
+            }
+            .success-checkmark-stem, .success-checkmark-kick {
+                position: absolute; background: #28a745;
+            }
+            .success-checkmark-stem {
+                left: 35px; top: 42px; width: 3px; height: 15px;
+                transform-origin: bottom; animation: checkmark-stem 0.3s ease-in-out 0.6s forwards;
+                transform: rotate(-45deg) scaleY(0);
+            }
+            .success-checkmark-kick {
+                left: 30px; top: 48px; width: 12px; height: 3px;
+                transform-origin: left; animation: checkmark-kick 0.3s ease-in-out 0.8s forwards;
+                transform: rotate(45deg) scaleX(0);
+            }
+            @keyframes stroke {
+                100% { stroke-dashoffset: 0; }
+            }
+            @keyframes scale {
+                0%, 100% { transform: none; }
+                50% { transform: scale3d(1.1, 1.1, 1); }
+            }
+            @keyframes fill {
+                100% { box-shadow: inset 0px 0px 0px 30px #28a745; }
+            }
+            @keyframes checkmark-stem {
+                100% { transform: rotate(-45deg) scaleY(1); }
+            }
+            @keyframes checkmark-kick {
+                100% { transform: rotate(45deg) scaleX(1); }
+            }
+            .success-title {
+                color: #28a745; margin: 20px 0 10px 0; font-weight: 700;
+            }
+            .success-subtitle {
+                color: #6c757d; margin-bottom: 25px;
+            }
+            .payment-receipt-card {
+                background: #f8f9fa; border: 2px dashed #28a745;
+                border-radius: 15px; margin-bottom: 25px; overflow: hidden;
+            }
+            .receipt-header {
+                background: #28a745; color: white; padding: 15px;
+                font-weight: 600; font-size: 1.1rem;
+            }
+            .receipt-body { padding: 20px; }
+            .receipt-row {
+                display: flex; justify-content: space-between;
+                margin-bottom: 12px; padding: 8px 0;
+            }
+            .receipt-row.total-row {
+                border-top: 2px solid #28a745; margin-top: 15px;
+                padding-top: 15px; font-weight: 600;
+            }
+            .receipt-row .label { color: #6c757d; }
+            .receipt-row .value { font-weight: 500; }
+            .receipt-row .amount { color: #28a745; font-size: 1.2rem; }
+            .next-steps-card, .important-reminders {
+                background: #e8f5e8; padding: 20px; border-radius: 12px;
+                margin-bottom: 20px; text-align: left;
+            }
+            .next-steps-card h6, .important-reminders h6 {
+                color: #155724; margin-bottom: 15px;
+            }
+            .next-steps-timeline { }
+            .timeline-step {
+                display: flex; align-items: center; margin-bottom: 10px;
+                padding: 8px; border-radius: 6px;
+            }
+            .timeline-step.completed {
+                background: #d4edda; color: #155724;
+            }
+            .timeline-step.next {
+                background: #fff3cd; color: #856404;
+            }
+            .timeline-step.future {
+                background: #f8f9fa; color: #6c757d;
+            }
+            .timeline-step i { margin-right: 12px; width: 20px; }
+            .important-reminders ul {
+                margin: 0; padding-left: 20px;
+            }
+            .important-reminders li {
+                margin-bottom: 8px; color: #155724;
+            }
+        </style>
+      `,
+      showCancelButton: true,
+      confirmButtonText: '<i class="fas fa-download me-2"></i>Download Receipt',
+      cancelButtonText: '<i class="fas fa-check me-2"></i>Continue',
+      confirmButtonColor: "#28a745",
+      cancelButtonColor: "#007bff",
+      width: "700px",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        downloadPaymentReceiptFromBackend(paymentStatusData.transactionId);
+      }
+
+      sessionStorage.removeItem('currentPayment');
+      
+      loadDriverApplications().then(() => {
+        loadSmartNotifications();
+      });
+    });
+  }
+
+  function showPaymentFailedModal(paymentStatusData) {
+    Swal.fire({
+      title: 'Payment Failed',
+      html: `
+        <div class="payment-failed-modal">
+            <div class="failed-animation">
+                <i class="fas fa-times-circle" style="font-size: 4rem; color: #dc3545; margin-bottom: 20px;"></i>
+            </div>
+            
+            <h4 style="color: #dc3545; margin-bottom: 15px;">Payment Unsuccessful</h4>
+            <p style="color: #6c757d; margin-bottom: 25px;">We're sorry, but your payment could not be processed.</p>
+            
+            <div class="failed-details-card">
+                <div class="failed-header">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <span>Transaction Details</span>
+                </div>
+                <div class="failed-body">
+                    <div class="detail-row">
+                        <span>Transaction ID:</span>
+                        <strong>${paymentStatusData.transactionId}</strong>
+                    </div>
+                    <div class="detail-row">
+                        <span>Status:</span>
+                        <strong>${paymentStatusData.statusMessage}</strong>
+                    </div>
+                    <div class="detail-row">
+                        <span>Amount:</span>
+                        <strong>Rs. ${paymentStatusData.amount.toLocaleString()}</strong>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="retry-suggestions">
+                <h6><i class="fas fa-lightbulb me-2"></i>What You Can Do</h6>
+                <ul>
+                    <li>Check your card details and try again</li>
+                    <li>Ensure sufficient balance in your account</li>
+                    <li>Try a different payment method</li>
+                    <li>Contact your bank if the issue persists</li>
+                    <li>Contact our support team for assistance</li>
+                </ul>
+            </div>
+        </div>
+        
+        <style>
+            .payment-failed-modal { text-align: center; }
+            .failed-details-card {
+                background: #f8f9fa; border: 2px solid #dc3545;
+                border-radius: 12px; margin-bottom: 20px; overflow: hidden;
+            }
+            .failed-header {
+                background: #dc3545; color: white; padding: 12px;
+                font-weight: 600;
+            }
+            .failed-body { padding: 15px; }
+            .detail-row {
+                display: flex; justify-content: space-between;
+                margin-bottom: 8px; padding: 5px 0;
+            }
+            .retry-suggestions {
+                background: #fff3cd; padding: 20px; border-radius: 10px;
+                text-align: left; border: 1px solid #ffeaa7;
+            }
+            .retry-suggestions h6 { color: #856404; margin-bottom: 15px; }
+            .retry-suggestions ul { margin: 0; padding-left: 20px; }
+            .retry-suggestions li { margin-bottom: 8px; color: #856404; }
+        </style>
+      `,
+      showCancelButton: true,
+      confirmButtonText: '<i class="fas fa-redo me-2"></i>Try Again',
+      cancelButtonText: '<i class="fas fa-times me-2"></i>Close',
+      confirmButtonColor: '#28a745',
+      cancelButtonColor: '#6c757d'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        showPaymentForm();
+      }
+    });
+  }
+
+  function showPaymentTimeoutModal(transactionId) {
+    Swal.fire({
+      title: 'Payment Status Unknown',
+      html: `
+        <div class="payment-timeout-modal">
+            <div class="timeout-icon">
+                <i class="fas fa-clock" style="font-size: 3rem; color: #ffc107; margin-bottom: 20px;"></i>
+            </div>
+            
+            <p>We couldn't confirm your payment status automatically. This might mean:</p>
+            
+            <div class="timeout-reasons">
+                <div class="reason-item">
+                    <i class="fas fa-hourglass-half me-2"></i>
+                    <span>Your payment is still being processed</span>
+                </div>
+                <div class="reason-item">
+                    <i class="fas fa-wifi me-2"></i>
+                    <span>Network connectivity issues</span>
+                </div>
+                <div class="reason-item">
+                    <i class="fas fa-window-close me-2"></i>
+                    <span>PayHere window was closed</span>
+                </div>
+            </div>
+            
+            <div class="timeout-actions">
+                <p><strong>Transaction ID:</strong> ${transactionId}</p>
+                <p><small>You can check your payment status manually or contact support if needed.</small></p>
+            </div>
+        </div>
+        
+        <style>
+            .payment-timeout-modal { text-align: center; }
+            .timeout-reasons {
+                background: #fff3cd; padding: 20px; border-radius: 10px;
+                margin: 20px 0; text-align: left;
+            }
+            .reason-item {
+                display: flex; align-items: center;
+                margin-bottom: 12px; color: #856404;
+            }
+            .timeout-actions {
+                background: #f8f9fa; padding: 15px; border-radius: 8px;
+                margin-top: 20px;
+            }
+        </style>
+      `,
+      showCancelButton: true,
+      confirmButtonText: '<i class="fas fa-search me-2"></i>Check Status',
+      cancelButtonText: '<i class="fas fa-times me-2"></i>Close',
+      confirmButtonColor: '#ffc107',
+      cancelButtonColor: '#6c757d'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        checkPaymentStatusManually(transactionId);
+      }
+    });
+  }
+
+  async function checkPaymentStatusManually(transactionId) {
     try {
-      console.log(`Checking payment status for transaction: ${transactionId} (attempt ${checkCount})`);
+      showLoading(true);
       
       const response = await fetch(`${API_BASE_URL}/payment/status/${transactionId}`, {
         method: 'GET',
         headers: {
-          Authorization: "Bearer " + (localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token")),
+        Authorization: "Bearer " + (localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token")),
           'Content-Type': 'application/json'
         }
       });
 
+      showLoading(false);
+
       if (response.ok) {
         const statusData = await response.json();
-        console.log("Payment status response:", statusData);
         
-        if (statusData.status === 200 || statusData.code === 200) {
+        if (statusData.status === 200) {
           const paymentStatus = statusData.data.status;
-          console.log("Payment status:", paymentStatus);
           
           if (paymentStatus === 'COMPLETED') {
-            clearInterval(statusInterval);
-            Swal.close(); // Close any open modal
             showPaymentSuccessModal(statusData.data);
           } else if (paymentStatus === 'FAILED' || paymentStatus === 'CANCELLED') {
-            clearInterval(statusInterval);
-            Swal.close(); // Close any open modal
             showPaymentFailedModal(statusData.data);
+          } else {
+            showAlert('Payment Status', `Your payment is currently: ${statusData.data.statusMessage}`, 'info');
           }
+        } else {
+          showAlert('Error', statusData.message || 'Could not retrieve payment status', 'error');
         }
       } else {
-        console.error("Error response:", response.status, response.statusText);
+        showAlert('Error', 'Failed to check payment status. Please try again later.', 'error');
       }
     } catch (error) {
+      showLoading(false);
       console.error('Error checking payment status:', error);
+      showAlert('Error', 'Network error. Please check your connection and try again.', 'error');
     }
+  }
 
-    // Stop checking after max attempts
-    if (checkCount >= maxChecks) {
-      clearInterval(statusInterval);
-      showPaymentTimeoutModal(transactionId);
-    }
-  }, checkInterval);
-
-  return statusInterval; // Return interval ID in case it needs to be cleared externally
-}
-
-// Updated handlePayHerePaymentWithPostMessage function
-function handlePayHerePaymentWithPostMessage(paymentData) {
-  Swal.close();
-  
-  // Listen for messages from PayHere iframe
-  window.addEventListener('message', function(event) {
-    // Make sure it's from PayHere domain
-    if (event.origin === 'https://sandbox.payhere.lk' || event.origin === 'https://www.payhere.lk') {
-      console.log('PayHere message received:', event.data);
+  async function downloadPaymentReceiptFromBackend(transactionId) {
+    try {
+      showLoading(true);
       
-      // Handle different message types
-      if (event.data.type === 'payment_success') {
-        Swal.close();
-        monitorPaymentStatus(paymentData.transactionId);
-      } else if (event.data.type === 'payment_failed') {
-        Swal.close();
-        showAlert('Payment Failed', 'Payment was not completed successfully.', 'error');
-      }
-    }
-  });
-  
-  Swal.fire({
-    title: 'Complete Your Payment',
-    html: `
-      <div class="payhere-embedded-container">
-        <div class="payment-info-card">
-          <h6><i class="fas fa-info-circle me-2"></i>Payment Details</h6>
-          <div class="info-row">
-            <span>Application:</span>
-            <strong>#${paymentData.paymentId}</strong>
-          </div>
-          <div class="info-row">
-            <span>Amount:</span>
-            <strong>Rs. ${paymentData.amount.toLocaleString()}</strong>
-          </div>
-          <div class="info-row">
-            <span>Transaction ID:</span>
-            <strong>${paymentData.transactionId}</strong>
-          </div>
-        </div>
+      const response = await fetch(`${API_BASE_URL}/payment/receipt/${transactionId}`, {
+        method: 'GET',
+        headers: {
+        Authorization: "Bearer " + (localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token"))
+        }
+      });
+
+      showLoading(false);
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `LicensePro_Receipt_${transactionId}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
         
-        <div class="payhere-embed-frame">
-          <iframe 
-            id="payhere-payment-iframe" 
-            src="${paymentData.checkoutUrl}" 
-            width="100%" 
-            height="650px" 
-            frameborder="0"
-            style="border: none; border-radius: 8px;">
-          </iframe>
-        </div>
-        
-        <div class="payment-instructions">
-          <div class="instruction-item">
-            <i class="fas fa-credit-card text-primary me-2"></i>
-            <span>Select your preferred payment method (Visa, MasterCard, etc.)</span>
-          </div>
-          <div class="instruction-item">
-            <i class="fas fa-keyboard text-success me-2"></i>
-            <span>Enter your card details securely</span>
-          </div>
-          <div class="instruction-item">
-            <i class="fas fa-lock text-warning me-2"></i>
-            <span>Complete the payment process</span>
-          </div>
-        </div>
-      </div>
-      
-      <style>
-        .payhere-embedded-container {
-          text-align: left;
-          max-width: 100%;
-        }
-        .payment-info-card {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-          padding: 20px;
-          border-radius: 12px;
-          margin-bottom: 20px;
-        }
-        .payment-info-card h6 {
-          color: white;
-          margin-bottom: 15px;
-        }
-        .info-row {
-          display: flex;
-          justify-content: space-between;
-          margin-bottom: 8px;
-          padding: 5px 0;
-        }
-        .payhere-embed-frame {
-          background: white;
-          border-radius: 12px;
-          padding: 10px;
-          box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-          margin-bottom: 20px;
-        }
-        .payment-instructions {
-          background: #f8f9fa;
-          padding: 20px;
-          border-radius: 10px;
-          border-left: 4px solid #007bff;
-        }
-        .instruction-item {
-          display: flex;
-          align-items: center;
-          margin-bottom: 10px;
-          font-size: 0.9rem;
-        }
-        
-        @media (max-width: 768px) {
-          .payhere-embed-frame iframe {
-            height: 500px;
-          }
-        }
-      </style>
-    `,
-    showConfirmButton: false,
-    showCancelButton: true,
-    cancelButtonText: '<i class="fas fa-times me-2"></i>Close',
-    cancelButtonColor: '#6c757d',
-    allowOutsideClick: false,
-    width: '90%',
-    didOpen: () => {
-      // Start monitoring without showing the monitoring modal
-      monitorPaymentStatus(paymentData.transactionId, {showModal: false});
-    }
-  });
-}
-
-function showPaymentSuccessModal(paymentStatusData) {
-  Swal.fire({
-    title: null,
-    html: `
-      <div class="payment-success-modal">
-          <div class="success-animation-container">
-              <div class="success-checkmark">
-                  <div class="success-checkmark-circle"></div>
-                  <div class="success-checkmark-stem"></div>
-                  <div class="success-checkmark-kick"></div>
-              </div>
-          </div>
-          
-          <h3 class="success-title">🎉 Payment Successful!</h3>
-          <p class="success-subtitle">Your exam fee has been processed successfully</p>
-          
-          <div class="payment-receipt-card">
-              <div class="receipt-header">
-                  <i class="fas fa-receipt me-2"></i>
-                  <span>Payment Receipt</span>
-              </div>
-              <div class="receipt-body">
-                  <div class="receipt-row">
-                      <span class="label">Transaction ID:</span>
-                      <span class="value">${paymentStatusData.transactionId}</span>
-                  </div>
-                  <div class="receipt-row">
-                      <span class="label">Status:</span>
-                      <span class="value">${paymentStatusData.statusMessage}</span>
-                  </div>
-                  <div class="receipt-row">
-                      <span class="label">Payment Method:</span>
-                      <span class="value">${paymentStatusData.paymentMethod}</span>
-                  </div>
-                  <div class="receipt-row">
-                      <span class="label">Date & Time:</span>
-                      <span class="value">${new Date(paymentStatusData.paymentDate).toLocaleString()}</span>
-                  </div>
-                  <div class="receipt-row total-row">
-                      <span class="label">Amount Paid:</span>
-                      <span class="value amount">Rs. ${paymentStatusData.amount.toLocaleString()}</span>
-                  </div>
-              </div>
-          </div>
-          
-          <div class="next-steps-card">
-              <h6><i class="fas fa-route me-2"></i>What Happens Next?</h6>
-              <div class="next-steps-timeline">
-                  <div class="timeline-step completed">
-                      <i class="fas fa-check-circle"></i>
-                      <span>Payment Confirmed</span>
-                  </div>
-                  <div class="timeline-step next">
-                      <i class="fas fa-envelope"></i>
-                      <span>Exam confirmation via SMS/Email</span>
-                  </div>
-                  <div class="timeline-step future">
-                      <i class="fas fa-graduation-cap"></i>
-                      <span>Attend written examination</span>
-                  </div>
-                  <div class="timeline-step future">
-                      <i class="fas fa-car"></i>
-                      <span>Practical driving test (if passed)</span>
-                  </div>
-              </div>
-          </div>
-          
-          <div class="important-reminders">
-              <h6><i class="fas fa-exclamation-circle me-2"></i>Important Reminders</h6>
-              <ul>
-                  <li>Save this receipt for your records</li>
-                  <li>Check your email/SMS for exam details</li>
-                  <li>Bring your NIC and this receipt to the exam</li>
-                  <li>Arrive 30 minutes before your exam time</li>
-              </ul>
-          </div>
-      </div>
-      
-      <style>
-          .payment-success-modal { text-align: center; }
-          .success-animation-container { margin: 20px 0; }
-          .success-checkmark {
-              width: 80px; height: 80px; border-radius: 50%;
-              display: block; stroke-width: 2; stroke: #28a745;
-              stroke-miterlimit: 10; margin: 0 auto;
-              box-shadow: inset 0px 0px 0px #28a745;
-              animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
-              position: relative;
-          }
-          .success-checkmark-circle {
-              stroke-dasharray: 166; stroke-dashoffset: 166;
-              stroke-width: 2; stroke-miterlimit: 10;
-              stroke: #28a745; fill: none;
-              animation: stroke .6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
-              width: 80px; height: 80px; border-radius: 50%;
-              background: #f0f8f0; border: 2px solid #28a745;
-          }
-          .success-checkmark-stem, .success-checkmark-kick {
-              position: absolute; background: #28a745;
-          }
-          .success-checkmark-stem {
-              left: 35px; top: 42px; width: 3px; height: 15px;
-              transform-origin: bottom; animation: checkmark-stem 0.3s ease-in-out 0.6s forwards;
-              transform: rotate(-45deg) scaleY(0);
-          }
-          .success-checkmark-kick {
-              left: 30px; top: 48px; width: 12px; height: 3px;
-              transform-origin: left; animation: checkmark-kick 0.3s ease-in-out 0.8s forwards;
-              transform: rotate(45deg) scaleX(0);
-          }
-          @keyframes stroke {
-              100% { stroke-dashoffset: 0; }
-          }
-          @keyframes scale {
-              0%, 100% { transform: none; }
-              50% { transform: scale3d(1.1, 1.1, 1); }
-          }
-          @keyframes fill {
-              100% { box-shadow: inset 0px 0px 0px 30px #28a745; }
-          }
-          @keyframes checkmark-stem {
-              100% { transform: rotate(-45deg) scaleY(1); }
-          }
-          @keyframes checkmark-kick {
-              100% { transform: rotate(45deg) scaleX(1); }
-          }
-          .success-title {
-              color: #28a745; margin: 20px 0 10px 0; font-weight: 700;
-          }
-          .success-subtitle {
-              color: #6c757d; margin-bottom: 25px;
-          }
-          .payment-receipt-card {
-              background: #f8f9fa; border: 2px dashed #28a745;
-              border-radius: 15px; margin-bottom: 25px; overflow: hidden;
-          }
-          .receipt-header {
-              background: #28a745; color: white; padding: 15px;
-              font-weight: 600; font-size: 1.1rem;
-          }
-          .receipt-body { padding: 20px; }
-          .receipt-row {
-              display: flex; justify-content: space-between;
-              margin-bottom: 12px; padding: 8px 0;
-          }
-          .receipt-row.total-row {
-              border-top: 2px solid #28a745; margin-top: 15px;
-              padding-top: 15px; font-weight: 600;
-          }
-          .receipt-row .label { color: #6c757d; }
-          .receipt-row .value { font-weight: 500; }
-          .receipt-row .amount { color: #28a745; font-size: 1.2rem; }
-          .next-steps-card, .important-reminders {
-              background: #e8f5e8; padding: 20px; border-radius: 12px;
-              margin-bottom: 20px; text-align: left;
-          }
-          .next-steps-card h6, .important-reminders h6 {
-              color: #155724; margin-bottom: 15px;
-          }
-          .next-steps-timeline { }
-          .timeline-step {
-              display: flex; align-items: center; margin-bottom: 10px;
-              padding: 8px; border-radius: 6px;
-          }
-          .timeline-step.completed {
-              background: #d4edda; color: #155724;
-          }
-          .timeline-step.next {
-              background: #fff3cd; color: #856404;
-          }
-          .timeline-step.future {
-              background: #f8f9fa; color: #6c757d;
-          }
-          .timeline-step i { margin-right: 12px; width: 20px; }
-          .important-reminders ul {
-              margin: 0; padding-left: 20px;
-          }
-          .important-reminders li {
-              margin-bottom: 8px; color: #155724;
-          }
-      </style>
-    `,
-    showCancelButton: true,
-    confirmButtonText: '<i class="fas fa-download me-2"></i>Download Receipt',
-    cancelButtonText: '<i class="fas fa-check me-2"></i>Continue',
-    confirmButtonColor: "#28a745",
-    cancelButtonColor: "#007bff",
-    width: "700px",
-  }).then((result) => {
-    if (result.isConfirmed) {
-      downloadPaymentReceiptFromBackend(paymentStatusData.transactionId);
-    }
-
-    // Clear stored payment data and refresh
-    sessionStorage.removeItem('currentPayment');
-    
-    // Refresh data after payment
-    loadDriverApplications().then(() => {
-      loadSmartNotifications();
-    });
-  });
-}
-
-function showPaymentFailedModal(paymentStatusData) {
-  Swal.fire({
-    title: 'Payment Failed',
-    html: `
-      <div class="payment-failed-modal">
-          <div class="failed-animation">
-              <i class="fas fa-times-circle" style="font-size: 4rem; color: #dc3545; margin-bottom: 20px;"></i>
-          </div>
-          
-          <h4 style="color: #dc3545; margin-bottom: 15px;">Payment Unsuccessful</h4>
-          <p style="color: #6c757d; margin-bottom: 25px;">We're sorry, but your payment could not be processed.</p>
-          
-          <div class="failed-details-card">
-              <div class="failed-header">
-                  <i class="fas fa-info-circle me-2"></i>
-                  <span>Transaction Details</span>
-              </div>
-              <div class="failed-body">
-                  <div class="detail-row">
-                      <span>Transaction ID:</span>
-                      <strong>${paymentStatusData.transactionId}</strong>
-                  </div>
-                  <div class="detail-row">
-                      <span>Status:</span>
-                      <strong>${paymentStatusData.statusMessage}</strong>
-                  </div>
-                  <div class="detail-row">
-                      <span>Amount:</span>
-                      <strong>Rs. ${paymentStatusData.amount.toLocaleString()}</strong>
-                  </div>
-              </div>
-          </div>
-          
-          <div class="retry-suggestions">
-              <h6><i class="fas fa-lightbulb me-2"></i>What You Can Do</h6>
-              <ul>
-                  <li>Check your card details and try again</li>
-                  <li>Ensure sufficient balance in your account</li>
-                  <li>Try a different payment method</li>
-                  <li>Contact your bank if the issue persists</li>
-                  <li>Contact our support team for assistance</li>
-              </ul>
-          </div>
-      </div>
-      
-      <style>
-          .payment-failed-modal { text-align: center; }
-          .failed-details-card {
-              background: #f8f9fa; border: 2px solid #dc3545;
-              border-radius: 12px; margin-bottom: 20px; overflow: hidden;
-          }
-          .failed-header {
-              background: #dc3545; color: white; padding: 12px;
-              font-weight: 600;
-          }
-          .failed-body { padding: 15px; }
-          .detail-row {
-              display: flex; justify-content: space-between;
-              margin-bottom: 8px; padding: 5px 0;
-          }
-          .retry-suggestions {
-              background: #fff3cd; padding: 20px; border-radius: 10px;
-              text-align: left; border: 1px solid #ffeaa7;
-          }
-          .retry-suggestions h6 { color: #856404; margin-bottom: 15px; }
-          .retry-suggestions ul { margin: 0; padding-left: 20px; }
-          .retry-suggestions li { margin-bottom: 8px; color: #856404; }
-      </style>
-    `,
-    showCancelButton: true,
-    confirmButtonText: '<i class="fas fa-redo me-2"></i>Try Again',
-    cancelButtonText: '<i class="fas fa-times me-2"></i>Close',
-    confirmButtonColor: '#28a745',
-    cancelButtonColor: '#6c757d'
-  }).then((result) => {
-    if (result.isConfirmed) {
-      // Retry payment
-      showPaymentForm();
-    }
-  });
-}
-
-function showPaymentTimeoutModal(transactionId) {
-  Swal.fire({
-    title: 'Payment Status Unknown',
-    html: `
-      <div class="payment-timeout-modal">
-          <div class="timeout-icon">
-              <i class="fas fa-clock" style="font-size: 3rem; color: #ffc107; margin-bottom: 20px;"></i>
-          </div>
-          
-          <p>We couldn't confirm your payment status automatically. This might mean:</p>
-          
-          <div class="timeout-reasons">
-              <div class="reason-item">
-                  <i class="fas fa-hourglass-half me-2"></i>
-                  <span>Your payment is still being processed</span>
-              </div>
-              <div class="reason-item">
-                  <i class="fas fa-wifi me-2"></i>
-                  <span>Network connectivity issues</span>
-              </div>
-              <div class="reason-item">
-                  <i class="fas fa-window-close me-2"></i>
-                  <span>PayHere window was closed</span>
-              </div>
-          </div>
-          
-          <div class="timeout-actions">
-              <p><strong>Transaction ID:</strong> ${transactionId}</p>
-              <p><small>You can check your payment status manually or contact support if needed.</small></p>
-          </div>
-      </div>
-      
-      <style>
-          .payment-timeout-modal { text-align: center; }
-          .timeout-reasons {
-              background: #fff3cd; padding: 20px; border-radius: 10px;
-              margin: 20px 0; text-align: left;
-          }
-          .reason-item {
-              display: flex; align-items: center;
-              margin-bottom: 12px; color: #856404;
-          }
-          .timeout-actions {
-              background: #f8f9fa; padding: 15px; border-radius: 8px;
-              margin-top: 20px;
-          }
-      </style>
-    `,
-    showCancelButton: true,
-    confirmButtonText: '<i class="fas fa-search me-2"></i>Check Status',
-    cancelButtonText: '<i class="fas fa-times me-2"></i>Close',
-    confirmButtonColor: '#ffc107',
-    cancelButtonColor: '#6c757d'
-  }).then((result) => {
-    if (result.isConfirmed) {
-      checkPaymentStatusManually(transactionId);
-    }
-  });
-}
-
-async function checkPaymentStatusManually(transactionId) {
-  try {
-    showLoading(true);
-    
-    const response = await fetch(`${API_BASE_URL}/payment/status/${transactionId}`, {
-      method: 'GET',
-      headers: {
-       Authorization: "Bearer " + (localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token")),
-        'Content-Type': 'application/json'
-      }
-    });
-
-    showLoading(false);
-
-    if (response.ok) {
-      const statusData = await response.json();
-      
-      if (statusData.status === 200) {
-        const paymentStatus = statusData.data.status;
-        
-        if (paymentStatus === 'COMPLETED') {
-          showPaymentSuccessModal(statusData.data);
-        } else if (paymentStatus === 'FAILED' || paymentStatus === 'CANCELLED') {
-          showPaymentFailedModal(statusData.data);
-        } else {
-          showAlert('Payment Status', `Your payment is currently: ${statusData.data.statusMessage}`, 'info');
-        }
+        showAlert('Success', 'Receipt downloaded successfully!', 'success');
       } else {
-        showAlert('Error', statusData.message || 'Could not retrieve payment status', 'error');
+        showAlert('Error', 'Failed to download receipt. Please try again.', 'error');
       }
-    } else {
-      showAlert('Error', 'Failed to check payment status. Please try again later.', 'error');
+    } catch (error) {
+      showLoading(false);
+      console.error('Error downloading receipt:', error);
+      showAlert('Error', 'Network error. Please check your connection and try again.', 'error');
     }
-  } catch (error) {
-    showLoading(false);
-    console.error('Error checking payment status:', error);
-    showAlert('Error', 'Network error. Please check your connection and try again.', 'error');
   }
-}
-
-async function downloadPaymentReceiptFromBackend(transactionId) {
-  try {
-    showLoading(true);
-    
-    const response = await fetch(`${API_BASE_URL}/payment/receipt/${transactionId}`, {
-      method: 'GET',
-      headers: {
-       Authorization: "Bearer " + (localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token"))
-      }
-    });
-
-    showLoading(false);
-
-    if (response.ok) {
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = `LicensePro_Receipt_${transactionId}.txt`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      showAlert('Success', 'Receipt downloaded successfully!', 'success');
-    } else {
-      showAlert('Error', 'Failed to download receipt. Please try again.', 'error');
-    }
-  } catch (error) {
-    showLoading(false);
-    console.error('Error downloading receipt:', error);
-    showAlert('Error', 'Network error. Please check your connection and try again.', 'error');
-  }
-}
 
 // Get payment history for driver
 // async function getDriverPaymentHistory() {
@@ -3291,7 +3257,6 @@ async function downloadPaymentReceiptFromBackend(transactionId) {
 
   window.showLicenseForm = function () {
     $("#licenseModal").show();
-    // Reset form state
     selectedVehicleClasses = [];
     updateSelectedVehicleClassesDisplay();
     $("#vehicleClass").prop("disabled", true);
@@ -3312,7 +3277,6 @@ async function downloadPaymentReceiptFromBackend(transactionId) {
     $("#vehicleClass").prop("disabled", true);
   }
 
-  // License type change handler
   $("#licenseType").on("change", function () {
     const licenseType = $(this).val();
     const vehicleClassSelect = $("#vehicleClass");
@@ -3333,7 +3297,6 @@ async function downloadPaymentReceiptFromBackend(transactionId) {
     }
   });
 
-  // Vehicle class selection handler
   $("#vehicleClass").on("change", function () {
     const selectedOptions = $(this).find("option:selected");
 
@@ -3373,78 +3336,74 @@ async function downloadPaymentReceiptFromBackend(transactionId) {
     }
   }
 
-  // Add this function to your driverDashboard.js file
 
-function calculateExamFee(licenseType, vehicleClasses) {
-  let baseFee = 3000;
+  function calculateExamFee(licenseType, vehicleClasses) {
+    let baseFee = 3000;
 
-  switch (licenseType?.toLowerCase()) {
-    case "learner":
-      baseFee = 2500;
-      break;
-    case "restricted":
-      baseFee = 3000;
-      break;
-    case "full":
-      baseFee = 4000;
-      break;
-    case "heavy":
-      baseFee = 6000;
-      break;
-    case "commercial":
-      baseFee = 7500;
-      break;
-    case "international":
-      baseFee = 5000;
-      break;
-    case "motorcycle":
-      baseFee = 3500;
-      break;
-    case "special":
-      baseFee = 8000;
-      break;
-    default:
-      baseFee = 3000;
-  }
-
-  // Handle vehicle classes - can be array or comma-separated string
-  const classCount = Array.isArray(vehicleClasses)
-    ? vehicleClasses.length
-    : vehicleClasses
-    ? vehicleClasses.split(",").length
-    : 1;
-    
-  const additionalFee = Math.max(0, classCount - 1) * 500;
-
-  return baseFee + additionalFee;
-}
-
-// Also add this async version that fetches from backend (recommended)
-async function calculateExamFeeFromBackend(licenseType, vehicleClasses) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/payment/calculate-fee?licenseType=${licenseType}&vehicleClasses=${vehicleClasses || ''}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${getAuthToken()}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (response.ok) {
-      const feeData = await response.json();
-      if (feeData.status === 200) {
-        return feeData.data.examFee;
-      }
+    switch (licenseType?.toLowerCase()) {
+      case "learner":
+        baseFee = 2500;
+        break;
+      case "restricted":
+        baseFee = 3000;
+        break;
+      case "full":
+        baseFee = 4000;
+        break;
+      case "heavy":
+        baseFee = 6000;
+        break;
+      case "commercial":
+        baseFee = 7500;
+        break;
+      case "international":
+        baseFee = 5000;
+        break;
+      case "motorcycle":
+        baseFee = 3500;
+        break;
+      case "special":
+        baseFee = 8000;
+        break;
+      default:
+        baseFee = 3000;
     }
-    
-    // Fallback to client-side calculation
-    return calculateExamFee(licenseType, vehicleClasses);
-  } catch (error) {
-    console.error('Error fetching exam fee from backend:', error);
-    // Fallback to client-side calculation
-    return calculateExamFee(licenseType, vehicleClasses);
+
+    // Handle vehicle classes - can be array or comma-separated string
+    const classCount = Array.isArray(vehicleClasses)
+      ? vehicleClasses.length
+      : vehicleClasses
+      ? vehicleClasses.split(",").length
+      : 1;
+      
+    const additionalFee = Math.max(0, classCount - 1) * 500;
+
+    return baseFee + additionalFee;
   }
-}
+
+  async function calculateExamFeeFromBackend(licenseType, vehicleClasses) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/payment/calculate-fee?licenseType=${licenseType}&vehicleClasses=${vehicleClasses || ''}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${getAuthToken()}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const feeData = await response.json();
+        if (feeData.status === 200) {
+          return feeData.data.examFee;
+        }
+      }
+      
+      return calculateExamFee(licenseType, vehicleClasses);
+    } catch (error) {
+      console.error('Error fetching exam fee from backend:', error);
+      return calculateExamFee(licenseType, vehicleClasses);
+    }
+  }
 
   window.removeVehicleClass = function (value) {
     selectedVehicleClasses = selectedVehicleClasses.filter(
@@ -3457,7 +3416,7 @@ async function calculateExamFeeFromBackend(licenseType, vehicleClasses) {
 
   async function validatePhoto(file) {
     const validationDiv = $("#photoValidation");
-    const maxSize = 2 * 1024 * 1024; // 2MB
+    const maxSize = 2 * 1024 * 1024;
     const minDimension = 300;
     const maxDimension = 2000;
 
@@ -3521,6 +3480,7 @@ async function calculateExamFeeFromBackend(licenseType, vehicleClasses) {
         resolve(false);
       };
 
+      // To See the img Preview , Thw Browser Genarate a link for that , imediately cansee a preview
       img.src = URL.createObjectURL(file);
     });
   }
@@ -3568,7 +3528,6 @@ async function calculateExamFeeFromBackend(licenseType, vehicleClasses) {
     $("#photoValidation").empty();
   }
 
-  // File upload handlers
   $("#photoUpload").on("change", async function (e) {
     const file = e.target.files[0];
     if (file) {
@@ -3611,7 +3570,7 @@ async function calculateExamFeeFromBackend(licenseType, vehicleClasses) {
     showLoading(true);
 
     try {
-      // Validations
+
       if (selectedVehicleClasses.length === 0) {
         throw new Error("Please select at least one vehicle class.");
       }
@@ -3930,10 +3889,10 @@ async function calculateExamFeeFromBackend(licenseType, vehicleClasses) {
           );
         break;
       default:
-       statusBadge
-  .removeClass("status-active status-pending status-rejected")
-  .addClass("status-success")
-  .html('<i class="fas fa-check-circle me-1" style="color: green;"></i> COMPLETED');
+        statusBadge
+        .removeClass("status-active status-pending status-rejected")
+        .addClass("status-success")
+        .html('<i class="fas fa-check-circle me-1" style="color: green;"></i> COMPLETED');
 
     }
   }
@@ -3966,7 +3925,6 @@ async function calculateExamFeeFromBackend(licenseType, vehicleClasses) {
       return;
     }
 
-    // Load additional details based on status
     Promise.all([
       application.status === "REJECTED"
         ? getDeclineReason(applicationId)
@@ -3975,19 +3933,18 @@ async function calculateExamFeeFromBackend(licenseType, vehicleClasses) {
         ? getWrittenExamDetails(applicationId)
         : Promise.resolve(null),
       application.status !== "REJECTED" &&
-application.status !== "APPROVED" &&
-application.status !== "PENDING"
-  ? Promise.resolve(`
-      <div class="license-success-box">
-        <i class="fas fa-check-circle"></i>
-        <h2>Congratulations!</h2>
-        <p>Your license process is <strong>fully completed</strong>.</p>
-        <p>You can collect your driving license within 
-          <b>6 months</b> or <b>1 year</b> depending on the issuing process.</p>
-      </div>
-    `)
-  : Promise.resolve(null)
-,
+      application.status !== "APPROVED" &&
+      application.status !== "PENDING"
+        ? Promise.resolve(`
+          <div class="license-success-box">
+            <i class="fas fa-check-circle"></i>
+            <h2>Congratulations!</h2>
+            <p>Your license process is <strong>fully completed</strong>.</p>
+            <p>You can collect your driving license within 
+              <b>6 months</b> or <b>1 year</b> depending on the issuing process.</p>
+          </div>
+      `)
+      : Promise.resolve(null),
     ])
       .then(([declineReason, examDetails]) => {
         showLoading(false);
@@ -4167,1360 +4124,1333 @@ application.status !== "PENDING"
     });
   }
 
+  // Function to check if exam date is expired
+  function isExamDateExpired(examDate) {
+      if (!examDate) return false;
+      const today = new Date();
+      const exam = new Date(examDate);
+      return exam < today;
+  }
 
+  // Function to get exam change request button HTML
+  async function getExamChangeButtonHTML(application) {
 
-// Function to check if exam date is expired
-function isExamDateExpired(examDate) {
-    if (!examDate) return false;
-    const today = new Date();
-    const exam = new Date(examDate);
-    return exam < today;
-}
-
-// Function to get exam change request button HTML
-async function getExamChangeButtonHTML(application) {
-    // Check if application has an exam date and if it's expired
     if (!application.examDate || !isExamDateExpired(application.examDate)) {
-        return '';
-    }
+          return '';
+      }
+      
+      try {
+          const hasPending = await ExamChangeRequestAPI.hasPendingRequest(application.id);
+          
+          if (hasPending) {
+              return `
+                  <div class="exam-change-section">
+                      <div class="alert alert-info">
+                          <i class="fas fa-info-circle me-2"></i>
+                          You have a pending exam date change request.
+                      </div>
+                  </div>
+              `;
+          }
+          
+          return `
+              <div class="exam-change-section">
+                  <div class="alert alert-warning mb-3">
+                      <i class="fas fa-exclamation-triangle me-2"></i>
+                      Your exam date (${formatDate(application.examDate)}) has expired.
+                  </div>
+                  <button class="btn btn-primary" onclick="showExamChangeRequestModal(${application.id}, '${application.examDate}')">
+                      <i class="fas fa-calendar-alt me-2"></i>Request Exam Date Change
+                  </button>
+              </div>
+          `;
+      } catch (error) {
+          console.error('Error checking pending request:', error);
+          return `
+              <div class="exam-change-section">
+                  <div class="alert alert-warning mb-3">
+                      <i class="fas fa-exclamation-triangle me-2"></i>
+                      Your exam date (${formatDate(application.examDate)}) has expired.
+                  </div>
+                  <button class="btn btn-primary" onclick="showExamChangeRequestModal(${application.id}, '${application.examDate}')">
+                      <i class="fas fa-calendar-alt me-2"></i>Request Exam Date Change
+                  </button>
+              </div>
+          `;
+      }
+  }
+
+
+  async function getExamChangeSpecificContent(application, additionalInfo) {
+      const examChangeButtonHTML = await getExamChangeButtonHTML(application);
+      
+      if (examChangeButtonHTML) {
+          return `
+              <div class="status-specific-section">
+                  <h6><i class="fas fa-calendar-check me-2"></i>Exam Schedule</h6>
+                  ${examChangeButtonHTML}
+              </div>
+          `;
+      }
+      
+      return '';
+  }
+
+  // Utility function to format dates (if not already exists)
+  // function formatDate(dateString) {
+  //     if (!dateString) return 'N/A';
+  //     const date = new Date(dateString);
+  //     return date.toLocaleDateString('en-US', {
+  //         year: 'numeric',
+  //         month: 'short',
+  //         day: 'numeric'
+  //     });
+  // }
+
+  // function formatDateTime(dateString) {
+  //     if (!dateString) return 'N/A';
+  //     const date = new Date(dateString);
+  //     return date.toLocaleString('en-US', {
+  //         year: 'numeric',
+  //         month: 'short',
+  //         day: 'numeric',
+  //         hour: '2-digit',
+  //         minute: '2-digit'
+  //     });
+  // }
+
+  function getTrialExamDetails(writtenExamId) {
+      return $.ajax({
+          url: `${API_BASE_URL}/trial-exams/written-exam/${writtenExamId}`,
+          method: "GET",
+          headers: {
+              Authorization: "Bearer " + (localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token")),
+              "Content-Type": "application/json",
+          },
+      })
+      .then(function (trialExams) {
+          console.log("Trial exams response:", trialExams);
+        
+          if (trialExams && Array.isArray(trialExams) && trialExams.length > 0) {
+              const latestTrial = trialExams.reduce((latest, current) => {
+                  const currentDate = new Date(current.trialDate || 0);
+                  const latestDate = new Date(latest.trialDate || 0);
+                  return currentDate > latestDate ? current : latest;
+              }, trialExams[0]);
+              return latestTrial;
+          }
+          
+          return trialExams || null;
+      })
+      .catch(function (error) {
+          console.error("Failed to get trial exam details:", error);
+          return null;
+      });
+  }
+
+  $("#licencePreview").on('click', handleClickLicensePreviewBtn);
+
+  async function handleClickLicensePreviewBtn() {
     
-    try {
-        // Check if there's already a pending request
-        const hasPending = await ExamChangeRequestAPI.hasPendingRequest(application.id);
-        
-        if (hasPending) {
-            return `
-                <div class="exam-change-section">
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        You have a pending exam date change request.
-                    </div>
-                </div>
-            `;
-        }
-        
-        return `
-            <div class="exam-change-section">
-                <div class="alert alert-warning mb-3">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    Your exam date (${formatDate(application.examDate)}) has expired.
-                </div>
-                <button class="btn btn-primary" onclick="showExamChangeRequestModal(${application.id}, '${application.examDate}')">
-                    <i class="fas fa-calendar-alt me-2"></i>Request Exam Date Change
-                </button>
-            </div>
-        `;
-    } catch (error) {
-        console.error('Error checking pending request:', error);
-        return `
-            <div class="exam-change-section">
-                <div class="alert alert-warning mb-3">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    Your exam date (${formatDate(application.examDate)}) has expired.
-                </div>
-                <button class="btn btn-primary" onclick="showExamChangeRequestModal(${application.id}, '${application.examDate}')">
-                    <i class="fas fa-calendar-alt me-2"></i>Request Exam Date Change
-                </button>
-            </div>
-        `;
-    }
-}
+      showLoadingSpinner();
+      
+      const smartUserString = localStorage.getItem("smartreg_user");
+      if (!smartUserString) {
+          console.error("No user found in localStorage");
+          hideLoadingSpinner();
+          showAlert('error', 'User not found. Please log in again.');
+          return;
+      }
 
-// Modified function to update your existing getStatusSpecificContent function
-// Add this to your existing getStatusSpecificContent function or create a new one
-async function getExamChangeSpecificContent(application, additionalInfo) {
-    const examChangeButtonHTML = await getExamChangeButtonHTML(application);
-    
-    if (examChangeButtonHTML) {
-        return `
-            <div class="status-specific-section">
-                <h6><i class="fas fa-calendar-check me-2"></i>Exam Schedule</h6>
-                ${examChangeButtonHTML}
-            </div>
-        `;
-    }
-    
-    return '';
-}
+      const smartUser = JSON.parse(smartUserString);
+      const userId = smartUser.id;
 
-// Utility function to format dates (if not already exists)
-function formatDate(dateString) {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-    });
-}
+      const authToken = localStorage.getItem("auth_token") || smartUser.token;
 
-function formatDateTime(dateString) {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-}
+      try {
+          
+          const applications = await makeAuthenticatedRequest({
+              url: `${API_BASE_URL}/applications/getall`,
+              method: 'GET',
+              token: authToken
+          });
 
-function getTrialExamDetails(writtenExamId) {
-    return $.ajax({
-        url: `${API_BASE_URL}/trial-exams/written-exam/${writtenExamId}`,
-        method: "GET",
-        headers: {
-            Authorization: "Bearer " + (localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token")),
-            "Content-Type": "application/json",
-        },
-    })
-    .then(function (trialExams) {
-        console.log("Trial exams response:", trialExams);
-        
-        // Handle array response - get latest trial exam
-        if (trialExams && Array.isArray(trialExams) && trialExams.length > 0) {
-            const latestTrial = trialExams.reduce((latest, current) => {
-                const currentDate = new Date(current.trialDate || 0);
-                const latestDate = new Date(latest.trialDate || 0);
-                return currentDate > latestDate ? current : latest;
-            }, trialExams[0]);
-            return latestTrial;
-        }
-        
-        return trialExams || null;
-    })
-    .catch(function (error) {
-        console.error("Failed to get trial exam details:", error);
-        return null;
-    });
-}
-$("#licencePreview").on('click', handleClickLicensePreviewBtn);
+          console.log("All applications:", applications);
 
-async function handleClickLicensePreviewBtn() {
-    // Show loading state
-    showLoadingSpinner();
-    
-    const smartUserString = localStorage.getItem("smartreg_user");
-    if (!smartUserString) {
-        console.error("No user found in localStorage");
-        hideLoadingSpinner();
-        showAlert('error', 'User not found. Please log in again.');
-        return;
-    }
+          const userApplication = applications.find(app => app.driver && app.driverId === userId);
 
-    const smartUser = JSON.parse(smartUserString);
-    const userId = smartUser.id;
+          if (!userApplication) {
+              console.log("No application found for this user");
+              hideLoadingSpinner();
+              showAlert('warning', 'No application found for your account.');
+              return;
+          }
 
-    // Get authentication token if available
-    const authToken = localStorage.getItem("auth_token") || smartUser.token;
+          console.log("User's application:", userApplication);
+          const applicationId = userApplication.id;
+          console.log("App Id: " + applicationId);
 
-    try {
-        // Step 1: Get all applications
-        const applications = await makeAuthenticatedRequest({
-            url: `${API_BASE_URL}/applications/getall`,
-            method: 'GET',
-            token: authToken
-        });
+          const exam = await makeAuthenticatedRequest({
+              url: `${API_BASE_URL}/written-exams/application/${applicationId}`,
+              method: 'GET',
+              token: authToken
+          });
 
-        console.log("All applications:", applications);
+          console.log("Written Exam Data:", exam);
+          const writtenExamId = exam.id;
+          console.log("writtenExam Id: " + writtenExamId);
 
-        // Find the application for current user
-        const userApplication = applications.find(app => app.driver && app.driverId === userId);
+          if (!writtenExamId) {
+              hideLoadingSpinner();
+              showAlert('error', 'No exam found. Please complete your written exam first.');
+              return;
+          }
 
-        if (!userApplication) {
-            console.log("No application found for this user");
-            hideLoadingSpinner();
-            showAlert('warning', 'No application found for your account.');
-            return;
-        }
+          const trialExamData = await getTrialExamDetails(writtenExamId);
+          
+          if (!trialExamData) {
+              hideLoadingSpinner();
+              showAlert('warning', 'No trial exam data found. Please complete your trial exam first.');
+              return;
+          }
+          
+          console.log('Trial exam data:', trialExamData);
 
-        console.log("User's application:", userApplication);
-        const applicationId = userApplication.id;
-        console.log("App Id: " + applicationId);
+          let licenseDetails = null;
+          try {
+              licenseDetails = await makeAuthenticatedRequest({
+                  url: `${API_BASE_URL}/licenses/trial/${trialExamData.id}`,
+                  method: 'GET',
+                  token: authToken
+              });
+              console.log("License Details:", licenseDetails);
+          } catch (licenseError) {
+              console.warn("Could not fetch license details:", licenseError);
+          }
 
-        // Step 2: Get written exam details
-        const exam = await makeAuthenticatedRequest({
-            url: `${API_BASE_URL}/written-exams/application/${applicationId}`,
-            method: 'GET',
-            token: authToken
-        });
+          hideLoadingSpinner();
 
-        console.log("Written Exam Data:", exam);
-        const writtenExamId = exam.id;
-        console.log("writtenExam Id: " + writtenExamId);
+          let latestTrialExam = trialExamData;
+          if (Array.isArray(trialExamData) && trialExamData.length > 0) {
+              latestTrialExam = trialExamData.reduce((latest, current) => {
+                  return new Date(current.trialDate) > new Date(latest.trialDate) ? current : latest;
+              }, trialExamData[0]);
+          }
+          
+          const trialResult = latestTrialExam.trialResult || latestTrialExam.result || 'not_complete';
+          
+          switch (trialResult.toLowerCase()) {
+              case 'pass':
+              case 'passed':
+                  showLicensePreviewModal(latestTrialExam, exam, userApplication, licenseDetails);
+                  break;
+                  
+              case 'fail':
+              case 'failed':
+                  showTrialFailedModal(latestTrialExam);
+                  break;
+                  
+              case 'absent':
+              case 'absant':
+                  showTrialAbsentModal(latestTrialExam);
+                  break;
+                  
+              default:
+                  showTrialIncompleteModal();
+                  break;
+          }
 
-        if (!writtenExamId) {
-            hideLoadingSpinner();
-            showAlert('error', 'No exam found. Please complete your written exam first.');
-            return;
-        }
+      } catch (error) {
+          hideLoadingSpinner();
+          console.error('Error in handleClickLicensePreviewBtn:', error);
+          
+          if (error.status === 401 || error.status === 403) {
+              showAlert('error', 'Authorization failed. Please log in again.');
+          } else if (error.status === 404) {
+              showAlert('warning', 'Required information not found. Please complete all exam steps first.');
+          } else {
+              showAlert('error', 'Failed to retrieve exam information. Please try again.');
+          }
+      }
+  }
 
-        // Step 3: Get trial exam details
-        const trialExamData = await getTrialExamDetails(writtenExamId);
-        
-        if (!trialExamData) {
-            hideLoadingSpinner();
-            showAlert('warning', 'No trial exam data found. Please complete your trial exam first.');
-            return;
-        }
-        
-        console.log('Trial exam data:', trialExamData);
+  // Helper function for authenticated requests
+  async function makeAuthenticatedRequest({ url, method, token, data = null }) {
+      return new Promise((resolve, reject) => {
+          const ajaxConfig = {
+              url: url,
+              method: method,
+              dataType: 'json',
+              
+              success: function(response) {
+                  if (response && response.data) {
+                      resolve(response.data);
+                  } else {
+                      resolve(response);
+                  }
+              },
+              error: function(xhr, status, error) {
+                  console.error(`Request failed: ${method} ${url}`, {
+                      status: xhr.status,
+                      statusText: xhr.statusText,
+                      response: xhr.responseText
+                  });
+                  reject({
+                      status: xhr.status,
+                      statusText: xhr.statusText,
+                      message: error,
+                      response: xhr.responseText
+                  });
+              }
+          };
 
-        // Step 4: Get license details with proper error handling
-        let licenseDetails = null;
-        try {
-            licenseDetails = await makeAuthenticatedRequest({
-                url: `${API_BASE_URL}/licenses/trial/${trialExamData.id}`,
-                method: 'GET',
-                token: authToken
-            });
-            console.log("License Details:", licenseDetails);
-        } catch (licenseError) {
-            console.warn("Could not fetch license details:", licenseError);
-            // Continue without license details - might not be generated yet
-        }
+          if (token) {
+              ajaxConfig.headers = {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+              };
+          }
 
-        hideLoadingSpinner();
+          if (data && (method === 'POST' || method === 'PUT')) {
+              ajaxConfig.data = JSON.stringify(data);
+          }
 
-        // Handle multiple trial exams if it's an array
-        let latestTrialExam = trialExamData;
-        if (Array.isArray(trialExamData) && trialExamData.length > 0) {
-            // Get the latest trial exam
-            latestTrialExam = trialExamData.reduce((latest, current) => {
-                return new Date(current.trialDate) > new Date(latest.trialDate) ? current : latest;
-            }, trialExamData[0]);
-        }
-        
-        // Check the trial result status
-        const trialResult = latestTrialExam.trialResult || latestTrialExam.result || 'not_complete';
-        
-        switch (trialResult.toLowerCase()) {
-            case 'pass':
-            case 'passed':
-                showLicensePreviewModal(latestTrialExam, exam, userApplication, licenseDetails);
-                break;
-                
-            case 'fail':
-            case 'failed':
-                showTrialFailedModal(latestTrialExam);
-                break;
-                
-            case 'absent':
-            case 'absant':
-                showTrialAbsentModal(latestTrialExam);
-                break;
-                
-            default:
-                showTrialIncompleteModal();
-                break;
-        }
+          $.ajax(ajaxConfig);
+      });
+  }
 
-    } catch (error) {
-        hideLoadingSpinner();
-        console.error('Error in handleClickLicensePreviewBtn:', error);
-        
-        // More specific error handling
-        if (error.status === 401 || error.status === 403) {
-            showAlert('error', 'Authorization failed. Please log in again.');
-        } else if (error.status === 404) {
-            showAlert('warning', 'Required information not found. Please complete all exam steps first.');
-        } else {
-            showAlert('error', 'Failed to retrieve exam information. Please try again.');
-        }
-    }
-}
+  // Updated license preview modal function
+  function showLicensePreviewModal(trialExamData, exam, applications, licenseDetails) {
+      const smartUser = JSON.parse(localStorage.getItem("smartreg_user"));
+      const issueDate = trialExamData.trialDate;
+      const expiryDate = new Date(issueDate);
+      expiryDate.setFullYear(expiryDate.getFullYear() + 8);
 
-// Helper function for authenticated requests
-async function makeAuthenticatedRequest({ url, method, token, data = null }) {
-    return new Promise((resolve, reject) => {
-        const ajaxConfig = {
-            url: url,
-            method: method,
-            dataType: 'json',
-            success: function(response) {
-                // Handle both direct data and wrapped responses
-                if (response && response.data) {
-                    resolve(response.data);
-                } else {
-                    resolve(response);
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error(`Request failed: ${method} ${url}`, {
-                    status: xhr.status,
-                    statusText: xhr.statusText,
-                    response: xhr.responseText
-                });
-                reject({
-                    status: xhr.status,
-                    statusText: xhr.statusText,
-                    message: error,
-                    response: xhr.responseText
-                });
-            }
-        };
+      const licenseNumber = licenseDetails?.licenseNumber || 'Pending Generation';
+      const showActions = licenseDetails && licenseDetails.licenseNumber;
 
-        // Add authentication header if token is available
-        if (token) {
-            ajaxConfig.headers = {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            };
-        }
+      Swal.fire({
+          title: '🎉 License Preview',
+          html: `
+              <div class="license-preview-modal">
+                  <div class="success-banner">
+                      <i class="fas fa-trophy me-2"></i>
+                      <strong>Congratulations!</strong>
+                      <p>You have successfully passed both written and trial exams!</p>
+                  </div>
+                  
+                  <div class="license-card">
+                      <div class="license-header">
+                          <i class="fas fa-id-card me-2"></i>
+                          <h5>Driving License Preview</h5>
+                      </div>
+                      
+                      <div class="license-details">
+                          <div class="row">
+                              <div class="col-md-6">
+                                  <div class="detail-group">
+                                      <label>License Number:</label>
+                                      <span class="${licenseDetails ? 'badge-success' : 'badge-pending'}">${licenseNumber}</span>
+                                  </div>
+                                  <div class="detail-group">
+                                      <label>Name:</label>
+                                      <span>${smartUser.fullName || 'N/A'}</span>
+                                  </div>
+                                  <div class="detail-group">
+                                      <label>Issue Date:</label>
+                                      <span>${formatDate(trialExamData.trialDate)}</span>
+                                  </div>
+                              </div>
+                              <div class="col-md-6">
+                                  <div class="detail-group">
+                                      <label>License Type:</label>
+                                      <span>${applications.licenseType || 'N/A'}</span>
+                                  </div>
+                                  <div class="detail-group">
+                                      <label>Vehicle Class:</label>
+                                      <span>${applications.vehicleClasses || 'N/A'}</span>
+                                  </div>
+                                  <div class="detail-group">
+                                      <label>Expire Date:</label>
+                                      <span>${formatDate(expiryDate)}</span>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                      
+                      ${showActions ? `
+                      <div class="license-actions">
+                          <button class="btn btn-success me-2" onclick="generateLicense(${trialExamData.id})">
+                              <i class="fas fa-download me-1"></i> Generate License
+                          </button>
+                          <button class="btn btn-primary" onclick="printLicense(${licenseDetails.id})">
+                              <i class="fas fa-print me-1"></i> Print Preview
+                          </button>
+                      </div>
+                      ` : `
+                      <div class="license-actions">
+                          <div class="alert alert-info">
+                              <i class="fas fa-info-circle me-2"></i>
+                              License is being processed. Please contact the office for physical license collection.
+                          </div>
+                      </div>
+                      `}
+                  </div>
+              </div>
+              
+              <style>
+                  .license-preview-modal { text-align: left; }
+                  
+                  .success-banner {
+                      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                      color: white; text-align: center; padding: 20px;
+                      border-radius: 10px; margin-bottom: 20px;
+                      box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+                  }
+                  .success-banner i { font-size: 1.5rem; }
+                  .success-banner p { margin: 5px 0 0 0; opacity: 0.9; }
+                  
+                  .license-card {
+                      background: #f8f9fa; border-radius: 10px; overflow: hidden;
+                      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                  }
+                  .license-header {
+                      background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+                      color: white; padding: 15px; text-align: center;
+                  }
+                  .license-details { padding: 20px; }
+                  .row { display: flex; gap: 20px; }
+                  .col-md-6 { flex: 1; }
+                  .detail-group {
+                      display: flex; justify-content: space-between;
+                      padding: 8px 0; border-bottom: 1px solid #e9ecef;
+                  }
+                  .detail-group label { font-weight: 600; color: #495057; }
+                  .detail-group span { color: #6c757d; }
+                  .badge-success {
+                      background: #fbfbfbff; color: white;
+                      border-radius: 12px; font-size: 0.85rem;
+                  }
+                  .badge-pending {
+                      background: #ffc107; color: #212529; padding: 4px 8px;
+                      border-radius: 12px; font-size: 0.85rem;
+                  }
+                  .license-actions {
+                      padding: 20px; background: white; text-align: center;
+                      border-top: 1px solid #e9ecef;
+                  }
+                  .alert {
+                      padding: 12px; border-radius: 6px; margin: 0;
+                  }
+                  .alert-info {
+                      background-color: #d1ecf1; border-color: #bee5eb; color: #0c5460;
+                  }
+                  .btn {
+                      padding: 10px 20px; border: none; border-radius: 6px;
+                      font-weight: 600; cursor: pointer; transition: all 0.3s;
+                  }
+                  .btn-success { background: #28a745; color: white; }
+                  .btn-success:hover { background: #218838; }
+                  .btn-primary { background: #007bff; color: white; }
+                  .btn-primary:hover { background: #0056b3; }
+                  .me-1 { margin-right: 4px; }
+                  .me-2 { margin-right: 8px; }
+              </style>
+          `,
+          showConfirmButton: false,
+          showCloseButton: true,
+          width: '600px',
+          customClass: {
+              closeButton: 'swal2-close-custom'
+          }
+      });
+  }
 
-        // Add data for POST/PUT requests
-        if (data && (method === 'POST' || method === 'PUT')) {
-            ajaxConfig.data = JSON.stringify(data);
-        }
+  function showTrialFailedModal(trialExamData) {
 
-        $.ajax(ajaxConfig);
-    });
-}
-
-// Updated license preview modal function
-function showLicensePreviewModal(trialExamData, exam, applications, licenseDetails) {
-    const smartUser = JSON.parse(localStorage.getItem("smartreg_user"));
-    const issueDate = trialExamData.trialDate;
-    const expiryDate = new Date(issueDate);
-    expiryDate.setFullYear(expiryDate.getFullYear() + 8);
-
-    // Handle case where license details might not be available
-    const licenseNumber = licenseDetails?.licenseNumber || 'Pending Generation';
-    const showActions = licenseDetails && licenseDetails.licenseNumber;
-
-    Swal.fire({
-        title: '🎉 License Preview',
-        html: `
-            <div class="license-preview-modal">
-                <div class="success-banner">
-                    <i class="fas fa-trophy me-2"></i>
-                    <strong>Congratulations!</strong>
-                    <p>You have successfully passed both written and trial exams!</p>
-                </div>
-                
-                <div class="license-card">
-                    <div class="license-header">
-                        <i class="fas fa-id-card me-2"></i>
-                        <h5>Driving License Preview</h5>
-                    </div>
-                    
-                    <div class="license-details">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="detail-group">
-                                    <label>License Number:</label>
-                                    <span class="${licenseDetails ? 'badge-success' : 'badge-pending'}">${licenseNumber}</span>
-                                </div>
-                                <div class="detail-group">
-                                    <label>Name:</label>
-                                    <span>${smartUser.fullName || 'N/A'}</span>
-                                </div>
-                                <div class="detail-group">
-                                    <label>Issue Date:</label>
-                                    <span>${formatDate(trialExamData.trialDate)}</span>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="detail-group">
-                                    <label>License Type:</label>
-                                    <span>${applications.licenseType || 'N/A'}</span>
-                                </div>
-                                <div class="detail-group">
-                                    <label>Vehicle Class:</label>
-                                    <span>${applications.vehicleClasses || 'N/A'}</span>
-                                </div>
-                                <div class="detail-group">
-                                    <label>Expire Date:</label>
-                                    <span>${formatDate(expiryDate)}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    ${showActions ? `
-                    <div class="license-actions">
-                        <button class="btn btn-success me-2" onclick="generateLicense(${trialExamData.id})">
-                            <i class="fas fa-download me-1"></i> Generate License
-                        </button>
-                        <button class="btn btn-primary" onclick="printLicense(${licenseDetails.id})">
-                            <i class="fas fa-print me-1"></i> Print Preview
-                        </button>
-                    </div>
-                    ` : `
-                    <div class="license-actions">
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            License is being processed. Please contact the office for physical license collection.
-                        </div>
-                    </div>
-                    `}
-                </div>
-            </div>
-            
-            <style>
-                .license-preview-modal { text-align: left; }
-                
-                .success-banner {
-                    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-                    color: white; text-align: center; padding: 20px;
-                    border-radius: 10px; margin-bottom: 20px;
-                    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
-                }
-                .success-banner i { font-size: 1.5rem; }
-                .success-banner p { margin: 5px 0 0 0; opacity: 0.9; }
-                
-                .license-card {
-                    background: #f8f9fa; border-radius: 10px; overflow: hidden;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-                }
-                .license-header {
-                    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-                    color: white; padding: 15px; text-align: center;
-                }
-                .license-details { padding: 20px; }
-                .row { display: flex; gap: 20px; }
-                .col-md-6 { flex: 1; }
-                .detail-group {
-                    display: flex; justify-content: space-between;
-                    padding: 8px 0; border-bottom: 1px solid #e9ecef;
-                }
-                .detail-group label { font-weight: 600; color: #495057; }
-                .detail-group span { color: #6c757d; }
-                .badge-success {
-                    background: #fbfbfbff; color: white;
-                    border-radius: 12px; font-size: 0.85rem;
-                }
-                .badge-pending {
-                    background: #ffc107; color: #212529; padding: 4px 8px;
-                    border-radius: 12px; font-size: 0.85rem;
-                }
-                .license-actions {
-                    padding: 20px; background: white; text-align: center;
-                    border-top: 1px solid #e9ecef;
-                }
-                .alert {
-                    padding: 12px; border-radius: 6px; margin: 0;
-                }
-                .alert-info {
-                    background-color: #d1ecf1; border-color: #bee5eb; color: #0c5460;
-                }
-                .btn {
-                    padding: 10px 20px; border: none; border-radius: 6px;
-                    font-weight: 600; cursor: pointer; transition: all 0.3s;
-                }
-                .btn-success { background: #28a745; color: white; }
-                .btn-success:hover { background: #218838; }
-                .btn-primary { background: #007bff; color: white; }
-                .btn-primary:hover { background: #0056b3; }
-                .me-1 { margin-right: 4px; }
-                .me-2 { margin-right: 8px; }
-            </style>
-        `,
-        showConfirmButton: false,
-        showCloseButton: true,
-        width: '600px',
-        customClass: {
-            closeButton: 'swal2-close-custom'
-        }
-    });
-}
-
-// Function to show trial failed modal with 3-month waiting period
-function showTrialFailedModal(trialExamData) {
-    // Calculate next available trial date (3 months from failed trial)
     function getNextTrialDate(trialDate) {
-        const failedDate = new Date(trialDate);
-        const nextTrialDate = new Date(failedDate);
-        nextTrialDate.setMonth(nextTrialDate.getMonth() + 3);
-        return nextTrialDate;
-    }
+          const failedDate = new Date(trialDate);
+          const nextTrialDate = new Date(failedDate);
+          nextTrialDate.setMonth(nextTrialDate.getMonth() + 3);
+          return nextTrialDate;
+      }
 
     const nextAvailableDate = getNextTrialDate(trialExamData.trialDate);
 
-    Swal.fire({
-        title: '❌ Trial Exam Failed',
-        html: `
-            <div class="trial-failed-modal">
-                <div class="failed-banner">
-                    <i class="fas fa-times-circle me-2"></i>
-                    <strong>Trial Exam Not Passed</strong>
-                    <p>Don't worry! You can try again after the waiting period.</p>
-                </div>
-                
-                <div class="exam-result-card">
-                    <div class="result-header">
-                        <i class="fas fa-clipboard-list me-2"></i>
-                        <h6>Exam Details</h6>
-                    </div>
-                    
-                    <div class="result-details">
-                        <div class="detail-item">
-                            <i class="fas fa-calendar me-2"></i>
-                            <span><strong>Date:</strong> ${formatDate(trialExamData.trialDate)}</span>
-                        </div>
-                        <div class="detail-item">
-                            <i class="fas fa-times me-2"></i>
-                            <span><strong>Result:</strong> <span class="badge-failed">FAILED</span></span>
-                        </div>
-                        ${trialExamData.examinerName ? `
-                            <div class="detail-item">
-                                <i class="fas fa-user-tie me-2"></i>
-                                <span><strong>Examiner:</strong> ${trialExamData.examinerName}</span>
-                            </div>
-                        ` : ''}
-                        ${trialExamData.examinerNotes ? `
-                            <div class="detail-item notes">
-                                <i class="fas fa-sticky-note me-2"></i>
-                                <span><strong>Examiner Notes:</strong><br>${trialExamData.examinerNotes}</span>
-                            </div>
-                        ` : ''}
-                        <div class="detail-item next-trial">
-                            <i class="fas fa-calendar-plus me-2 text-info"></i>
-                            <span><strong>Next Trial Available From:</strong> <span class="next-date">${formatDate(nextAvailableDate)}</span></span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="retry-section">
-                    <h6><i class="fas fa-redo me-2"></i>Next Steps</h6>
-                    <ul class="next-steps-list">
-                        <li>Review your performance and practice more</li>
-                        <li>Wait for the 3-month period to complete</li>
-                        <li>Contact the administration to schedule a new trial exam after ${formatDate(nextAvailableDate)}</li>
-                        <li>Prepare thoroughly before your next attempt</li>
-                        <li>Consider taking additional driving lessons if needed</li>
-                    </ul>
-                    
-                    <div class="waiting-period-notice">
-                        <i class="fas fa-clock text-warning me-2"></i>
-                        <strong>Waiting Period:</strong> You must wait 3 months from your last failed attempt before applying for a new trial exam.
-                    </div>
-                    
-                    <button class="btn btn-primary retry-btn" onclick="applyForTrialExam(${trialExamData.writtenExamId || 'null'})">
-                        <i class="fas fa-calendar-plus me-1"></i> Apply for New Trial Exam (After ${formatDate(nextAvailableDate)})
-                    </button>
-                </div>
-            </div>
-            
-            <style>
-                .trial-failed-modal { text-align: left; }
-                
-                .failed-banner {
-                    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-                    color: white; text-align: center; padding: 20px;
-                    border-radius: 10px; margin-bottom: 20px;
-                }
-                .failed-banner p { margin: 5px 0 0 0; opacity: 0.9; }
-                
-                .exam-result-card {
-                    background: #f8f9fa; border-radius: 10px; padding: 20px;
-                    margin-bottom: 20px; border-left: 4px solid #dc3545;
-                }
-                .result-header { 
-                    color: #dc3545; margin-bottom: 15px; 
-                    display: flex; align-items: center;
-                }
-                .result-details .detail-item {
-                    display: flex; align-items: flex-start; margin-bottom: 10px;
-                    color: #495057;
-                }
-                .detail-item.notes { flex-direction: column; }
-                .detail-item.notes span { margin-left: 0; margin-top: 5px; }
-                .detail-item.next-trial {
-                    background: #e3f2fd; padding: 10px; border-radius: 5px;
-                    border-left: 3px solid #2196f3; margin-top: 10px;
-                }
-                .next-date { color: #1976d2; font-weight: 600; }
-                .badge-failed {
-                    background: #dc3545; color: white; padding: 4px 8px;
-                    border-radius: 12px; font-size: 0.85rem;
-                }
-                
-                .retry-section {
-                    background: #e3f2fd; padding: 20px; border-radius: 10px;
-                }
-                .retry-section h6 { color: #1976d2; margin-bottom: 15px; }
-                .next-steps-list {
-                    margin: 15px 0; padding-left: 20px; color: #495057;
-                }
-                .next-steps-list li { margin-bottom: 8px; }
-                .waiting-period-notice {
-                    background: #fff3cd; padding: 12px; border-radius: 6px;
-                    margin-bottom: 15px; color: #856404; border: 1px solid #ffeaa7;
-                }
-                .retry-btn {
-                    background: #007bff; color: white; padding: 10px 20px;
-                    border: none; border-radius: 6px; font-weight: 600;
-                    cursor: pointer; transition: all 0.3s;
-                }
-                .retry-btn:hover { background: #0056b3; }
-                .me-1 { margin-right: 4px; }
-                .me-2 { margin-right: 8px; }
-            </style>
-        `,
-        confirmButtonText: '<i class="fas fa-times me-2"></i>Close',
-        confirmButtonColor: "#6c757d",
-        width: '600px'
-    });
-}
+      Swal.fire({
+          title: '❌ Trial Exam Failed',
+          html: `
+              <div class="trial-failed-modal">
+                  <div class="failed-banner">
+                      <i class="fas fa-times-circle me-2"></i>
+                      <strong>Trial Exam Not Passed</strong>
+                      <p>Don't worry! You can try again after the waiting period.</p>
+                  </div>
+                  
+                  <div class="exam-result-card">
+                      <div class="result-header">
+                          <i class="fas fa-clipboard-list me-2"></i>
+                          <h6>Exam Details</h6>
+                      </div>
+                      
+                      <div class="result-details">
+                          <div class="detail-item">
+                              <i class="fas fa-calendar me-2"></i>
+                              <span><strong>Date:</strong> ${formatDate(trialExamData.trialDate)}</span>
+                          </div>
+                          <div class="detail-item">
+                              <i class="fas fa-times me-2"></i>
+                              <span><strong>Result:</strong> <span class="badge-failed">FAILED</span></span>
+                          </div>
+                          ${trialExamData.examinerName ? `
+                              <div class="detail-item">
+                                  <i class="fas fa-user-tie me-2"></i>
+                                  <span><strong>Examiner:</strong> ${trialExamData.examinerName}</span>
+                              </div>
+                          ` : ''}
+                          ${trialExamData.examinerNotes ? `
+                              <div class="detail-item notes">
+                                  <i class="fas fa-sticky-note me-2"></i>
+                                  <span><strong>Examiner Notes:</strong><br>${trialExamData.examinerNotes}</span>
+                              </div>
+                          ` : ''}
+                          <div class="detail-item next-trial">
+                              <i class="fas fa-calendar-plus me-2 text-info"></i>
+                              <span><strong>Next Trial Available From:</strong> <span class="next-date">${formatDate(nextAvailableDate)}</span></span>
+                          </div>
+                      </div>
+                  </div>
+                  
+                  <div class="retry-section">
+                      <h6><i class="fas fa-redo me-2"></i>Next Steps</h6>
+                      <ul class="next-steps-list">
+                          <li>Review your performance and practice more</li>
+                          <li>Wait for the 3-month period to complete</li>
+                          <li>Contact the administration to schedule a new trial exam after ${formatDate(nextAvailableDate)}</li>
+                          <li>Prepare thoroughly before your next attempt</li>
+                          <li>Consider taking additional driving lessons if needed</li>
+                      </ul>
+                      
+                      <div class="waiting-period-notice">
+                          <i class="fas fa-clock text-warning me-2"></i>
+                          <strong>Waiting Period:</strong> You must wait 3 months from your last failed attempt before applying for a new trial exam.
+                      </div>
+                      
+                      <button class="btn btn-primary retry-btn" onclick="applyForTrialExam(${trialExamData.writtenExamId || 'null'})">
+                          <i class="fas fa-calendar-plus me-1"></i> Apply for New Trial Exam (After ${formatDate(nextAvailableDate)})
+                      </button>
+                  </div>
+              </div>
+              
+              <style>
+                  .trial-failed-modal { text-align: left; }
+                  
+                  .failed-banner {
+                      background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+                      color: white; text-align: center; padding: 20px;
+                      border-radius: 10px; margin-bottom: 20px;
+                  }
+                  .failed-banner p { margin: 5px 0 0 0; opacity: 0.9; }
+                  
+                  .exam-result-card {
+                      background: #f8f9fa; border-radius: 10px; padding: 20px;
+                      margin-bottom: 20px; border-left: 4px solid #dc3545;
+                  }
+                  .result-header { 
+                      color: #dc3545; margin-bottom: 15px; 
+                      display: flex; align-items: center;
+                  }
+                  .result-details .detail-item {
+                      display: flex; align-items: flex-start; margin-bottom: 10px;
+                      color: #495057;
+                  }
+                  .detail-item.notes { flex-direction: column; }
+                  .detail-item.notes span { margin-left: 0; margin-top: 5px; }
+                  .detail-item.next-trial {
+                      background: #e3f2fd; padding: 10px; border-radius: 5px;
+                      border-left: 3px solid #2196f3; margin-top: 10px;
+                  }
+                  .next-date { color: #1976d2; font-weight: 600; }
+                  .badge-failed {
+                      background: #dc3545; color: white; padding: 4px 8px;
+                      border-radius: 12px; font-size: 0.85rem;
+                  }
+                  
+                  .retry-section {
+                      background: #e3f2fd; padding: 20px; border-radius: 10px;
+                  }
+                  .retry-section h6 { color: #1976d2; margin-bottom: 15px; }
+                  .next-steps-list {
+                      margin: 15px 0; padding-left: 20px; color: #495057;
+                  }
+                  .next-steps-list li { margin-bottom: 8px; }
+                  .waiting-period-notice {
+                      background: #fff3cd; padding: 12px; border-radius: 6px;
+                      margin-bottom: 15px; color: #856404; border: 1px solid #ffeaa7;
+                  }
+                  .retry-btn {
+                      background: #007bff; color: white; padding: 10px 20px;
+                      border: none; border-radius: 6px; font-weight: 600;
+                      cursor: pointer; transition: all 0.3s;
+                  }
+                  .retry-btn:hover { background: #0056b3; }
+                  .me-1 { margin-right: 4px; }
+                  .me-2 { margin-right: 8px; }
+              </style>
+          `,
+          confirmButtonText: '<i class="fas fa-times me-2"></i>Close',
+          confirmButtonColor: "#6c757d",
+          width: '600px'
+      });
+  }
 
-// Function to show trial absent modal with 3-month waiting period
-function showTrialAbsentModal(trialExamData) {
-    // Calculate next available trial date (3 months from absent trial)
+  // Function to show trial absent modal with 3-month waiting period
+  function showTrialAbsentModal(trialExamData) {
+
     function getNextTrialDate(trialDate) {
-        const absentDate = new Date(trialDate);
-        const nextTrialDate = new Date(absentDate);
-        nextTrialDate.setMonth(nextTrialDate.getMonth() + 3);
-        return nextTrialDate;
-    }
+          const absentDate = new Date(trialDate);
+          const nextTrialDate = new Date(absentDate);
+          nextTrialDate.setMonth(nextTrialDate.getMonth() + 3);
+          return nextTrialDate;
+      }
 
-    const nextAvailableDate = getNextTrialDate(trialExamData.trialDate);
+      const nextAvailableDate = getNextTrialDate(trialExamData.trialDate);
 
-    Swal.fire({
-        title: '⚠️ Trial Exam - Absent',
-        html: `
-            <div class="trial-absent-modal">
-                <div class="absent-banner">
-                    <i class="fas fa-user-slash me-2"></i>
-                    <strong>Marked as Absent</strong>
-                    <p>You were not present for your scheduled trial exam.</p>
-                </div>
-                
-                <div class="exam-info-card">
-                    <div class="info-header">
-                        <i class="fas fa-info-circle me-2"></i>
-                        <h6>Scheduled Exam Details</h6>
-                    </div>
-                    
-                    <div class="info-details">
-                        <div class="detail-item">
-                            <i class="fas fa-calendar me-2"></i>
-                            <span><strong>Date:</strong> ${formatDate(trialExamData.trialDate)}</span>
-                        </div>
-                        <div class="detail-item">
-                            <i class="fas fa-clock me-2"></i>
-                            <span><strong>Time:</strong> ${trialExamData.trialTime || 'Not specified'}</span>
-                        </div>
-                        <div class="detail-item">
-                            <i class="fas fa-map-marker-alt me-2"></i>
-                            <span><strong>Location:</strong> ${trialExamData.trialLocation || 'Not specified'}</span>
-                        </div>
-                        <div class="detail-item">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            <span><strong>Status:</strong> <span class="badge-absent">ABSENT</span></span>
-                        </div>
-                        <div class="detail-item next-trial">
-                            <i class="fas fa-calendar-plus me-2 text-info"></i>
-                            <span><strong>Next Trial Available From:</strong> <span class="next-date">${formatDate(nextAvailableDate)}</span></span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="reschedule-section">
-                    <h6><i class="fas fa-calendar-plus me-2"></i>Reschedule Your Exam</h6>
-                    <p>To proceed with getting your license, you need to reschedule and attend your trial exam after the waiting period.</p>
-                    
-                    <div class="waiting-period-notice">
-                        <i class="fas fa-clock text-warning me-2"></i>
-                        <strong>Waiting Period:</strong> You must wait 3 months from your absence before applying for a new trial exam.
-                    </div>
-                    
-                    <div class="important-note">
-                        <i class="fas fa-bell me-2"></i>
-                        <strong>Important:</strong> Please ensure you attend your next scheduled exam to avoid further delays.
-                    </div>
-                    
-                    <button class="btn btn-warning reschedule-btn" onclick="applyForTrialExam(${trialExamData.writtenExamId || 'null'})">
-                        <i class="fas fa-calendar-alt me-1"></i> Reschedule Trial Exam (After ${formatDate(nextAvailableDate)})
-                    </button>
-                </div>
-            </div>
+      Swal.fire({
+          title: '⚠️ Trial Exam - Absent',
+          html: `
+              <div class="trial-absent-modal">
+                  <div class="absent-banner">
+                      <i class="fas fa-user-slash me-2"></i>
+                      <strong>Marked as Absent</strong>
+                      <p>You were not present for your scheduled trial exam.</p>
+                  </div>
+                  
+                  <div class="exam-info-card">
+                      <div class="info-header">
+                          <i class="fas fa-info-circle me-2"></i>
+                          <h6>Scheduled Exam Details</h6>
+                      </div>
+                      
+                      <div class="info-details">
+                          <div class="detail-item">
+                              <i class="fas fa-calendar me-2"></i>
+                              <span><strong>Date:</strong> ${formatDate(trialExamData.trialDate)}</span>
+                          </div>
+                          <div class="detail-item">
+                              <i class="fas fa-clock me-2"></i>
+                              <span><strong>Time:</strong> ${trialExamData.trialTime || 'Not specified'}</span>
+                          </div>
+                          <div class="detail-item">
+                              <i class="fas fa-map-marker-alt me-2"></i>
+                              <span><strong>Location:</strong> ${trialExamData.trialLocation || 'Not specified'}</span>
+                          </div>
+                          <div class="detail-item">
+                              <i class="fas fa-exclamation-triangle me-2"></i>
+                              <span><strong>Status:</strong> <span class="badge-absent">ABSENT</span></span>
+                          </div>
+                          <div class="detail-item next-trial">
+                              <i class="fas fa-calendar-plus me-2 text-info"></i>
+                              <span><strong>Next Trial Available From:</strong> <span class="next-date">${formatDate(nextAvailableDate)}</span></span>
+                          </div>
+                      </div>
+                  </div>
+                  
+                  <div class="reschedule-section">
+                      <h6><i class="fas fa-calendar-plus me-2"></i>Reschedule Your Exam</h6>
+                      <p>To proceed with getting your license, you need to reschedule and attend your trial exam after the waiting period.</p>
+                      
+                      <div class="waiting-period-notice">
+                          <i class="fas fa-clock text-warning me-2"></i>
+                          <strong>Waiting Period:</strong> You must wait 3 months from your absence before applying for a new trial exam.
+                      </div>
+                      
+                      <div class="important-note">
+                          <i class="fas fa-bell me-2"></i>
+                          <strong>Important:</strong> Please ensure you attend your next scheduled exam to avoid further delays.
+                      </div>
+                      
+                      <button class="btn btn-warning reschedule-btn" onclick="applyForTrialExam(${trialExamData.writtenExamId || 'null'})">
+                          <i class="fas fa-calendar-alt me-1"></i> Reschedule Trial Exam (After ${formatDate(nextAvailableDate)})
+                      </button>
+                  </div>
+              </div>
+              
+              <style>
+                  .trial-absent-modal { text-align: left; }
+                  
+                  .absent-banner {
+                      background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+                      color: #212529; text-align: center; padding: 20px;
+                      border-radius: 10px; margin-bottom: 20px;
+                  }
+                  .absent-banner p { margin: 5px 0 0 0; opacity: 0.8; }
+                  
+                  .exam-info-card {
+                      background: #f8f9fa; border-radius: 10px; padding: 20px;
+                      margin-bottom: 20px; border-left: 4px solid #ffc107;
+                  }
+                  .info-header { 
+                      color: #856404; margin-bottom: 15px; 
+                      display: flex; align-items: center;
+                  }
+                  .info-details .detail-item {
+                      display: flex; align-items: center; margin-bottom: 10px;
+                      color: #495057;
+                  }
+                  .detail-item.next-trial {
+                      background: #e3f2fd; padding: 10px; border-radius: 5px;
+                      border-left: 3px solid #2196f3; margin-top: 10px;
+                  }
+                  .next-date { color: #1976d2; font-weight: 600; }
+                  .badge-absent {
+                      background: #ffc107; color: #212529; padding: 4px 8px;
+                      border-radius: 12px; font-size: 0.85rem; font-weight: 600;
+                  }
+                  
+                  .reschedule-section {
+                      background: #fff3cd; padding: 20px; border-radius: 10px;
+                      border: 1px solid #ffeaa7;
+                  }
+                  .reschedule-section h6 { color: #856404; margin-bottom: 10px; }
+                  .reschedule-section p { color: #6c757d; margin-bottom: 15px; }
+                  .waiting-period-notice {
+                      background: #ffeaa7; padding: 12px; border-radius: 6px;
+                      margin-bottom: 15px; color: #856404; border: 1px solid #f0c649;
+                  }
+                  .important-note {
+                      background: #d1ecf1; padding: 12px; border-radius: 6px;
+                      margin-bottom: 15px; color: #0c5460;
+                  }
+                  .reschedule-btn {
+                      background: #ffc107; color: #212529; padding: 10px 20px;
+                      border: none; border-radius: 6px; font-weight: 600;
+                      cursor: pointer; transition: all 0.3s;
+                  }
+                  .reschedule-btn:hover { background: #e0a800; }
+                  .me-1 { margin-right: 4px; }
+                  .me-2 { margin-right: 8px; }
+              </style>
+          `,
+          confirmButtonText: '<i class="fas fa-times me-2"></i>Close',
+          confirmButtonColor: "#6c757d",
+          width: '600px'
+      });
+  }
+
+  // Function to show trial incomplete modal
+  function showTrialIncompleteModal() {
+      Swal.fire({
+          title: '📋 Trial Exam Incomplete',
+          html: `
+              <div class="trial-incomplete-modal">
+                  <div class="incomplete-banner">
+                      <i class="fas fa-clock me-2"></i>
+                      <strong>Trial Exam Not Completed</strong>
+                      <p>You need to complete your trial exam to generate your license.</p>
+                  </div>
+                  
+                  <div class="steps-card">
+                      <div class="steps-header">
+                          <i class="fas fa-list-ol me-2"></i>
+                          <h6>Steps to Complete</h6>
+                      </div>
+                      
+                      <div class="steps-list">
+                          <div class="step-item completed">
+                              <i class="fas fa-check-circle me-2"></i>
+                              <span>✅ Written exam passed</span>
+                          </div>
+                          <div class="step-item pending">
+                              <i class="fas fa-clock me-2"></i>
+                              <span>⏳ Trial exam - Pending</span>
+                          </div>
+                          <div class="step-item disabled">
+                              <i class="fas fa-id-card me-2"></i>
+                              <span>🎯 License generation</span>
+                          </div>
+                      </div>
+                  </div>
+                  
+                  <div class="action-section">
+                      <h6><i class="fas fa-arrow-right me-2"></i>Next Action</h6>
+                      <p>Apply for your trial exam to proceed with the license generation process.</p>
+                      
+                      <button class="btn btn-primary apply-btn" onclick="applyForTrialExam()">
+                          <i class="fas fa-paper-plane me-1"></i> Apply for Trial Exam
+                      </button>
+                  </div>
+              </div>
+              
+              <style>
+                  .trial-incomplete-modal { text-align: left; }
+                  
+                  .incomplete-banner {
+                      background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+                      color: white; text-align: center; padding: 20px;
+                      border-radius: 10px; margin-bottom: 20px;
+                  }
+                  .incomplete-banner p { margin: 5px 0 0 0; opacity: 0.9; }
+                  
+                  .steps-card {
+                      background: #f8f9fa; border-radius: 10px; padding: 20px;
+                      margin-bottom: 20px; border-left: 4px solid #17a2b8;
+                  }
+                  .steps-header { 
+                      color: #17a2b8; margin-bottom: 15px; 
+                      display: flex; align-items: center;
+                  }
+                  .steps-list { }
+                  .step-item {
+                      display: flex; align-items: center; padding: 10px;
+                      margin-bottom: 8px; border-radius: 6px;
+                  }
+                  .step-item.completed { 
+                      background: #d4edda; color: #155724; 
+                  }
+                  .step-item.pending { 
+                      background: #fff3cd; color: #856404; 
+                  }
+                  .step-item.disabled { 
+                      background: #e2e3e5; color: #6c757d; 
+                  }
+                  
+                  .action-section {
+                      background: #e3f2fd; padding: 20px; border-radius: 10px;
+                  }
+                  .action-section h6 { color: #1976d2; margin-bottom: 10px; }
+                  .action-section p { color: #495057; margin-bottom: 15px; }
+                  .apply-btn {
+                      background: #007bff; color: white; padding: 10px 20px;
+                      border: none; border-radius: 6px; font-weight: 600;
+                      cursor: pointer; transition: all 0.3s;
+                  }
+                  .apply-btn:hover { background: #0056b3; }
+                  .me-1 { margin-right: 4px; }
+                  .me-2 { margin-right: 8px; }
+              </style>
+          `,
+          confirmButtonText: '<i class="fas fa-times me-2"></i>Close',
+          confirmButtonColor: "#6c757d",
+          width: '600px'
+      });
+  }
+
+  // Keep existing utility functions
+  function showLoadingSpinner() {
+      $('#licencePreview').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Loading...');
+  }
+
+  function hideLoadingSpinner() {
+      $('#licencePreview').prop('disabled', false).html('<i class="fas fa-eye"></i> License Preview');
+  }
+
+  function showAlert(type, message) {
+      const alertClass = {
+          'success': 'alert-success',
+          'error': 'alert-danger',
+          'warning': 'alert-warning',
+          'info': 'alert-info'
+      };
+      
+      const alertHtml = `
+          <div class="alert ${alertClass[type]} alert-dismissible fade show" role="alert">
+              <i class="fas fa-${type === 'error' ? 'exclamation-circle' : type === 'success' ? 'check-circle' : 'info-circle'}"></i>
+              ${message}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+      `;
+      
+      $('#alertContainer').html(alertHtml);
+      
+      setTimeout(() => {
+          $('.alert').fadeOut();
+      }, 5000);
+  }
+
+  function generateLicense() {
+      console.log('Generating license...');
+      showAlert('info', 'License generation started...');
+      // Add your license generation logic here
+  }
+
+  function printLicense() {
+      console.log('Printing license...');
+      window.print();
+  }
+
+  function getStatusSpecificContent(application, additionalInfo) {
+      const { declineReason, examDetails } = additionalInfo;
+
+      const getNextTrialDate = (trialDate) => {
+          try {
+             
+              const dateObj = typeof trialDate === 'string' ? new Date(trialDate) : trialDate;
             
-            <style>
-                .trial-absent-modal { text-align: left; }
-                
-                .absent-banner {
-                    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
-                    color: #212529; text-align: center; padding: 20px;
-                    border-radius: 10px; margin-bottom: 20px;
-                }
-                .absent-banner p { margin: 5px 0 0 0; opacity: 0.8; }
-                
-                .exam-info-card {
-                    background: #f8f9fa; border-radius: 10px; padding: 20px;
-                    margin-bottom: 20px; border-left: 4px solid #ffc107;
-                }
-                .info-header { 
-                    color: #856404; margin-bottom: 15px; 
-                    display: flex; align-items: center;
-                }
-                .info-details .detail-item {
-                    display: flex; align-items: center; margin-bottom: 10px;
-                    color: #495057;
-                }
-                .detail-item.next-trial {
-                    background: #e3f2fd; padding: 10px; border-radius: 5px;
-                    border-left: 3px solid #2196f3; margin-top: 10px;
-                }
-                .next-date { color: #1976d2; font-weight: 600; }
-                .badge-absent {
-                    background: #ffc107; color: #212529; padding: 4px 8px;
-                    border-radius: 12px; font-size: 0.85rem; font-weight: 600;
-                }
-                
-                .reschedule-section {
-                    background: #fff3cd; padding: 20px; border-radius: 10px;
-                    border: 1px solid #ffeaa7;
-                }
-                .reschedule-section h6 { color: #856404; margin-bottom: 10px; }
-                .reschedule-section p { color: #6c757d; margin-bottom: 15px; }
-                .waiting-period-notice {
-                    background: #ffeaa7; padding: 12px; border-radius: 6px;
-                    margin-bottom: 15px; color: #856404; border: 1px solid #f0c649;
-                }
-                .important-note {
-                    background: #d1ecf1; padding: 12px; border-radius: 6px;
-                    margin-bottom: 15px; color: #0c5460;
-                }
-                .reschedule-btn {
-                    background: #ffc107; color: #212529; padding: 10px 20px;
-                    border: none; border-radius: 6px; font-weight: 600;
-                    cursor: pointer; transition: all 0.3s;
-                }
-                .reschedule-btn:hover { background: #e0a800; }
-                .me-1 { margin-right: 4px; }
-                .me-2 { margin-right: 8px; }
-            </style>
-        `,
-        confirmButtonText: '<i class="fas fa-times me-2"></i>Close',
-        confirmButtonColor: "#6c757d",
-        width: '600px'
-    });
-}
+              if (isNaN(dateObj.getTime())) {
+                  return 'To be announced';
+              }
+              
+              const nextDate = new Date(dateObj);
+              nextDate.setMonth(nextDate.getMonth() + 3);
+              
+              return nextDate.toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+              });
+          } catch (error) {
+              console.error('Error calculating next trial date:', error);
+              return 'To be announced';
+          }
+      };
 
-// Function to show trial incomplete modal
-function showTrialIncompleteModal() {
-    Swal.fire({
-        title: '📋 Trial Exam Incomplete',
-        html: `
-            <div class="trial-incomplete-modal">
-                <div class="incomplete-banner">
-                    <i class="fas fa-clock me-2"></i>
-                    <strong>Trial Exam Not Completed</strong>
-                    <p>You need to complete your trial exam to generate your license.</p>
-                </div>
-                
-                <div class="steps-card">
-                    <div class="steps-header">
-                        <i class="fas fa-list-ol me-2"></i>
-                        <h6>Steps to Complete</h6>
-                    </div>
-                    
-                    <div class="steps-list">
-                        <div class="step-item completed">
-                            <i class="fas fa-check-circle me-2"></i>
-                            <span>✅ Written exam passed</span>
-                        </div>
-                        <div class="step-item pending">
-                            <i class="fas fa-clock me-2"></i>
-                            <span>⏳ Trial exam - Pending</span>
-                        </div>
-                        <div class="step-item disabled">
-                            <i class="fas fa-id-card me-2"></i>
-                            <span>🎯 License generation</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="action-section">
-                    <h6><i class="fas fa-arrow-right me-2"></i>Next Action</h6>
-                    <p>Apply for your trial exam to proceed with the license generation process.</p>
-                    
-                    <button class="btn btn-primary apply-btn" onclick="applyForTrialExam()">
-                        <i class="fas fa-paper-plane me-1"></i> Apply for Trial Exam
-                    </button>
-                </div>
-            </div>
-            
-            <style>
-                .trial-incomplete-modal { text-align: left; }
-                
-                .incomplete-banner {
-                    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
-                    color: white; text-align: center; padding: 20px;
-                    border-radius: 10px; margin-bottom: 20px;
-                }
-                .incomplete-banner p { margin: 5px 0 0 0; opacity: 0.9; }
-                
-                .steps-card {
-                    background: #f8f9fa; border-radius: 10px; padding: 20px;
-                    margin-bottom: 20px; border-left: 4px solid #17a2b8;
-                }
-                .steps-header { 
-                    color: #17a2b8; margin-bottom: 15px; 
-                    display: flex; align-items: center;
-                }
-                .steps-list { }
-                .step-item {
-                    display: flex; align-items: center; padding: 10px;
-                    margin-bottom: 8px; border-radius: 6px;
-                }
-                .step-item.completed { 
-                    background: #d4edda; color: #155724; 
-                }
-                .step-item.pending { 
-                    background: #fff3cd; color: #856404; 
-                }
-                .step-item.disabled { 
-                    background: #e2e3e5; color: #6c757d; 
-                }
-                
-                .action-section {
-                    background: #e3f2fd; padding: 20px; border-radius: 10px;
-                }
-                .action-section h6 { color: #1976d2; margin-bottom: 10px; }
-                .action-section p { color: #495057; margin-bottom: 15px; }
-                .apply-btn {
-                    background: #007bff; color: white; padding: 10px 20px;
-                    border: none; border-radius: 6px; font-weight: 600;
-                    cursor: pointer; transition: all 0.3s;
-                }
-                .apply-btn:hover { background: #0056b3; }
-                .me-1 { margin-right: 4px; }
-                .me-2 { margin-right: 8px; }
-            </style>
-        `,
-        confirmButtonText: '<i class="fas fa-times me-2"></i>Close',
-        confirmButtonColor: "#6c757d",
-        width: '600px'
-    });
-}
+      const updateTrialInfo = (trialDetails) => {
+          console.log("Updating trial info:", trialDetails);
+          
+          const trialDateElement = document.querySelector('.trial-date-placeholder');
+          const trialLocationElement = document.querySelector('.trial-location-placeholder');
+          const trialTimeElement = document.querySelector('.trial-time-placeholder');
+          const trialResultElement = document.querySelector('.trial-result-placeholder');
+          
+          [trialDateElement, trialLocationElement, trialTimeElement, trialResultElement].forEach(el => {
+              if (el) {
+                  el.style.color = '#6b7280';
+                  el.style.fontWeight = '500';
+              }
+          });
 
-// Keep existing utility functions
-function showLoadingSpinner() {
-    $('#licencePreview').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Loading...');
-}
+          if (trialDetails.trialResult === "PENDING") {
+          
+              if (trialDateElement) {
+                  trialDateElement.textContent = trialDetails.trialDate || 'To be announced';
+                  trialDateElement.style.color = '#16a34a';
+                  trialDateElement.style.fontWeight = '600';
+              }
+              if (trialLocationElement) {
+                  trialLocationElement.textContent = trialDetails.trialLocation || 'To be announced';
+                  trialLocationElement.style.color = '#16a34a';
+                  trialLocationElement.style.fontWeight = '600';
+              }
+              if (trialTimeElement) {
+                  trialTimeElement.textContent = trialDetails.trialTime || 'To be announced';
+                  trialTimeElement.style.color = '#16a34a';
+                  trialTimeElement.style.fontWeight = '600';
+              }
+              if (trialResultElement) {
+                  trialResultElement.textContent = 'Pending';
+                  trialResultElement.style.color = '#f59e0b';
+                  trialResultElement.style.fontWeight = '600';
+              }
+              
+          } else if (trialDetails.trialResult === "PASS") {
+              
+              if (trialDateElement) {
+                  trialDateElement.textContent = trialDetails.trialDate || 'Completed';
+                  trialDateElement.style.color = '#16a34a';
+              }
+              if (trialLocationElement) {
+                  trialLocationElement.textContent = trialDetails.trialLocation || 'Completed';
+                  trialLocationElement.style.color = '#16a34a';
+              }
+              if (trialTimeElement) {
+                  trialTimeElement.textContent = trialDetails.trialTime || 'Completed';
+                  trialTimeElement.style.color = '#16a34a';
+              }
+              if (trialResultElement) {
+                  trialResultElement.textContent = 'Passed ✓';
+                  trialResultElement.style.color = '#16a34a';
+                  trialResultElement.style.fontWeight = '600';
+              }
+              
+          } else if (trialDetails.trialResult === "FAIL") {
+             
+              const nextTrialDate = getNextTrialDate(trialDetails.trialDate || trialDetails.trialExamData);
+              
+              if (trialDateElement) {
+                  trialDateElement.textContent = `Next Trial: ${nextTrialDate}`;
+                  trialDateElement.style.color = '#dc2626';
+                  trialDateElement.style.fontWeight = '600';
+              }
+              if (trialLocationElement) {
+                  trialLocationElement.textContent = trialDetails.trialLocation || 'To be announced';
+                  trialLocationElement.style.color = '#dc2626';
+              }
+              if (trialTimeElement) {
+                  trialTimeElement.textContent = trialDetails.trialTime || 'To be announced';
+                  trialTimeElement.style.color = '#dc2626';
+              }
+              if (trialResultElement) {
+                  trialResultElement.textContent = 'Failed Trial - Retry Available';
+                  trialResultElement.style.color = '#dc2626';
+                  trialResultElement.style.fontWeight = '600';
+              }
+              
+          } else if (trialDetails.trialResult === "ABSENT") {
+              
+              const nextTrialDate = getNextTrialDate(trialDetails.trialDate || trialDetails.trialExamData);
+              
+              if (trialDateElement) {
+                  trialDateElement.textContent = `Next Trial: ${nextTrialDate}`;
+                  trialDateElement.style.color = '#f59e0b';
+                  trialDateElement.style.fontWeight = '600';
+              }
+              if (trialLocationElement) {
+                  trialLocationElement.textContent = trialDetails.trialLocation || 'To be announced';
+                  trialLocationElement.style.color = '#f59e0b';
+              }
+              if (trialTimeElement) {
+                  trialTimeElement.textContent = trialDetails.trialTime || 'To be announced';
+                  trialTimeElement.style.color = '#f59e0b';
+              }
+              if (trialResultElement) {
+                  trialResultElement.textContent = 'Absent Trial - Retry Available';
+                  trialResultElement.style.color = '#f59e0b';
+                  trialResultElement.style.fontWeight = '600';
+              }
+              
+          } else {
+              
+              [trialDateElement, trialLocationElement, trialTimeElement, trialResultElement].forEach(el => {
+                  if (el) {
+                      el.textContent = 'To be announced';
+                      el.style.color = '#6b7280';
+                      el.style.fontWeight = '500';
+                  }
+              });
+          }
+      };
 
-function hideLoadingSpinner() {
-    $('#licencePreview').prop('disabled', false).html('<i class="fas fa-eye"></i> License Preview');
-}
+      if (examDetails && examDetails.id) {
+          getTrialExamDetails(examDetails.id)
+              .then(updateTrialInfo)
+              .catch(error => {
+                  console.error("Error fetching trial details:", error);
+                  updateTrialInfo(null);
+              });
+      }
 
-function showAlert(type, message) {
-    const alertClass = {
-        'success': 'alert-success',
-        'error': 'alert-danger',
-        'warning': 'alert-warning',
-        'info': 'alert-info'
-    };
-    
-    const alertHtml = `
-        <div class="alert ${alertClass[type]} alert-dismissible fade show" role="alert">
-            <i class="fas fa-${type === 'error' ? 'exclamation-circle' : type === 'success' ? 'check-circle' : 'info-circle'}"></i>
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    `;
-    
-    $('#alertContainer').html(alertHtml);
-    
-    setTimeout(() => {
-        $('.alert').fadeOut();
-    }, 5000);
-}
+      switch (application.status) {
+          case "REJECTED":
+              return `
+                  <div class="status-specific-section rejection-section" style="
+                      background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+                      border: 2px solid #fca5a5;
+                      border-radius: 16px;
+                      padding: 24px;
+                      margin: 16px 0;
+                      box-shadow: 0 10px 25px rgba(239, 68, 68, 0.1);
+                  ">
+                      <h6 style="color: #dc2626; font-size: 20px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center;">
+                          <i class="fas fa-times-circle" style="margin-right: 12px; font-size: 24px;"></i>
+                          Application Rejected
+                      </h6>
+                      
+                      <div class="rejection-content">
+                          <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; border-left: 4px solid #dc2626; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
+                              <h7 style="color: #374151; font-weight: 600; font-size: 16px; display: block; margin-bottom: 8px;">
+                                  <strong>Reason for Rejection:</strong>
+                              </h7>
+                              <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0; background: #f9fafb; padding: 12px; border-radius: 8px;">
+                                  ${declineReason?.declineReason || "No specific reason provided. Please contact support for details."}
+                              </p>
+                          </div>
+                          
+                          <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; border-left: 4px solid #dc2626; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
+                              <h7 style="color: #374151; font-weight: 600; font-size: 16px; display: block; margin-bottom: 8px;">
+                                  <strong>Note For You:</strong>
+                              </h7>
+                              <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0; background: #f9fafb; padding: 12px; border-radius: 8px;">
+                                  ${declineReason?.declineNotes || "No specific Note provided. Please contact support for details."}
+                              </p>
+                          </div>
+                          
+                          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                              <button onclick="Swal.close(); showLicenseForm();" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); border: none; color: white; padding: 12px 24px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3); display: flex; align-items: center; font-size: 14px;">
+                                  <i class="fas fa-plus" style="margin-right: 8px;"></i>Submit New Application
+                              </button>
+                          </div>
+                      </div>
+                  </div>
+              `;
 
-function generateLicense() {
-    console.log('Generating license...');
-    showAlert('info', 'License generation started...');
-    // Add your license generation logic here
-}
+          case "APPROVED":
+              if (examDetails) {
+                  const hasPassed = examDetails.writtenExamResult === "PASS";
+                  const hasFailed = examDetails.writtenExamResult === "FAIL";
+                  const hasAbsant = examDetails.writtenExamResult === "ABSENT";
+                  const hasTrialExams = examDetails.trialExams && examDetails.trialExams.length > 0;
+                  const latestTrialExam = hasTrialExams ? 
+                      examDetails.trialExams.reduce((latest, current) => {
+                          const currentDate = new Date(current.trialDate || 0);
+                          const latestDate = new Date(latest.trialDate || 0);
+                          return currentDate > latestDate ? current : latest;
+                      }, examDetails.trialExams[0]) : null;
+                  const hasPassedTrial = latestTrialExam && latestTrialExam.trialResult === "PASS";
+                  const isComplete = hasPassed && hasPassedTrial;
 
-function printLicense() {
-    console.log('Printing license...');
-    window.print();
-}
+                  return `
+                      <div class="status-specific-section approval-section" style="
+                          background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+                          border: 2px solid #86efac;
+                          border-radius: 16px;
+                          padding: 24px;
+                          margin: 16px 0;
+                          box-shadow: 0 10px 25px rgba(34, 197, 94, 0.15);
+                      ">
+                          <h6 style="color: #16a34a; font-size: 20px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center;">
+                              <i class="fas fa-check-circle" style="margin-right: 12px; font-size: 24px;"></i>
+                              Application Approved - ${isComplete ? 'Process Complete' : (hasPassed ? 'Exam Passed' : 'Exam Scheduled')}
+                          </h6>
+                          
+                          ${isComplete ? `
+                              <div style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: center; box-shadow: 0 8px 20px rgba(22, 163, 74, 0.3);">
+                                  <i class="fas fa-trophy" style="font-size: 32px; margin-bottom: 10px; display: block;"></i>
+                                  <strong style="font-size: 18px;">Congratulations!</strong>
+                                  <p style="margin: 8px 0 0 0; opacity: 0.9;">You have successfully completed both written and practical exams.</p>
+                              </div>
+                          ` : ''}
+                          
+                          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 20px;">
+                              
+                              <!-- Written Exam Date (only if scheduled and not passed yet) -->
+                              ${!hasPassed && examDetails.writtenExamDate ? `
+                                  <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border-left: 4px solid #3b82f6;">
+                                      <div style="color: #3b82f6; font-size: 24px; margin-bottom: 12px;">
+                                          <i class="fas fa-calendar-alt"></i>
+                                      </div>
+                                      <div>
+                                          <label style="color: #6b7280; font-size: 14px; font-weight: 500; display: block; margin-bottom: 6px; text-transform: uppercase;">
+                                              ${hasFailed || hasAbsant ? 'Last Exam Date' : 'Written Exam Date'}
+                                          </label>
+                                          <strong style="color: #1f2937; font-size: 16px; font-weight: 600;">
+                                              ${formatDate(examDetails.writtenExamDate)}
+                                          </strong>
+                                      </div>
+                                  </div>
+                              ` : ''}
 
-// Non-async function with beautiful inline styling
-// Corrected getStatusSpecificContent function with proper exam detail display
-function getStatusSpecificContent(application, additionalInfo) {
-    const { declineReason, examDetails } = additionalInfo;
+                              <!-- Written Exam Time (only if scheduled and not passed yet) -->
+                              ${!hasPassed && examDetails.writtenExamTime ? `
+                                  <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border-left: 4px solid #f59e0b;">
+                                      <div style="color: #f59e0b; font-size: 24px; margin-bottom: 12px;">
+                                          <i class="fas fa-clock"></i>
+                                      </div>
+                                      <div>
+                                          <label style="color: #6b7280; font-size: 14px; font-weight: 500; display: block; margin-bottom: 6px; text-transform: uppercase;">
+                                              Written Exam Time
+                                          </label>
+                                          <strong style="color: #1f2937; font-size: 16px; font-weight: 600;">
+                                              ${examDetails.writtenExamTime}
+                                          </strong>
+                                      </div>
+                                  </div>
+                              ` : ''}
 
-    // Function to calculate date 8 months from trial date
-    const getNextTrialDate = (trialDate) => {
-        try {
-            // Convert trialDate to Date object if it's a string
-            const dateObj = typeof trialDate === 'string' ? new Date(trialDate) : trialDate;
-            
-            // Check if date is valid
-            if (isNaN(dateObj.getTime())) {
-                return 'To be announced';
-            }
-            
-            const nextDate = new Date(dateObj);
-            nextDate.setMonth(nextDate.getMonth() + 3);
-            
-            return nextDate.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-        } catch (error) {
-            console.error('Error calculating next trial date:', error);
-            return 'To be announced';
-        }
-    };
+                              <!-- Written Exam Location (only if scheduled and not passed yet) -->
+                              ${!hasPassed && examDetails.writtenExamLocation ? `
+                                  <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border-left: 4px solid #dc2626; grid-column: 1 / -1;">
+                                      <div style="color: #dc2626; font-size: 24px; margin-bottom: 12px;">
+                                          <i class="fas fa-map-marker-alt"></i>
+                                      </div>
+                                      <div>
+                                          <label style="color: #6b7280; font-size: 14px; font-weight: 500; display: block; margin-bottom: 6px; text-transform: uppercase;">
+                                              Written Exam Location
+                                          </label>
+                                          <strong style="color: #1f2937; font-size: 16px; font-weight: 600;">
+                                              ${examDetails.writtenExamLocation}
+                                          </strong>
+                                      </div>
+                                  </div>
+                              ` : ''}
 
-    // Function to update content with trial data
-    const updateTrialInfo = (trialDetails) => {
-        console.log("Updating trial info:", trialDetails);
-        
-        const trialDateElement = document.querySelector('.trial-date-placeholder');
-        const trialLocationElement = document.querySelector('.trial-location-placeholder');
-        const trialTimeElement = document.querySelector('.trial-time-placeholder');
-        const trialResultElement = document.querySelector('.trial-result-placeholder');
-        
-        // Reset styles first
-        [trialDateElement, trialLocationElement, trialTimeElement, trialResultElement].forEach(el => {
-            if (el) {
-                el.style.color = '#6b7280';
-                el.style.fontWeight = '500';
-            }
-        });
+                              <!-- Next Exam Date (only if failed) -->
+                              ${( hasFailed || hasAbsant ) && examDetails.nextExamDate ? `
+                                  <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border-left: 4px solid #f59e0b;">
+                                      <div style="color: #f59e0b; font-size: 24px; margin-bottom: 12px;">
+                                          <i class="fas fa-calendar-alt"></i>
+                                      </div>
+                                      <div>
+                                          <label style="color: #6b7280; font-size: 14px; font-weight: 500; display: block; margin-bottom: 6px; text-transform: uppercase;">
+                                              Next Exam Date
+                                          </label>
+                                          <strong style="color: #1f2937; font-size: 16px; font-weight: 600;">
+                                              ${formatDate(examDetails.nextExamDate)}
+                                          </strong>
+                                      </div>
+                                  </div>
+                              ` : ''}
+                              
+                              <!-- Notes -->
+                              ${examDetails.note ? `
+                                  <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border-left: 4px solid #facc15; grid-column: 1 / -1;">
+                                      <div style="color: #facc15; font-size: 24px; margin-bottom: 12px;">
+                                          <i class="fas fa-sticky-note"></i>
+                                      </div>
+                                      <div>
+                                          <label style="color: #6b7280; font-size: 14px; font-weight: 500; display: block; margin-bottom: 6px; text-transform: uppercase;">
+                                              Notes
+                                          </label>
+                                          <strong style="color: #1f2937; font-size: 16px; font-weight: 600; line-height: 1.5;">
+                                              ${examDetails.note}
+                                          </strong>
+                                      </div>
+                                  </div>
+                              ` : ''}
+                              
+                              <!-- Exam Result (only if available) -->
+                              ${examDetails.writtenExamResult ? `
+                                  <div style="
+                                      background: ${examDetails.writtenExamResult === "PASS" ? 
+                                          "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)" : 
+                                          examDetails.writtenExamResult === "FAIL" || examDetails.writtenExamResult === "ABSANT" ? 
+                                          "linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)" : 
+                                          "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)"
+                                      };
+                                      border: 2px solid ${examDetails.writtenExamResult === "PASS" ? "#16a34a" : examDetails.writtenExamResult === "FAIL"|| examDetails.writtenExamResult === "ABSANT" ? "#dc2626" : "#f59e0b"};
+                                      border-radius: 16px;
+                                      padding: 24px;
+                                      margin: 20px 0;
+                                      box-shadow: 0 8px 20px ${examDetails.writtenExamResult === "PASS" ? "rgba(22, 163, 74, 0.2)" : examDetails.writtenExamResult === "FAIL" || examDetails.writtenExamResult === "ABSANT" ? "rgba(220, 38, 38, 0.2)" : "rgba(245, 158, 11, 0.2)"};
+                                      grid-column: 1 / -1;
+                                      display: flex;
+                                      align-items: center;
+                                  ">
+                                      <div style="font-size: 48px; color: ${examDetails.writtenExamResult === "PASS" ? "#16a34a" : examDetails.writtenExamResult === "FAIL" || examDetails.writtenExamResult === "ABSANT"? "#dc2626" : "#f59e0b"}; margin-right: 20px;">
+                                          <i class="fas fa-${examDetails.writtenExamResult === "PASS" ? "trophy" : examDetails.writtenExamResult === "FAIL" || examDetails.writtenExamResult === "ABSANT"? "times" : "clock"}"></i>
+                                      </div>
+                                      <div style="flex: 1;">
+                                          <label style="display: block; font-size: 14px; color: #6b7280; margin-bottom: 8px; font-weight: 500; text-transform: uppercase;">
+                                              Written Exam Result
+                                          </label>
+                                          <strong style="font-size: 32px; font-weight: 800; color: ${examDetails.writtenExamResult === "PASS" ? "#16a34a" : examDetails.writtenExamResult === "FAIL" || examDetails.writtenExamResult === "ABSANT" ? "#dc2626" : "#f59e0b"}; display: block; margin-bottom: 10px;">
+                                              ${examDetails.writtenExamResult}
+                                          </strong>
+                                      </div>
+                                  </div>
+                              ` : ""}
+                              
+                              <!-- Trial Exam Result (if available) -->
+                              ${hasTrialExams && latestTrialExam && latestTrialExam.trialResult ? `
+                                  <div style="
+                                      background: ${latestTrialExam.trialResult === "PASS" ? 
+                                          "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)" : 
+                                          latestTrialExam.trialResult === "FAIL" || latestTrialExam.trialResult === "ABSENT" ? 
+                                          "linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)" : 
+                                          "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)"
+                                      };
+                                      border: 2px solid ${latestTrialExam.trialResult === "PASS" ? "#16a34a" : latestTrialExam.trialResult === "FAIL" || latestTrialExam.trialResult === "ABSENT" ? "#dc2626" : "#f59e0b"};
+                                      border-radius: 16px;
+                                      padding: 24px;
+                                      margin: 20px 0;
+                                      box-shadow: 0 8px 20px ${latestTrialExam.trialResult === "PASS" ? "rgba(22, 163, 74, 0.2)" : latestTrialExam.trialResult === "FAIL" || latestTrialExam.trialResult === "ABSENT" ? "rgba(220, 38, 38, 0.2)" : "rgba(245, 158, 11, 0.2)"};
+                                      grid-column: 1 / -1;
+                                      display: flex;
+                                      align-items: center;
+                                  ">
+                                      <div style="font-size: 48px; color: ${latestTrialExam.trialResult === "PASS" ? "#16a34a" : latestTrialExam.trialResult === "FAIL" || latestTrialExam.trialResult === "ABSENT" ? "#dc2626" : "#f59e0b"}; margin-right: 20px;">
+                                          <i class="fas fa-${latestTrialExam.trialResult === "PASS" ? "trophy" : latestTrialExam.trialResult === "FAIL" || latestTrialExam.trialResult === "ABSENT" ? "times" : "clock"}"></i>
+                                      </div>
+                                      <div style="flex: 1;">
+                                          <label style="display: block; font-size: 14px; color: #6b7280; margin-bottom: 8px; font-weight: 500; text-transform: uppercase;">
+                                              Trial Exam Result
+                                          </label>
+                                          <strong style="font-size: 32px; font-weight: 800; color: ${latestTrialExam.trialResult === "PASS" ? "#16a34a" : latestTrialExam.trialResult === "FAIL" || latestTrialExam.trialResult === "ABSENT" ? "#dc2626" : "#f59e0b"}; display: block; margin-bottom: 10px;">
+                                              ${latestTrialExam.trialResult}
+                                          </strong>
+                                      </div>
+                                  </div>
+                              ` : ""}
+                          </div>
+                          
+                          <!-- Trial Exam Application Section -->
+                          ${hasPassed && !hasTrialExams ? `
+                              <div style="background: linear-gradient(135deg, #e0f2fe 0%, #b3e5fc 100%); border: 2px solid #29b6f6; border-radius: 16px; padding: 24px; margin-bottom: 20px;">
+                                  <div style="display: flex; align-items: center; margin-bottom: 16px; color: #0277bd;">
+                                      <i class="fas fa-info-circle" style="font-size: 24px; margin-right: 12px;"></i>
+                                      <strong style="font-size: 18px; font-weight: 700;">You've passed the written exam!</strong>
+                                  </div>
+                                  
+                                  <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
+                                      <p style="margin: 0 0 8px 0; color: #374151; font-weight: 600;">
+                                          <i class="fas fa-calendar" style="margin-right: 8px; color: #3b82f6;"></i>
+                                          <b>Trial Date:</b> <span class="trial-date-placeholder" style="color: #6b7280;">${examDetails.trialDate || 'Loading...'}</span>
+                                      </p>
+                                      <p style="margin: 0 0 8px 0; color: #374151; font-weight: 600;">
+                                          <i class="fas fa-clock" style="margin-right: 8px; color: #f59e0b;"></i>
+                                          <b>Trial Time:</b> <span class="trial-time-placeholder" style="color: #6b7280;">Loading...</span>
+                                      </p>
+                                      <p style="margin: 0 0 8px 0; color: #374151; font-weight: 600;">
+                                          <i class="fas fa-map-marker-alt" style="margin-right: 8px; color: #dc2626;"></i>
+                                          <b>Trial Location:</b> <span class="trial-location-placeholder" style="color: #6b7280;">Loading...</span>
+                                      </p>
+                                      <p style="margin: 0; color: #374151; font-weight: 600;">
+                                          <i class="fas fa-clipboard-check" style="margin-right: 8px; color: #16a34a;"></i>
+                                          <b>Trial Result:</b> <span class="trial-result-placeholder" style="color: #6b7280;">Loading...</span>
+                                      </p>
+                                  </div>
+                                  
+                                  <button onclick="applyForTrialExam(${examDetails.id})" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border: none; color: white; padding: 14px 28px; border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4); display: flex; align-items: center; justify-content: center; width: 100%;">
+                                      <i class="fas fa-car" style="margin-right: 10px; font-size: 18px;"></i>
+                                      Apply for Trial Exam
+                                  </button>
+                              </div>
+                          ` : ''}
+                          
+                          <!-- Trial Retry Section -->
+                          ${hasTrialExams && !hasPassedTrial ? `
+                              <div style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 2px solid #fbbf24; border-radius: 16px; padding: 24px; margin-bottom: 20px;">
+                                  <div style="display: flex; align-items: center; margin-bottom: 16px; color: #d97706;">
+                                      <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-right: 12px;"></i>
+                                      <strong style="font-size: 18px; font-weight: 700;">You didn't pass the practical exam. You can apply for another trial exam.</strong>
+                                  </div>
+                                  
+                                  <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
+                                      <p style="margin: 0 0 8px 0; color: #374151; font-weight: 600;">
+                                          <i class="fas fa-calendar" style="margin-right: 8px; color: #3b82f6;"></i>
+                                          <b>Next Trial Date:</b> <span class="trial-date-placeholder" style="color: #6b7280;">Loading...</span>
+                                      </p>
+                                      <p style="margin: 0 0 8px 0; color: #374151; font-weight: 600;">
+                                          <i class="fas fa-clock" style="margin-right: 8px; color: #f59e0b;"></i>
+                                          <b>Trial Time:</b> <span class="trial-time-placeholder" style="color: #6b7280;">Loading...</span>
+                                      </p>
+                                      <p style="margin: 0 0 8px 0; color: #374151; font-weight: 600;">
+                                          <i class="fas fa-map-marker-alt" style="margin-right: 8px; color: #dc2626;"></i>
+                                          <b>Trial Location:</b> <span class="trial-location-placeholder" style="color: #6b7280;">Loading...</span>
+                                      </p>
+                                      <p style="margin: 0; color: #374151; font-weight: 600;">
+                                          <i class="fas fa-clipboard-check" style="margin-right: 8px; color: #16a34a;"></i>
+                                          <b>Trial Result:</b> <span class="trial-result-placeholder" style="color: #6b7280;">Loading...</span>
+                                      </p>
+                                  </div>
+                                  
+                                  <button onclick="applyForTrialExam(${examDetails.id})" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: none; color: white; padding: 14px 28px; border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4); display: flex; align-items: center; justify-content: center; width: 100%;">
+                                      <i class="fas fa-redo" style="margin-right: 10px; font-size: 18px;"></i>
+                                      Apply for Retry
+                                  </button>
+                              </div>
+                          ` : ''}
+                          
+                          <!-- Action Buttons -->
+                          <div style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;">
+                              <button onclick="Swal.close(); showExamDetails(${JSON.stringify(examDetails).replace(/"/g, "&quot;")});" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border: none; color: white; padding: 12px 24px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); display: flex; align-items: center; font-size: 14px; min-width: 180px; justify-content: center;">
+                                  <i class="fas fa-info-circle" style="margin-right: 8px;"></i>Full Exam Details
+                              </button>
+                              
+                              ${!hasPassed ? `
+                                  <button onclick="Swal.close(); showPaymentForm();" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); border: none; color: white; padding: 12px 24px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3); display: flex; align-items: center; font-size: 14px; min-width: 180px; justify-content: center;">
+                                      <i class="fas fa-credit-card" style="margin-right: 8px;"></i>Make Payment
+                                  </button>
+                              ` : ''}
+                          </div>
+                      </div>
+                  `;
+              }
 
-        if (trialDetails.trialResult === "PENDING") {
-            // PENDING - Show scheduled details
-            if (trialDateElement) {
-                trialDateElement.textContent = trialDetails.trialDate || 'To be announced';
-                trialDateElement.style.color = '#16a34a';
-                trialDateElement.style.fontWeight = '600';
-            }
-            if (trialLocationElement) {
-                trialLocationElement.textContent = trialDetails.trialLocation || 'To be announced';
-                trialLocationElement.style.color = '#16a34a';
-                trialLocationElement.style.fontWeight = '600';
-            }
-            if (trialTimeElement) {
-                trialTimeElement.textContent = trialDetails.trialTime || 'To be announced';
-                trialTimeElement.style.color = '#16a34a';
-                trialTimeElement.style.fontWeight = '600';
-            }
-            if (trialResultElement) {
-                trialResultElement.textContent = 'Pending';
-                trialResultElement.style.color = '#f59e0b';
-                trialResultElement.style.fontWeight = '600';
-            }
-            
-        } else if (trialDetails.trialResult === "PASS") {
-            // PASS - Show success details
-            if (trialDateElement) {
-                trialDateElement.textContent = trialDetails.trialDate || 'Completed';
-                trialDateElement.style.color = '#16a34a';
-            }
-            if (trialLocationElement) {
-                trialLocationElement.textContent = trialDetails.trialLocation || 'Completed';
-                trialLocationElement.style.color = '#16a34a';
-            }
-            if (trialTimeElement) {
-                trialTimeElement.textContent = trialDetails.trialTime || 'Completed';
-                trialTimeElement.style.color = '#16a34a';
-            }
-            if (trialResultElement) {
-                trialResultElement.textContent = 'Passed ✓';
-                trialResultElement.style.color = '#16a34a';
-                trialResultElement.style.fontWeight = '600';
-            }
-            
-        } else if (trialDetails.trialResult === "FAIL") {
-            // FAIL - Show next trial date (8 months from trial date)
-            const nextTrialDate = getNextTrialDate(trialDetails.trialDate || trialDetails.trialExamData);
-            
-            if (trialDateElement) {
-                trialDateElement.textContent = `Next Trial: ${nextTrialDate}`;
-                trialDateElement.style.color = '#dc2626';
-                trialDateElement.style.fontWeight = '600';
-            }
-            if (trialLocationElement) {
-                trialLocationElement.textContent = trialDetails.trialLocation || 'To be announced';
-                trialLocationElement.style.color = '#dc2626';
-            }
-            if (trialTimeElement) {
-                trialTimeElement.textContent = trialDetails.trialTime || 'To be announced';
-                trialTimeElement.style.color = '#dc2626';
-            }
-            if (trialResultElement) {
-                trialResultElement.textContent = 'Failed Trial - Retry Available';
-                trialResultElement.style.color = '#dc2626';
-                trialResultElement.style.fontWeight = '600';
-            }
-            
-        } else if (trialDetails.trialResult === "ABSENT") {
-            // ABSENT - Show next trial date (8 months from trial date)
-            const nextTrialDate = getNextTrialDate(trialDetails.trialDate || trialDetails.trialExamData);
-            
-            if (trialDateElement) {
-                trialDateElement.textContent = `Next Trial: ${nextTrialDate}`;
-                trialDateElement.style.color = '#f59e0b';
-                trialDateElement.style.fontWeight = '600';
-            }
-            if (trialLocationElement) {
-                trialLocationElement.textContent = trialDetails.trialLocation || 'To be announced';
-                trialLocationElement.style.color = '#f59e0b';
-            }
-            if (trialTimeElement) {
-                trialTimeElement.textContent = trialDetails.trialTime || 'To be announced';
-                trialTimeElement.style.color = '#f59e0b';
-            }
-            if (trialResultElement) {
-                trialResultElement.textContent = 'Absent Trial - Retry Available';
-                trialResultElement.style.color = '#f59e0b';
-                trialResultElement.style.fontWeight = '600';
-            }
-            
-        } else {
-            // Unknown status or no trial details
-            [trialDateElement, trialLocationElement, trialTimeElement, trialResultElement].forEach(el => {
-                if (el) {
-                    el.textContent = 'To be announced';
-                    el.style.color = '#6b7280';
-                    el.style.fontWeight = '500';
-                }
-            });
-        }
-    };
-
-
-    // Fetch trial details in background and update UI
-    if (examDetails && examDetails.id) {
-        getTrialExamDetails(examDetails.id)
-            .then(updateTrialInfo)
-            .catch(error => {
-                console.error("Error fetching trial details:", error);
-                // updateTrialInfo(examDetails.trialDetails);
-                updateTrialInfo(null);
-            });
-    }
-
-    switch (application.status) {
-        case "REJECTED":
-            return `
-                <div class="status-specific-section rejection-section" style="
-                    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-                    border: 2px solid #fca5a5;
-                    border-radius: 16px;
-                    padding: 24px;
-                    margin: 16px 0;
-                    box-shadow: 0 10px 25px rgba(239, 68, 68, 0.1);
-                ">
-                    <h6 style="color: #dc2626; font-size: 20px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center;">
-                        <i class="fas fa-times-circle" style="margin-right: 12px; font-size: 24px;"></i>
-                        Application Rejected
-                    </h6>
-                    
-                    <div class="rejection-content">
-                        <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; border-left: 4px solid #dc2626; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
-                            <h7 style="color: #374151; font-weight: 600; font-size: 16px; display: block; margin-bottom: 8px;">
-                                <strong>Reason for Rejection:</strong>
-                            </h7>
-                            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0; background: #f9fafb; padding: 12px; border-radius: 8px;">
-                                ${declineReason?.declineReason || "No specific reason provided. Please contact support for details."}
-                            </p>
-                        </div>
-                        
-                        <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; border-left: 4px solid #dc2626; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
-                            <h7 style="color: #374151; font-weight: 600; font-size: 16px; display: block; margin-bottom: 8px;">
-                                <strong>Note For You:</strong>
-                            </h7>
-                            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0; background: #f9fafb; padding: 12px; border-radius: 8px;">
-                                ${declineReason?.declineNotes || "No specific Note provided. Please contact support for details."}
-                            </p>
-                        </div>
-                        
-                        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                            <button onclick="Swal.close(); showLicenseForm();" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); border: none; color: white; padding: 12px 24px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3); display: flex; align-items: center; font-size: 14px;">
-                                <i class="fas fa-plus" style="margin-right: 8px;"></i>Submit New Application
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-        case "APPROVED":
-            if (examDetails) {
-                const hasPassed = examDetails.writtenExamResult === "PASS";
-                const hasFailed = examDetails.writtenExamResult === "FAIL";
-                const hasAbsant = examDetails.writtenExamResult === "ABSENT";
-                const hasTrialExams = examDetails.trialExams && examDetails.trialExams.length > 0;
-                const latestTrialExam = hasTrialExams ? 
-                    examDetails.trialExams.reduce((latest, current) => {
-                        const currentDate = new Date(current.trialDate || 0);
-                        const latestDate = new Date(latest.trialDate || 0);
-                        return currentDate > latestDate ? current : latest;
-                    }, examDetails.trialExams[0]) : null;
-                const hasPassedTrial = latestTrialExam && latestTrialExam.trialResult === "PASS";
-                const isComplete = hasPassed && hasPassedTrial;
-
-                return `
-                    <div class="status-specific-section approval-section" style="
-                        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-                        border: 2px solid #86efac;
-                        border-radius: 16px;
-                        padding: 24px;
-                        margin: 16px 0;
-                        box-shadow: 0 10px 25px rgba(34, 197, 94, 0.15);
-                    ">
-                        <h6 style="color: #16a34a; font-size: 20px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center;">
-                            <i class="fas fa-check-circle" style="margin-right: 12px; font-size: 24px;"></i>
-                            Application Approved - ${isComplete ? 'Process Complete' : (hasPassed ? 'Exam Passed' : 'Exam Scheduled')}
-                        </h6>
-                        
-                        ${isComplete ? `
-                            <div style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: center; box-shadow: 0 8px 20px rgba(22, 163, 74, 0.3);">
-                                <i class="fas fa-trophy" style="font-size: 32px; margin-bottom: 10px; display: block;"></i>
-                                <strong style="font-size: 18px;">Congratulations!</strong>
-                                <p style="margin: 8px 0 0 0; opacity: 0.9;">You have successfully completed both written and practical exams.</p>
-                            </div>
-                        ` : ''}
-                        
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 20px;">
-                            
-                            <!-- Written Exam Date (only if scheduled and not passed yet) -->
-                            ${!hasPassed && examDetails.writtenExamDate ? `
-                                <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border-left: 4px solid #3b82f6;">
-                                    <div style="color: #3b82f6; font-size: 24px; margin-bottom: 12px;">
-                                        <i class="fas fa-calendar-alt"></i>
-                                    </div>
-                                    <div>
-                                        <label style="color: #6b7280; font-size: 14px; font-weight: 500; display: block; margin-bottom: 6px; text-transform: uppercase;">
-                                            ${hasFailed || hasAbsant ? 'Last Exam Date' : 'Written Exam Date'}
-                                        </label>
-                                        <strong style="color: #1f2937; font-size: 16px; font-weight: 600;">
-                                            ${formatDate(examDetails.writtenExamDate)}
-                                        </strong>
-                                    </div>
-                                </div>
-                            ` : ''}
-
-                            <!-- Written Exam Time (only if scheduled and not passed yet) -->
-                            ${!hasPassed && examDetails.writtenExamTime ? `
-                                <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border-left: 4px solid #f59e0b;">
-                                    <div style="color: #f59e0b; font-size: 24px; margin-bottom: 12px;">
-                                        <i class="fas fa-clock"></i>
-                                    </div>
-                                    <div>
-                                        <label style="color: #6b7280; font-size: 14px; font-weight: 500; display: block; margin-bottom: 6px; text-transform: uppercase;">
-                                            Written Exam Time
-                                        </label>
-                                        <strong style="color: #1f2937; font-size: 16px; font-weight: 600;">
-                                            ${examDetails.writtenExamTime}
-                                        </strong>
-                                    </div>
-                                </div>
-                            ` : ''}
-
-                            <!-- Written Exam Location (only if scheduled and not passed yet) -->
-                            ${!hasPassed && examDetails.writtenExamLocation ? `
-                                <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border-left: 4px solid #dc2626; grid-column: 1 / -1;">
-                                    <div style="color: #dc2626; font-size: 24px; margin-bottom: 12px;">
-                                        <i class="fas fa-map-marker-alt"></i>
-                                    </div>
-                                    <div>
-                                        <label style="color: #6b7280; font-size: 14px; font-weight: 500; display: block; margin-bottom: 6px; text-transform: uppercase;">
-                                            Written Exam Location
-                                        </label>
-                                        <strong style="color: #1f2937; font-size: 16px; font-weight: 600;">
-                                            ${examDetails.writtenExamLocation}
-                                        </strong>
-                                    </div>
-                                </div>
-                            ` : ''}
-
-                            <!-- Next Exam Date (only if failed) -->
-                            ${( hasFailed || hasAbsant ) && examDetails.nextExamDate ? `
-                                <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border-left: 4px solid #f59e0b;">
-                                    <div style="color: #f59e0b; font-size: 24px; margin-bottom: 12px;">
-                                        <i class="fas fa-calendar-alt"></i>
-                                    </div>
-                                    <div>
-                                        <label style="color: #6b7280; font-size: 14px; font-weight: 500; display: block; margin-bottom: 6px; text-transform: uppercase;">
-                                            Next Exam Date
-                                        </label>
-                                        <strong style="color: #1f2937; font-size: 16px; font-weight: 600;">
-                                            ${formatDate(examDetails.nextExamDate)}
-                                        </strong>
-                                    </div>
-                                </div>
-                            ` : ''}
-                            
-                            <!-- Notes -->
-                            ${examDetails.note ? `
-                                <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border-left: 4px solid #facc15; grid-column: 1 / -1;">
-                                    <div style="color: #facc15; font-size: 24px; margin-bottom: 12px;">
-                                        <i class="fas fa-sticky-note"></i>
-                                    </div>
-                                    <div>
-                                        <label style="color: #6b7280; font-size: 14px; font-weight: 500; display: block; margin-bottom: 6px; text-transform: uppercase;">
-                                            Notes
-                                        </label>
-                                        <strong style="color: #1f2937; font-size: 16px; font-weight: 600; line-height: 1.5;">
-                                            ${examDetails.note}
-                                        </strong>
-                                    </div>
-                                </div>
-                            ` : ''}
-                            
-                            <!-- Exam Result (only if available) -->
-                            ${examDetails.writtenExamResult ? `
-                                <div style="
-                                    background: ${examDetails.writtenExamResult === "PASS" ? 
-                                        "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)" : 
-                                        examDetails.writtenExamResult === "FAIL" || examDetails.writtenExamResult === "ABSANT" ? 
-                                        "linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)" : 
-                                        "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)"
-                                    };
-                                    border: 2px solid ${examDetails.writtenExamResult === "PASS" ? "#16a34a" : examDetails.writtenExamResult === "FAIL"|| examDetails.writtenExamResult === "ABSANT" ? "#dc2626" : "#f59e0b"};
-                                    border-radius: 16px;
-                                    padding: 24px;
-                                    margin: 20px 0;
-                                    box-shadow: 0 8px 20px ${examDetails.writtenExamResult === "PASS" ? "rgba(22, 163, 74, 0.2)" : examDetails.writtenExamResult === "FAIL" || examDetails.writtenExamResult === "ABSANT" ? "rgba(220, 38, 38, 0.2)" : "rgba(245, 158, 11, 0.2)"};
-                                    grid-column: 1 / -1;
-                                    display: flex;
-                                    align-items: center;
-                                ">
-                                    <div style="font-size: 48px; color: ${examDetails.writtenExamResult === "PASS" ? "#16a34a" : examDetails.writtenExamResult === "FAIL" || examDetails.writtenExamResult === "ABSANT"? "#dc2626" : "#f59e0b"}; margin-right: 20px;">
-                                        <i class="fas fa-${examDetails.writtenExamResult === "PASS" ? "trophy" : examDetails.writtenExamResult === "FAIL" || examDetails.writtenExamResult === "ABSANT"? "times" : "clock"}"></i>
-                                    </div>
-                                    <div style="flex: 1;">
-                                        <label style="display: block; font-size: 14px; color: #6b7280; margin-bottom: 8px; font-weight: 500; text-transform: uppercase;">
-                                            Written Exam Result
-                                        </label>
-                                        <strong style="font-size: 32px; font-weight: 800; color: ${examDetails.writtenExamResult === "PASS" ? "#16a34a" : examDetails.writtenExamResult === "FAIL" || examDetails.writtenExamResult === "ABSANT" ? "#dc2626" : "#f59e0b"}; display: block; margin-bottom: 10px;">
-                                            ${examDetails.writtenExamResult}
-                                        </strong>
-                                    </div>
-                                </div>
-                            ` : ""}
-                            
-                            <!-- Trial Exam Result (if available) -->
-                            ${hasTrialExams && latestTrialExam && latestTrialExam.trialResult ? `
-                                <div style="
-                                    background: ${latestTrialExam.trialResult === "PASS" ? 
-                                        "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)" : 
-                                        latestTrialExam.trialResult === "FAIL" || latestTrialExam.trialResult === "ABSENT" ? 
-                                        "linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)" : 
-                                        "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)"
-                                    };
-                                    border: 2px solid ${latestTrialExam.trialResult === "PASS" ? "#16a34a" : latestTrialExam.trialResult === "FAIL" || latestTrialExam.trialResult === "ABSENT" ? "#dc2626" : "#f59e0b"};
-                                    border-radius: 16px;
-                                    padding: 24px;
-                                    margin: 20px 0;
-                                    box-shadow: 0 8px 20px ${latestTrialExam.trialResult === "PASS" ? "rgba(22, 163, 74, 0.2)" : latestTrialExam.trialResult === "FAIL" || latestTrialExam.trialResult === "ABSENT" ? "rgba(220, 38, 38, 0.2)" : "rgba(245, 158, 11, 0.2)"};
-                                    grid-column: 1 / -1;
-                                    display: flex;
-                                    align-items: center;
-                                ">
-                                    <div style="font-size: 48px; color: ${latestTrialExam.trialResult === "PASS" ? "#16a34a" : latestTrialExam.trialResult === "FAIL" || latestTrialExam.trialResult === "ABSENT" ? "#dc2626" : "#f59e0b"}; margin-right: 20px;">
-                                        <i class="fas fa-${latestTrialExam.trialResult === "PASS" ? "trophy" : latestTrialExam.trialResult === "FAIL" || latestTrialExam.trialResult === "ABSENT" ? "times" : "clock"}"></i>
-                                    </div>
-                                    <div style="flex: 1;">
-                                        <label style="display: block; font-size: 14px; color: #6b7280; margin-bottom: 8px; font-weight: 500; text-transform: uppercase;">
-                                            Trial Exam Result
-                                        </label>
-                                        <strong style="font-size: 32px; font-weight: 800; color: ${latestTrialExam.trialResult === "PASS" ? "#16a34a" : latestTrialExam.trialResult === "FAIL" || latestTrialExam.trialResult === "ABSENT" ? "#dc2626" : "#f59e0b"}; display: block; margin-bottom: 10px;">
-                                            ${latestTrialExam.trialResult}
-                                        </strong>
-                                    </div>
-                                </div>
-                            ` : ""}
-                        </div>
-                        
-                        <!-- Trial Exam Application Section -->
-                        ${hasPassed && !hasTrialExams ? `
-                            <div style="background: linear-gradient(135deg, #e0f2fe 0%, #b3e5fc 100%); border: 2px solid #29b6f6; border-radius: 16px; padding: 24px; margin-bottom: 20px;">
-                                <div style="display: flex; align-items: center; margin-bottom: 16px; color: #0277bd;">
-                                    <i class="fas fa-info-circle" style="font-size: 24px; margin-right: 12px;"></i>
-                                    <strong style="font-size: 18px; font-weight: 700;">You've passed the written exam!</strong>
-                                </div>
-                                
-                                <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
-                                    <p style="margin: 0 0 8px 0; color: #374151; font-weight: 600;">
-                                        <i class="fas fa-calendar" style="margin-right: 8px; color: #3b82f6;"></i>
-                                        <b>Trial Date:</b> <span class="trial-date-placeholder" style="color: #6b7280;">${examDetails.trialDate || 'Loading...'}</span>
-                                    </p>
-                                    <p style="margin: 0 0 8px 0; color: #374151; font-weight: 600;">
-                                        <i class="fas fa-clock" style="margin-right: 8px; color: #f59e0b;"></i>
-                                        <b>Trial Time:</b> <span class="trial-time-placeholder" style="color: #6b7280;">Loading...</span>
-                                    </p>
-                                    <p style="margin: 0 0 8px 0; color: #374151; font-weight: 600;">
-                                        <i class="fas fa-map-marker-alt" style="margin-right: 8px; color: #dc2626;"></i>
-                                        <b>Trial Location:</b> <span class="trial-location-placeholder" style="color: #6b7280;">Loading...</span>
-                                    </p>
-                                    <p style="margin: 0; color: #374151; font-weight: 600;">
-                                        <i class="fas fa-clipboard-check" style="margin-right: 8px; color: #16a34a;"></i>
-                                        <b>Trial Result:</b> <span class="trial-result-placeholder" style="color: #6b7280;">Loading...</span>
-                                    </p>
-                                </div>
-                                
-                                <button onclick="applyForTrialExam(${examDetails.id})" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border: none; color: white; padding: 14px 28px; border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4); display: flex; align-items: center; justify-content: center; width: 100%;">
-                                    <i class="fas fa-car" style="margin-right: 10px; font-size: 18px;"></i>
-                                    Apply for Trial Exam
-                                </button>
-                            </div>
-                        ` : ''}
-                        
-                        <!-- Trial Retry Section -->
-                        ${hasTrialExams && !hasPassedTrial ? `
-                            <div style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 2px solid #fbbf24; border-radius: 16px; padding: 24px; margin-bottom: 20px;">
-                                <div style="display: flex; align-items: center; margin-bottom: 16px; color: #d97706;">
-                                    <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-right: 12px;"></i>
-                                    <strong style="font-size: 18px; font-weight: 700;">You didn't pass the practical exam. You can apply for another trial exam.</strong>
-                                </div>
-                                
-                                <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
-                                    <p style="margin: 0 0 8px 0; color: #374151; font-weight: 600;">
-                                        <i class="fas fa-calendar" style="margin-right: 8px; color: #3b82f6;"></i>
-                                        <b>Next Trial Date:</b> <span class="trial-date-placeholder" style="color: #6b7280;">Loading...</span>
-                                    </p>
-                                    <p style="margin: 0 0 8px 0; color: #374151; font-weight: 600;">
-                                        <i class="fas fa-clock" style="margin-right: 8px; color: #f59e0b;"></i>
-                                        <b>Trial Time:</b> <span class="trial-time-placeholder" style="color: #6b7280;">Loading...</span>
-                                    </p>
-                                    <p style="margin: 0 0 8px 0; color: #374151; font-weight: 600;">
-                                        <i class="fas fa-map-marker-alt" style="margin-right: 8px; color: #dc2626;"></i>
-                                        <b>Trial Location:</b> <span class="trial-location-placeholder" style="color: #6b7280;">Loading...</span>
-                                    </p>
-                                    <p style="margin: 0; color: #374151; font-weight: 600;">
-                                        <i class="fas fa-clipboard-check" style="margin-right: 8px; color: #16a34a;"></i>
-                                        <b>Trial Result:</b> <span class="trial-result-placeholder" style="color: #6b7280;">Loading...</span>
-                                    </p>
-                                </div>
-                                
-                                <button onclick="applyForTrialExam(${examDetails.id})" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: none; color: white; padding: 14px 28px; border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4); display: flex; align-items: center; justify-content: center; width: 100%;">
-                                    <i class="fas fa-redo" style="margin-right: 10px; font-size: 18px;"></i>
-                                    Apply for Retry
-                                </button>
-                            </div>
-                        ` : ''}
-                        
-                        <!-- Action Buttons -->
-                        <div style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;">
-                            <button onclick="Swal.close(); showExamDetails(${JSON.stringify(examDetails).replace(/"/g, "&quot;")});" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border: none; color: white; padding: 12px 24px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); display: flex; align-items: center; font-size: 14px; min-width: 180px; justify-content: center;">
-                                <i class="fas fa-info-circle" style="margin-right: 8px;"></i>Full Exam Details
-                            </button>
-                            
-                            ${!hasPassed ? `
-                                <button onclick="Swal.close(); showPaymentForm();" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); border: none; color: white; padding: 12px 24px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3); display: flex; align-items: center; font-size: 14px; min-width: 180px; justify-content: center;">
-                                    <i class="fas fa-credit-card" style="margin-right: 8px;"></i>Make Payment
-                                </button>
-                            ` : ''}
-                        </div>
-                    </div>
-                `;
-            }
-
-        default:
-            return "";
-    }
-}
+          default:
+              return "";
+      }
+  }
 
 
   // =================== UTILITY FUNCTIONS ===================

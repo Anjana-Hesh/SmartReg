@@ -1,29 +1,19 @@
-/// Admin Dashboard Functions - IMPROVED VERSION WITH REAL APPLICATION STATUS COUNTS
-
-// FIXED: Move API_BASE_URL to global scope
 const API_BASE_URL = "http://localhost:8080/api/v1";
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Check authentication first
+
     checkAuthentication();
-    
-    // Initialize dashboard
     initializeDashboard();
-
-    // Add event listeners
     addEventListeners();
-
-    // Load initial data with real database values
     loadDashboardData();
 });
 
 function checkAuthentication() {
-    // CORRECTED: Use the exact same keys as in your other files
+
     const token = localStorage.getItem('smartreg_token') || sessionStorage.getItem('smartreg_token');
     const userData = localStorage.getItem('smartreg_user');
     
     if (!token || !userData) {
-        // Not authenticated, redirect to login
         Swal.fire({
             title: "Authentication Required",
             text: "Please login to access the admin dashboard",
@@ -37,11 +27,9 @@ function checkAuthentication() {
         return false;
     }
     
-    // Parse user data and display user info
     try {
         const user = JSON.parse(userData);
         
-        // Check if user has admin role (if your system has roles)
         if (user.role && user.role !== 'ADMIN') {
             Swal.fire({
                 title: "Access Denied",
@@ -55,24 +43,20 @@ function checkAuthentication() {
             });
             return false;
         }
-        
-        // Update user display elements
+    
         updateUserDisplay(user);
-        
-        // Setup AJAX defaults with authentication
         setupAjaxDefaults(token);
         
         return true;
     } catch (e) {
         console.error('Error parsing user data:', e);
-        // Clear corrupted data and redirect
         performLogout();
         return false;
     }
 }
 
 function setupAjaxDefaults(token) {
-    // Setup jQuery AJAX defaults if jQuery is available
+    
     if (typeof $ !== 'undefined') {
         $.ajaxSetup({
             beforeSend: function(xhr) {
@@ -98,13 +82,12 @@ function setupAjaxDefaults(token) {
 }
 
 function updateUserDisplay(user) {
-    // Update admin name in navigation
+    
     const adminName = document.querySelector('.navbar-nav .dropdown-toggle');
     if (adminName && user.fullName) {
         adminName.innerHTML = `<i class="fas fa-user-circle me-2"></i>${user.fullName}`;
     }
     
-    // Update any other user-specific elements
     const userElements = document.querySelectorAll('[data-user-name]');
     userElements.forEach(element => {
         element.textContent = user.fullName || user.name || 'Admin';
@@ -112,12 +95,11 @@ function updateUserDisplay(user) {
 }
 
 function initializeDashboard() {
-    // FIXED: Add smooth scrolling with proper selector validation
+   
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
             const href = this.getAttribute('href');
             
-            // Only handle if it's a valid selector (not just "#")
             if (href !== '#' && document.querySelector(href)) {
                 e.preventDefault();
                 const target = document.querySelector(href);
@@ -130,83 +112,85 @@ function initializeDashboard() {
         });
     });
 
-    // Add animation to cards
     const cards = document.querySelectorAll('.card-glass');
     cards.forEach((card, index) => {
         card.style.animationDelay = `${index * 0.1}s`;
         card.classList.add('animate-fade-in');
     });
 
-    // Add click handlers to stats cards for navigation
     addStatsCardClickHandlers();
 }
 
 function addStatsCardClickHandlers() {
-    // Get all stats cards
     const statsCards = document.querySelectorAll('.floating-element');
     
     if (statsCards.length >= 4) {
-        // Pending Licenses card - navigate to pending applications
         statsCards[0].style.cursor = 'pointer';
         statsCards[0].addEventListener('click', function() {
             navigateToApplications('PENDING');
         });
-
-        // Declined Licenses card - navigate to rejected applications
+        
         statsCards[1].style.cursor = 'pointer';
         statsCards[1].addEventListener('click', function() {
             navigateToApplications('REJECTED');
         });
-
-        // Approved Licenses card - navigate to approved applications
+        
         statsCards[2].style.cursor = 'pointer';
         statsCards[2].addEventListener('click', function() {
             navigateToApplications('APPROVED');
         });
-
-        // Staff Members card - navigate to staff management
+        
         statsCards[3].style.cursor = 'pointer';
         statsCards[3].addEventListener('click', function() {
+            localStorage.removeItem('application_status_filter');
             window.location.href = 'staffManagement.html';
         });
     }
-
-    // Add hover effects
-    statsCards.forEach(card => {
+    
+    statsCards.forEach((card, index) => {
         card.addEventListener('mouseenter', function() {
             this.style.transform = 'translateY(-5px)';
-            this.style.transition = 'transform 0.3s ease';
+            this.style.transition = 'transform 0.3s ease, box-shadow 0.3s ease';
+            this.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.15)';
         });
         
         card.addEventListener('mouseleave', function() {
             this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '';
+        });
+        
+        card.addEventListener('mousedown', function() {
+            this.style.transform = 'translateY(-3px) scale(0.98)';
+        });
+        
+        card.addEventListener('mouseup', function() {
+            this.style.transform = 'translateY(-5px)';
         });
     });
 }
 
 function navigateToApplications(status) {
-    // Store the status filter in localStorage to be used by applications page
-    localStorage.setItem('application_status_filter', status);
+    const filterData = {
+        status: status,
+        timestamp: Date.now(),
+        fromDashboard: true
+    };
     
-    // Navigate to applications page
-    window.location.href = '../views/Approvement.html'; // Create this page if it doesn't exist
+    localStorage.setItem('application_status_filter', JSON.stringify(filterData));
+    
+    window.location.href = '../views/Approvement.html';
 }
 
 function addEventListeners() {
-    // Sidebar navigation
+   
     document.querySelectorAll('.nav-link').forEach(link => {
         link.addEventListener('click', function(e) {
-            // Only prevent default for hash links, not actual page links
+          
             if (this.getAttribute('href').startsWith('#')) {
                 e.preventDefault();
 
-                // Remove active class from all links
                 document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-
-                // Add active class to clicked link
                 this.classList.add('active');
-
-                // Load corresponding content
                 const page = this.getAttribute('href').replace('#', '');
                 if (page) {
                     loadPageContent(page);
@@ -215,7 +199,6 @@ function addEventListeners() {
         });
     });
 
-    // Quick action buttons - handle both links and buttons
     document.querySelectorAll('.btn-primary-glass, .btn-glass').forEach(btn => {
         if (!btn.getAttribute('href') || btn.getAttribute('href').startsWith('#')) {
             btn.addEventListener('click', function(e) {
@@ -226,7 +209,6 @@ function addEventListeners() {
         }
     });
 
-    // Logout button handlers
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', function(e) {
@@ -258,6 +240,7 @@ function handleLogout() {
         cancelButtonText: 'Cancel',
         background: '#1a1a1a',
         color: '#ffffff'
+    
     }).then((result) => {
         if (result.isConfirmed) {
             performLogout();
@@ -266,7 +249,7 @@ function handleLogout() {
 }
 
 function performLogout() {
-    // Clear all auth tokens and user data
+
     localStorage.removeItem('smartreg_token');
     sessionStorage.removeItem('smartreg_token');
     localStorage.removeItem('smartreg_user');
@@ -305,7 +288,6 @@ function handleUnauthorized() {
 function loadDashboardData() {
     showLoading(true);
     
-    // Load all dashboard data with real API calls
     Promise.all([
         loadApplicationStatusCounts(),
         loadRecentActivity(),
@@ -321,14 +303,12 @@ function loadDashboardData() {
     });
 }
 
-// IMPROVED: Function to load application status counts from the API with better error handling
 async function loadApplicationStatusCounts() {
     try {
         const token = localStorage.getItem('smartreg_token') || sessionStorage.getItem('smartreg_token');
         
         console.log('Fetching application status counts...');
         
-        // Fetch all applications
         const response = await fetch(`${API_BASE_URL}/applications/getall`, {
             method: 'GET',
             headers: { 
@@ -336,15 +316,25 @@ async function loadApplicationStatusCounts() {
                 'Content-Type': 'application/json'
             }
         });
+
+        const respStaff = await fetch(`${API_BASE_URL}/staff`,{
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        })
         
-        if (!response.ok) {
+        if (!response.ok && !respStaff.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         
         const applications = await response.json();
         console.log('Fetched applications:', applications);
+
+        const staffDetails = await respStaff.json();
+        console.log("Fetch Starr Details: " + staffDetails);
         
-        // Initialize status counts
         const statusCounts = {
             PENDING: 0,
             APPROVED: 0,
@@ -352,7 +342,6 @@ async function loadApplicationStatusCounts() {
             TOTAL: 0
         };
         
-        // Count applications by status (handle case-insensitive comparison)
         applications.forEach(app => {
             statusCounts.TOTAL++;
             
@@ -378,10 +367,8 @@ async function loadApplicationStatusCounts() {
         
         console.log('Application status counts:', statusCounts);
         
-        // Update the UI with real statistics
         updateApplicationStatsCards(statusCounts);
         
-        // Store stats globally for notifications
         window.applicationStats = statusCounts;
         
         return statusCounts;
@@ -389,14 +376,12 @@ async function loadApplicationStatusCounts() {
     } catch (error) {
         console.error('Error loading application status counts:', error);
         
-        // Show user-friendly error message
         showAlert(
             "Data Loading Error", 
             "Unable to load application statistics. Using cached data if available.", 
             "warning"
         );
         
-        // Use fallback values if API fails
         const fallbackCounts = {
             PENDING: 0,
             APPROVED: 0,
@@ -411,11 +396,9 @@ async function loadApplicationStatusCounts() {
     }
 }
 
-// IMPROVED: Better card updating with proper selectors
 function updateApplicationStatsCards(statusCounts = {}) {
     console.log('Updating application stats cards with:', statusCounts);
     
-    // Stats configuration - updated for better targeting
     const statsConfig = [
         { 
             cardIndex: 1,
@@ -440,7 +423,7 @@ function updateApplicationStatsCards(statusCounts = {}) {
         },
         { 
             cardIndex: 4,
-            value: 12, // Static staff count - you can make this dynamic later
+            value: 12,
             label: 'Staff Members',
             icon: 'fas fa-users',
             color: 'info'
@@ -448,7 +431,7 @@ function updateApplicationStatsCards(statusCounts = {}) {
     ];
 
     statsConfig.forEach((stat, index) => {
-        // Try multiple selector approaches to find the correct elements
+
         const selectors = [
             `.col-md-3:nth-child(${stat.cardIndex}) h3`,
             `.stats-card:nth-child(${stat.cardIndex}) h3`,
@@ -462,7 +445,6 @@ function updateApplicationStatsCards(statusCounts = {}) {
             if (element) break;
         }
         
-        // If still not found, try finding by content or data attribute
         if (!element) {
             const allH3s = document.querySelectorAll('h3');
             allH3s.forEach(h3 => {
@@ -474,16 +456,14 @@ function updateApplicationStatsCards(statusCounts = {}) {
         }
         
         if (element) {
-            // Animate the counter
+
             animateCounter(element, stat.value);
             
-            // Update the label if found
             const labelElement = element.nextElementSibling;
             if (labelElement && labelElement.tagName.toLowerCase() === 'p') {
                 labelElement.textContent = stat.label;
             }
             
-            // Update icon if found
             const iconElement = element.parentElement.querySelector('i') || 
                               element.previousElementSibling?.querySelector('i');
             if (iconElement) {
@@ -496,7 +476,6 @@ function updateApplicationStatsCards(statusCounts = {}) {
         }
     });
 
-    // Update page title or other elements if needed
     updateDashboardTitle(statusCounts);
 }
 
@@ -507,7 +486,6 @@ function updateDashboardTitle(statusCounts) {
         titleElement.textContent = `Admin Dashboard - ${totalApplications} Applications`;
     }
     
-    // Update any dashboard subtitle
     const subtitleElement = document.querySelector('.dashboard-subtitle, .page-subtitle');
     if (subtitleElement) {
         subtitleElement.textContent = `Managing ${totalApplications} total applications`;
@@ -518,14 +496,13 @@ function animateCounter(element, target) {
     if (!element) return;
     
     const startValue = parseInt(element.textContent) || 0;
-    const duration = 1000; // 1 second
+    const duration = 1000;
     const startTime = performance.now();
     
     function updateCounter(currentTime) {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
         
-        // Use easing function for smooth animation
         const easeOutQuart = 1 - Math.pow(1 - progress, 4);
         const current = Math.round(startValue + (target - startValue) * easeOutQuart);
         
@@ -541,7 +518,6 @@ function animateCounter(element, target) {
     requestAnimationFrame(updateCounter);
 }
 
-// IMPROVED: Recent activity with better error handling
 async function loadRecentActivity() {
     try {
         const token = localStorage.getItem('smartreg_token') || sessionStorage.getItem('smartreg_token');
@@ -556,7 +532,6 @@ async function loadRecentActivity() {
         if (response.ok) {
             const applications = await response.json();
             
-            // Sort by date and take the latest 3
             const recentApps = applications
                 .sort((a, b) => {
                     const dateA = new Date(a.createdAt || a.submittedDate || 0);
@@ -565,7 +540,6 @@ async function loadRecentActivity() {
                 })
                 .slice(0, 3);
             
-            // Convert to activity format
             const activities = recentApps.map(app => {
                 let icon, color, text;
                 
@@ -668,7 +642,6 @@ async function loadNotifications() {
         
         const notifications = [];
         
-        // Add notifications based on real data
         if (pendingCount > 0) {
             notifications.push({
                 type: 'warning', 
@@ -693,7 +666,6 @@ async function loadNotifications() {
             });
         }
         
-        // Add system notification
         notifications.push({
             type: 'info', 
             icon: 'fas fa-server',
@@ -727,7 +699,6 @@ function updateNotificationsUI(notifications) {
         return;
     }
 
-    // Create notifications area if it doesn't exist
     let notificationArea = notificationContainer.querySelector('.notifications-area');
     if (!notificationArea) {
         notificationContainer.innerHTML = `
@@ -741,7 +712,6 @@ function updateNotificationsUI(notifications) {
     } else {
         notificationArea.innerHTML = '';
         
-        // Update notification count
         const badge = notificationContainer.querySelector('.badge');
         if (badge) {
             badge.textContent = notifications.length;
@@ -763,10 +733,9 @@ function updateNotificationsUI(notifications) {
 
 async function loadSystemStatus() {
     try {
-        // You can implement actual system status checking here
+
         console.log('System status: Operational');
         
-        // Update system status indicator if it exists
         const statusIndicator = document.querySelector('.system-status');
         if (statusIndicator) {
             statusIndicator.innerHTML = `
@@ -821,7 +790,6 @@ function generateReport() {
         generatedAt: new Date().toLocaleString()
     };
     
-    // Create a simple report
     const reportContent = `
         <div style="text-align: left;">
             <h6>Application Statistics Report</h6>
@@ -849,7 +817,6 @@ function generateReport() {
         confirmButtonColor: '#3085d6'
     }).then((result) => {
         if (result.isConfirmed) {
-            // Here you could implement actual PDF generation
             showAlert('PDF Download', 'PDF generation feature coming soon!', 'info');
         }
     });
@@ -928,7 +895,6 @@ function showAlert(title, message, type = 'info') {
     });
 }
 
-// Utility function to format time ago
 function formatTimeAgo(date) {
     const now = new Date();
     const diffInSeconds = Math.floor((now - date) / 1000);
@@ -947,7 +913,6 @@ function formatTimeAgo(date) {
     }
 }
 
-// Refresh dashboard function
 window.refreshDashboard = function() {
     showLoading(true);
 
@@ -968,13 +933,10 @@ window.refreshDashboard = function() {
     });
 };
 
-
-// IMPROVED: Auto-refresh with better performance
 let refreshInterval;
 let isVisible = true;
 
 function startAutoRefresh() {
-    // Refresh data every 3 minutes when page is visible
     refreshInterval = setInterval(() => {
         if (isVisible && !document.hidden) {
             console.log('Auto-refreshing dashboard data...');
@@ -982,7 +944,7 @@ function startAutoRefresh() {
             loadRecentActivity();
             loadNotifications();
         }
-    }, 3 * 60 * 1000); // 3 minutes
+    }, 3 * 60 * 1000);
 }
 
 function stopAutoRefresh() {
@@ -992,7 +954,6 @@ function stopAutoRefresh() {
     }
 }
 
-// Handle page visibility changes for better performance
 document.addEventListener('visibilitychange', function() {
     isVisible = !document.hidden;
     
@@ -1004,32 +965,27 @@ document.addEventListener('visibilitychange', function() {
     }
 });
 
-// Handle browser beforeunload
 window.addEventListener('beforeunload', function() {
     stopAutoRefresh();
 });
 
-// IMPROVED: Keyboard shortcuts with better UX
 document.addEventListener('keydown', function(e) {
-    // Ctrl/Cmd + R for refresh (prevent default browser refresh)
+
     if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
         e.preventDefault();
         refreshDashboard();
     }
     
-    // Ctrl/Cmd + L for logout
     if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
         e.preventDefault();
         handleLogout();
     }
     
-    // Ctrl/Cmd + G for generate report
     if ((e.ctrlKey || e.metaKey) && e.key === 'g') {
         e.preventDefault();
         generateReport();
     }
     
-    // ESC key to close any open modals or overlays
     if (e.key === 'Escape') {
         const overlay = document.getElementById('loadingOverlay');
         if (overlay) {
@@ -1038,11 +994,9 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// IMPROVED: Add error boundary for better error handling
 window.addEventListener('error', function(event) {
     console.error('Dashboard error:', event.error);
     
-    // Don't show alert for network errors during auto-refresh
     if (!event.error.message.includes('fetch')) {
         showAlert(
             'Application Error',
@@ -1052,13 +1006,11 @@ window.addEventListener('error', function(event) {
     }
 });
 
-// IMPROVED: Add performance monitoring
 function logPerformanceMetrics() {
     if (window.performance && window.performance.now) {
         const loadTime = window.performance.now();
         console.log(`Dashboard loaded in ${loadTime.toFixed(2)}ms`);
         
-        // Log memory usage if available
         if (window.performance.memory) {
             const memory = window.performance.memory;
             console.log('Memory usage:', {
@@ -1070,7 +1022,6 @@ function logPerformanceMetrics() {
     }
 }
 
-// IMPROVED: Add connection status monitoring
 function monitorConnectionStatus() {
     function updateConnectionStatus() {
         const isOnline = navigator.onLine;
@@ -1094,15 +1045,13 @@ function monitorConnectionStatus() {
     window.addEventListener('online', updateConnectionStatus);
     window.addEventListener('offline', updateConnectionStatus);
     
-    // Initial check
     updateConnectionStatus();
 }
 
-// IMPROVED: Add data caching for better performance
 const dataCache = {
     applications: null,
     cacheTime: null,
-    cacheExpiry: 5 * 60 * 1000, // 5 minutes
+    cacheExpiry: 5 * 60 * 1000,
     
     set(key, data) {
         this[key] = data;
@@ -1122,9 +1071,8 @@ const dataCache = {
     }
 };
 
-// IMPROVED: Cached version of loadApplicationStatusCounts for better performance
 async function loadApplicationStatusCountsCached() {
-    // Check cache first
+
     const cachedData = dataCache.get('applications');
     if (cachedData) {
         console.log('Using cached application data');
@@ -1133,7 +1081,6 @@ async function loadApplicationStatusCountsCached() {
         return cachedData;
     }
     
-    // Load from API and cache
     const data = await loadApplicationStatusCounts();
     if (data) {
         dataCache.set('applications', data);
@@ -1141,7 +1088,6 @@ async function loadApplicationStatusCountsCached() {
     return data;
 }
 
-// IMPROVED: Add search functionality for quick navigation
 function addSearchFunctionality() {
     const searchInput = document.querySelector('.dashboard-search, #dashboardSearch');
     if (searchInput) {
@@ -1158,7 +1104,6 @@ function addSearchFunctionality() {
     }
 }
 
-// IMPROVED: Add tooltips for better UX
 function addTooltips() {
     const tooltipElements = document.querySelectorAll('[data-tooltip]');
     tooltipElements.forEach(element => {
@@ -1197,34 +1142,23 @@ function addTooltips() {
     });
 }
 
-// IMPROVED: Initialize all enhanced features
 function initializeEnhancedFeatures() {
-    // Add performance monitoring
     logPerformanceMetrics();
-    
-    // Add connection status monitoring
     monitorConnectionStatus();
-    
-    // Add search functionality
     addSearchFunctionality();
-    
-    // Add tooltips
     addTooltips();
     
     console.log('Enhanced dashboard features initialized');
 }
 
-// Start auto-refresh when page loads
 startAutoRefresh();
 
-// Initialize enhanced features when DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeEnhancedFeatures);
 } else {
     initializeEnhancedFeatures();
 }
 
-// Export functions for external use if needed
 window.DashboardAPI = {
     refreshData: loadDashboardData,
     refreshStats: loadApplicationStatusCounts,
