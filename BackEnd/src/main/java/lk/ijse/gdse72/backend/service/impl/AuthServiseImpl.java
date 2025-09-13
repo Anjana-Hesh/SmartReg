@@ -306,9 +306,9 @@ public class AuthServiseImpl implements AuthServise {  // Fixed typo in interfac
                             .fullName(name)
                             .password("") // Google users don't need password
                             .phoneNumber(0) // Default phone number (you might want to make this nullable)
-                            .role(Role.ADMIN) // Set to ADMIN for dashboard access
+                            .role(Role.DRIVER) // Set to ADMIN for dashboard access
                             .status(UserStatus.ACTIVE) // Set active status
-                            .isAdmin(true) // Set admin flag
+                            .isAdmin(false) // Set admin flag
                             .build();
                     return userRepository.save(newUser);
                 });
@@ -316,8 +316,8 @@ public class AuthServiseImpl implements AuthServise {  // Fixed typo in interfac
                 // Ensure existing user has proper role and status
                 boolean needsUpdate = false;
 
-                if (user.getRole() == null || user.getRole() != Role.ADMIN) {
-                    user.setRole(Role.ADMIN);
+                if (user.getRole() == null) {
+                    user.setRole(Role.DRIVER);
                     needsUpdate = true;
                 }
 
