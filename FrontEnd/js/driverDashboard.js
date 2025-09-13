@@ -4265,7 +4265,7 @@ checkPayHereLoaded().then((loaded) => {
       const smartUser = JSON.parse(smartUserString);
       const userId = smartUser.id;
 
-      const authToken = localStorage.getItem("auth_token") || smartUser.token;
+      const authToken = localStorage.getItem("auth_token") || sessionStorage.getItem("auth_token");
 
       try {
           
@@ -4384,8 +4384,10 @@ checkPayHereLoaded().then((loaded) => {
               
               success: function(response) {
                   if (response && response.data) {
+                    console.log("make Authentication Request: " + response.data);
                       resolve(response.data);
                   } else {
+                    console.log("make Authentication Request else: ");
                       resolve(response);
                   }
               },

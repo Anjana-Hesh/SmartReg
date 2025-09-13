@@ -219,7 +219,7 @@ public class TrialExamServiceImpl implements TrialExamService {
 
                 // Conditional logic for different email templates
                 if ("PASS".equals(normalizedResult)) {
-                    subject = "Congratulations! Your Trial Exam Result is a Pass";
+                    subject = "Congratulations! Your Trial Exam Result is a Pass So You COMPLETE your License";
                     body = "<!DOCTYPE html>" +
                             "<html lang=\"en\">" +
                             "<head>" +
@@ -388,7 +388,6 @@ public class TrialExamServiceImpl implements TrialExamService {
             }
         } catch (Exception e) {
             log.error("Error handling application status update: {}", e.getMessage(), e);
-            // Don't fail the main transaction for status update errors
         }
     }
 

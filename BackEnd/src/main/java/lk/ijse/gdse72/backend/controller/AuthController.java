@@ -2,10 +2,7 @@ package lk.ijse.gdse72.backend.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import lk.ijse.gdse72.backend.dto.ApiResponse;
-import lk.ijse.gdse72.backend.dto.AuthDTO;
-import lk.ijse.gdse72.backend.dto.AuthResponseDTO;
-import lk.ijse.gdse72.backend.dto.RegisterDTO;
+import lk.ijse.gdse72.backend.dto.*;
 import lk.ijse.gdse72.backend.service.AuthServise;
 import lk.ijse.gdse72.backend.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +21,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
-@CrossOrigin
+@CrossOrigin("*")
 public class AuthController {
     private final AuthServise authService;
     private final JwtUtil jwtUtil;
@@ -119,4 +116,21 @@ public class AuthController {
         return ResponseEntity.status(403).build();
     }
 
+    @PostMapping("/google")
+    public ResponseEntity<ApiResponse> loginWithGoogle(@RequestBody GoogleAuthDTO googleAuthDTO) {
+        try {
+            AuthResponseDTO authResponse = authService.authenticateGoogle(googleAuthDTO);
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("accessToken", authResponse.getAccessToken());
+            data.put("role", authResponse.getRole());
+            data.put("id", authResponse.getUserId());
+            data.put("fullName", authResponse.getName());
+
+            return ResponseEntity.ok(new ApiResponse(200, "Google login successful", data));
+        } catch (Exception e) {
+            return ResponseEntity.status(401)
+                    .body(new ApiResponse(401, "Google Authentication Failed", e.getMessage()));
+        }
+    }
 }

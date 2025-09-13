@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,7 +11,6 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.10.5/sweetalert2.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/signin.css">
 
-    <!-- For the Google logging part , and fb loging part -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
 
@@ -20,7 +20,7 @@
 <div class="container-fluid vh-100 d-flex align-items-center">
     <div class="row w-100">
         <div class="content-container">
-            <div class="card-glass p-4">
+            <div class="card-glass p-4" style="max-width: 400px; width: 100%;">
                 <div class="text-center mb-4">
                     <div class="floating-element">
                         <i class="fas fa-car text-primary mb-3" style="font-size: 3rem;"></i>
@@ -28,14 +28,25 @@
                     <h2 class="fw-bold mb-2">SmartReg.lk</h2>
                     <p class="text-secondary">Vehicle & License Management System</p>
                 </div>
+                
+                <div class="d-flex justify-content-center w-100 mb-3">
+                    <div id="g_id_onload"
+                         data-client_id="155511992182-thj6vobkl47smageue09csfsml1vn5cv.apps.googleusercontent.com"
+                         data-callback="handleCredentialResponse"
+                         data-auto_prompt="false">
+                    </div>
+                    <div class="g_id_signin"
+                         data-type="standard"
+                         data-shape="pill"
+                         data-theme="outline"
+                         data-text="continue_with"
+                         data-size="large"
+                         data-logo_alignment="left"
+                         data-width="320">
+                    </div>
+                </div>
 
-                <button class="btn btn-google-glass w-100 mb-3">
-                    <img src="assets/images/googleLogo.png"
-                         alt="Google logo" width="20" class="me-2">
-                    Continue with Google
-                </button>
-
-                <button class="btn btn-google-glass w-100 mb-3">
+                <button class="btn btn-facebook-glass w-100 mb-3">
                     <img src="assets/images/facebook.png"
                          alt="Facebook logo" width="20" class="me-2">
                     Continue with Facebook
@@ -92,9 +103,9 @@
     </div>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.10.5/sweetalert2.all.min.js"></script>
 
 <script src="js/signin.js">  </script>

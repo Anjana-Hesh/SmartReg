@@ -72,6 +72,19 @@ body::before {
   transform: translateY(-2px);
 }
 
+.btn-facebook-glass {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.btn-facebook-glass:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+
 .content-container {
   margin-left: 15%;
   max-width: 450px;

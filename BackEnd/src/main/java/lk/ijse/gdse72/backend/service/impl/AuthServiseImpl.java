@@ -1,7 +1,12 @@
 package lk.ijse.gdse72.backend.service.impl;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.json.jackson2.JacksonFactory;
 import lk.ijse.gdse72.backend.dto.AuthDTO;
 import lk.ijse.gdse72.backend.dto.AuthResponseDTO;
+import lk.ijse.gdse72.backend.dto.GoogleAuthDTO;
 import lk.ijse.gdse72.backend.dto.RegisterDTO;
 import lk.ijse.gdse72.backend.entity.Role;
 import lk.ijse.gdse72.backend.entity.User;
@@ -13,10 +18,13 @@ import lk.ijse.gdse72.backend.service.EmailService;
 import lk.ijse.gdse72.backend.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.Collections;
 
 @Slf4j
 @Service
@@ -27,6 +35,14 @@ public class AuthServiseImpl implements AuthServise {  // Fixed typo in interfac
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
+
+
+    @Value("${google.client.id}")
+    private String clientId;
+
+    @Value("${google.client.secret}")
+    private String clientSecret;
+
 
     @Override
     public AuthResponseDTO authenticate(AuthDTO authDTO) {
@@ -257,6 +273,95 @@ public class AuthServiseImpl implements AuthServise {  // Fixed typo in interfac
         } catch (Exception e) {
             // Log error but don't fail the password reset if email fails
             System.err.println("Failed to send confirmation email: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public AuthResponseDTO authenticateGoogle(GoogleAuthDTO googleAuthDTO) {
+        try {
+            JacksonFactory jacksonFactory = JacksonFactory.getDefaultInstance();
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
+                    GoogleNetHttpTransport.newTrustedTransport(),
+                    jacksonFactory
+            )
+                    .setAudience(Collections.singletonList(clientId))
+                    .build();
+
+            GoogleIdToken idToken = verifier.verify(googleAuthDTO.getTokenId());
+            if (idToken != null) {
+                GoogleIdToken.Payload payload = idToken.getPayload();
+
+                String email = payload.getEmail();
+                String name = (String) payload.get("name");
+                String googleId = payload.getSubject();
+
+                log.info("Google authentication attempt for email: {}", email);
+
+                // Find existing user or create new one
+                User user = userRepository.findByEmail(email).orElseGet(() -> {
+                    log.info("Creating new Google user: {}", email);
+                    User newUser = User.builder()
+                            .email(email)
+                            .userName(email) // Use email as username for consistency
+                            .fullName(name)
+                            .password("") // Google users don't need password
+                            .phoneNumber(0) // Default phone number (you might want to make this nullable)
+                            .role(Role.ADMIN) // Set to ADMIN for dashboard access
+                            .status(UserStatus.ACTIVE) // Set active status
+                            .isAdmin(true) // Set admin flag
+                            .build();
+                    return userRepository.save(newUser);
+                });
+
+                // Ensure existing user has proper role and status
+                boolean needsUpdate = false;
+
+                if (user.getRole() == null || user.getRole() != Role.ADMIN) {
+                    user.setRole(Role.ADMIN);
+                    needsUpdate = true;
+                }
+
+                if (user.getStatus() == null || user.getStatus() != UserStatus.ACTIVE) {
+                    user.setStatus(UserStatus.ACTIVE);
+                    needsUpdate = true;
+                }
+
+                // Make sure userName is set (for JWT compatibility)
+                if (user.getUserName() == null || user.getUserName().isEmpty()) {
+                    user.setUserName(email);
+                    needsUpdate = true;
+                }
+
+                // Set admin flag if not set
+//                if (!user.isAdmin()) {
+//                    user.setIsAdmin(true);
+//                    needsUpdate = true;
+//                }
+
+                if (needsUpdate) {
+                    userRepository.save(user);
+                }
+
+                // Generate JWT token with enhanced claims using the new method
+                String token = jwtUtil.generateTokenWithClaims(user);
+
+                log.info("Google user {} authenticated successfully with role: {}", user.getEmail(), user.getRole());
+
+                // Return response in same format as normal login
+                return new AuthResponseDTO(
+                        token,
+                        user.getRole().name(),
+                        user.getUserName(),
+                        user.getFullName(),
+                        user.getId()
+                );
+
+            } else {
+                throw new RuntimeException("Invalid Google ID Token");
+            }
+        } catch (Exception e) {
+            log.error("Google authentication failed: {}", e.getMessage(), e);
+            throw new RuntimeException("Google login failed: " + e.getMessage());
         }
     }
 }

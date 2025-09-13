@@ -8,12 +8,89 @@ document.addEventListener('DOMContentLoaded', function() {
     loadDashboardData();
 });
 
-function checkAuthentication() {
+// function checkAuthentication() {
 
+//     const token = localStorage.getItem('smartreg_token') || sessionStorage.getItem('smartreg_token');
+//     const userData = localStorage.getItem('smartreg_user');
+    
+//     if (!token || !userData) {
+//         Swal.fire({
+//             title: "Authentication Required",
+//             text: "Please login to access the admin dashboard",
+//             icon: "error",
+//             background: "#1a1a1a",
+//             color: "#ffffff",
+//             confirmButtonText: "OK"
+//         }).then(() => {
+//             window.location.href = '../index.html';
+//         });
+//         return false;
+//     }
+    
+//     try {
+//         const user = JSON.parse(userData);
+        
+//         if (user.role && user.role !== 'ADMIN') {
+//             Swal.fire({
+//                 title: "Access Denied",
+//                 text: "You don't have permission to access the admin dashboard",
+//                 icon: "error",
+//                 background: "#1a1a1a",
+//                 color: "#ffffff",
+//                 confirmButtonText: "OK"
+//             }).then(() => {
+//                 window.location.href = '../index.html';
+//             });
+//             return false;
+//         }
+    
+//         updateUserDisplay(user);
+//         setupAjaxDefaults(token);
+        
+//         return true;
+//     } catch (e) {
+//         console.error('Error parsing user data:', e);
+//         performLogout();
+//         return false;
+//     }
+// }
+
+// function setupAjaxDefaults(token) {
+    
+//     if (typeof $ !== 'undefined') {
+//         $.ajaxSetup({
+//             beforeSend: function(xhr) {
+//                 if (token) {
+//                     xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+//                 }
+//                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+//                 if (csrfToken) {
+//                     xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken);
+//                 }
+//             },
+//             error: function(xhr, status, error) {
+//                 if (xhr.status === 401) {
+//                     handleUnauthorized();
+//                 } else if (xhr.status === 403) {
+//                     showAlert("Access Denied", "You don't have permission to perform this action", "error");
+//                 } else if (xhr.status >= 500) {
+//                     showAlert("Server Error", "Internal server error. Please try again later.", "error");
+//                 }
+//             }
+//         });
+//     }
+// }
+
+// Enhanced checkAuthentication function for dashboard.js
+function checkAuthentication() {
+    // Check both localStorage and sessionStorage for token
     const token = localStorage.getItem('smartreg_token') || sessionStorage.getItem('smartreg_token');
     const userData = localStorage.getItem('smartreg_user');
     
+    console.log('Authentication check:', { hasToken: !!token, hasUserData: !!userData });
+    
     if (!token || !userData) {
+        console.log('Missing authentication data - redirecting to login');
         Swal.fire({
             title: "Authentication Required",
             text: "Please login to access the admin dashboard",
@@ -29,8 +106,11 @@ function checkAuthentication() {
     
     try {
         const user = JSON.parse(userData);
+        console.log('User data:', user);
         
+        // Check role permissions
         if (user.role && user.role !== 'ADMIN') {
+            console.log('Access denied - insufficient permissions');
             Swal.fire({
                 title: "Access Denied",
                 text: "You don't have permission to access the admin dashboard",
@@ -44,8 +124,12 @@ function checkAuthentication() {
             return false;
         }
     
+        // Update UI and setup AJAX
         updateUserDisplay(user);
         setupAjaxDefaults(token);
+        
+        // Log successful authentication
+        console.log('Authentication successful for user:', user.fullName || user.username);
         
         return true;
     } catch (e) {
@@ -55,29 +139,165 @@ function checkAuthentication() {
     }
 }
 
+// Enhanced setupAjaxDefaults function
 function setupAjaxDefaults(token) {
+    console.log('Setting up AJAX defaults with token:', token ? 'Present' : 'Missing');
     
     if (typeof $ !== 'undefined') {
+        // Clear any existing AJAX setup
+        $.ajaxSetup({});
+        
+        // Set new AJAX defaults
         $.ajaxSetup({
-            beforeSend: function(xhr) {
+            beforeSend: function(xhr, settings) {
+                console.log('AJAX Request:', settings.type, settings.url);
+                
                 if (token) {
                     xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+                    console.log('Authorization header set');
                 }
+                
                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
                 if (csrfToken) {
                     xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken);
                 }
+                
+                // Set content type for POST requests
+                if (settings.type === 'POST' && !settings.contentType) {
+                    xhr.setRequestHeader('Content-Type', 'application/json');
+                }
             },
             error: function(xhr, status, error) {
+                console.error('AJAX Error:', {
+                    status: xhr.status,
+                    statusText: xhr.statusText,
+                    responseText: xhr.responseText,
+                    error: error
+                });
+                
                 if (xhr.status === 401) {
+                    console.log('401 Unauthorized - clearing auth data');
                     handleUnauthorized();
                 } else if (xhr.status === 403) {
+                    console.log('403 Forbidden - access denied');
                     showAlert("Access Denied", "You don't have permission to perform this action", "error");
                 } else if (xhr.status >= 500) {
+                    console.log('Server error:', xhr.status);
                     showAlert("Server Error", "Internal server error. Please try again later.", "error");
+                } else if (xhr.status === 0) {
+                    console.log('Network error - possibly CORS or server down');
+                    showAlert("Network Error", "Could not connect to server. Please check your connection.", "error");
                 }
             }
         });
+        
+        console.log('AJAX defaults configured successfully');
+    } else {
+        console.warn('jQuery not available - AJAX defaults not set');
+    }
+}
+
+// Enhanced token verification for fetch requests
+// async function makeAuthenticatedRequest(url, options = {}) {
+//     const token = localStorage.getItem('smartreg_token') || sessionStorage.getItem('smartreg_token');
+    
+//     if (!token) {
+//         console.error('No token available for authenticated request');
+//         handleUnauthorized();
+//         return null;
+//     }
+    
+//     const defaultOptions = {
+//         headers: {
+//             'Authorization': `Bearer ${token}`,
+//             'Content-Type': 'application/json',
+//             ...options.headers
+//         },
+//         ...options
+//     };
+    
+//     try {
+//         console.log('Making authenticated request to:', url);
+//         const response = await fetch(url, defaultOptions);
+        
+//         if (response.status === 401) {
+//             console.log('401 response - handling unauthorized');
+//             handleUnauthorized();
+//             return null;
+//         }
+        
+//         if (!response.ok) {
+//             console.error('Request failed:', response.status, response.statusText);
+//             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+//         }
+        
+//         return response;
+//     } catch (error) {
+//         console.error('Authenticated request error:', error);
+//         throw error;
+//     }
+// }
+
+
+async function makeAuthenticatedRequest(url, options = {}) {
+    const token = localStorage.getItem('smartreg_token') || sessionStorage.getItem('smartreg_token');
+    
+    if (!token) {
+        console.error('No token available for authenticated request');
+        handleUnauthorized();
+        return null;
+    }
+    
+    const defaultOptions = {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            ...options.headers
+        },
+        ...options
+    };
+    
+    try {
+        console.log('Making authenticated request to:', url);
+        console.log('Request headers:', defaultOptions.headers);
+        
+        const response = await fetch(url, defaultOptions);
+        
+        console.log('Response status:', response.status);
+        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+        
+        if (response.status === 401) {
+            console.log('401 Unauthorized - token might be expired or invalid');
+            debugJWTToken(); // Debug the token when we get 401
+            handleUnauthorized();
+            return null;
+        }
+        
+        if (response.status === 403) {
+            console.log('403 Forbidden - user lacks required permissions');
+            debugJWTToken(); // Debug the token when we get 403
+            
+            // Try to get the response body for more details
+            const responseText = await response.text();
+            console.log('403 Response body:', responseText);
+            
+            showAlert(
+                "Access Denied", 
+                "You don't have permission to access this resource. Please contact support.", 
+                "error"
+            );
+            return null;
+        }
+        
+        if (!response.ok) {
+            console.error('Request failed:', response.status, response.statusText);
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        return response;
+    } catch (error) {
+        console.error('Authenticated request error:', error);
+        throw error;
     }
 }
 
@@ -305,41 +525,30 @@ function loadDashboardData() {
 
 async function loadApplicationStatusCounts() {
     try {
-        const token = localStorage.getItem('smartreg_token') || sessionStorage.getItem('smartreg_token');
+        console.log('Loading application status counts...');
         
-        console.log('Fetching application status counts...');
-        
-        const response = await fetch(`${API_BASE_URL}/applications/getall`, {
-            method: 'GET',
-            headers: { 
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        const respStaff = await fetch(`${API_BASE_URL}/staff`,{
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        })
-        
-        if (!response.ok && !respStaff.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
+        const response = await makeAuthenticatedRequest(`${API_BASE_URL}/applications/getall`);
+        if (!response) return null;
         
         const applications = await response.json();
-        console.log('Fetched applications:', applications);
-
-        const staffDetails = await respStaff.json();
-        console.log("Fetch Starr Details: " + staffDetails);
+        console.log('Applications loaded:', applications.length);
+        
+        // Load staff data
+        const staffResponse = await makeAuthenticatedRequest(`${API_BASE_URL}/staff`);
+        let staffCount = 12; // Default fallback
+        
+        if (staffResponse) {
+            const staffDetails = await staffResponse.json();
+            staffCount = Array.isArray(staffDetails) ? staffDetails.length : 12;
+            console.log('Staff count:', staffCount);
+        }
         
         const statusCounts = {
             PENDING: 0,
             APPROVED: 0,
             REJECTED: 0,
-            TOTAL: 0
+            TOTAL: 0,
+            STAFF: staffCount
         };
         
         applications.forEach(app => {
@@ -366,9 +575,7 @@ async function loadApplicationStatusCounts() {
         });
         
         console.log('Application status counts:', statusCounts);
-        
         updateApplicationStatsCards(statusCounts);
-        
         window.applicationStats = statusCounts;
         
         return statusCounts;
@@ -376,17 +583,12 @@ async function loadApplicationStatusCounts() {
     } catch (error) {
         console.error('Error loading application status counts:', error);
         
-        showAlert(
-            "Data Loading Error", 
-            "Unable to load application statistics. Using cached data if available.", 
-            "warning"
-        );
-        
         const fallbackCounts = {
             PENDING: 0,
             APPROVED: 0,
             REJECTED: 0,
-            TOTAL: 0
+            TOTAL: 0,
+            STAFF: 12
         };
         
         updateApplicationStatsCards(fallbackCounts);
@@ -395,6 +597,84 @@ async function loadApplicationStatusCounts() {
         return fallbackCounts;
     }
 }
+
+// Add debugging function
+function debugAuthStatus() {
+    const token = localStorage.getItem('smartreg_token') || sessionStorage.getItem('smartreg_token');
+    const userData = localStorage.getItem('smartreg_user');
+    const loginMethod = sessionStorage.getItem('login_method');
+    
+    console.log('=== AUTH DEBUG INFO ===');
+    console.log('Token present:', !!token);
+    console.log('Token source:', localStorage.getItem('smartreg_token') ? 'localStorage' : 'sessionStorage');
+    console.log('User data present:', !!userData);
+    console.log('Login method:', loginMethod);
+    
+    if (userData) {
+        try {
+            const user = JSON.parse(userData);
+            console.log('User role:', user.role);
+            console.log('User name:', user.fullName);
+            console.log('Login method from user data:', user.loginMethod);
+        } catch (e) {
+            console.log('Error parsing user data:', e);
+        }
+    }
+    console.log('========================');
+}
+
+function debugJWTToken() {
+    const token = localStorage.getItem('smartreg_token') || sessionStorage.getItem('smartreg_token');
+    
+    if (!token) {
+        console.log('No token found');
+        return;
+    }
+    
+    try {
+        // JWT tokens have 3 parts separated by dots
+        const parts = token.split('.');
+        if (parts.length !== 3) {
+            console.log('Invalid JWT format');
+            return;
+        }
+        
+        // Decode the payload (middle part)
+        const payload = JSON.parse(atob(parts[1]));
+        
+        console.log('=== JWT TOKEN DEBUG ===');
+        console.log('Token payload:', payload);
+        console.log('Roles/Authorities:', payload.authorities || payload.roles || 'Not found');
+        console.log('Subject:', payload.sub);
+        console.log('Issued at:', new Date(payload.iat * 1000));
+        console.log('Expires at:', new Date(payload.exp * 1000));
+        console.log('Current time:', new Date());
+        console.log('Token expired?', payload.exp * 1000 < Date.now());
+        console.log('========================');
+        
+        return payload;
+    } catch (error) {
+        console.error('Error decoding JWT:', error);
+    }
+}
+
+// Call debug function on page load
+document.addEventListener('DOMContentLoaded', function() {
+    debugAuthStatus();
+    debugJWTToken(); 
+});
+
+// Enhanced error handling for Google login users
+window.addEventListener('unhandledrejection', function(event) {
+    console.error('Unhandled promise rejection:', event.reason);
+    
+    if (event.reason && event.reason.message && event.reason.message.includes('401')) {
+        console.log('Detected 401 error - handling unauthorized access');
+        handleUnauthorized();
+    }
+});
+
+
 
 function updateApplicationStatsCards(statusCounts = {}) {
     console.log('Updating application stats cards with:', statusCounts);
