@@ -2010,7 +2010,7 @@ checkPayHereLoaded().then((loaded) => {
       "merchant_id": paymentData.merchantId,
       "return_url": paymentData.returnUrl || `${window.location.origin}/payment/success`,
       "cancel_url": paymentData.cancelUrl || `${window.location.origin}/payment/cancel`,
-      "notify_url": paymentData.notifyUrl || `${API_BASE_URL}/payment/callback`,
+      "notify_url": paymentData.notifyUrl || `https://pipedream.com/requestbin`,
       "order_id": paymentData.payhereOrderId,
       "items": `Driving License Exam Fee - Application #${paymentData.paymentId}`,
       "amount": parseFloat(paymentData.amount).toFixed(2),

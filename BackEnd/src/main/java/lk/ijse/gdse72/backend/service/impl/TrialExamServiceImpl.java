@@ -27,6 +27,7 @@ public class TrialExamServiceImpl implements TrialExamService {
     private final WrittenExamRepository writtenExamRepository;
     private final ApplicationRepository applicationRepository;
     private final EmailService emailService;
+    private final TwilioSmsServiceImpl smsService;
 
     @Override
     @Transactional
@@ -216,6 +217,7 @@ public class TrialExamServiceImpl implements TrialExamService {
                 String driverEmail = updatedTrialExam.getWrittenExam().getApplication().getDriver().getEmail();
                 String subject;
                 String body;
+                String driverPhone = String.valueOf(updatedTrialExam.getWrittenExam().getApplication().getDriver().getPhoneNumber());
 
                 // Conditional logic for different email templates
                 if ("PASS".equals(normalizedResult)) {
@@ -249,6 +251,10 @@ public class TrialExamServiceImpl implements TrialExamService {
                             "</body>" +
                             "</html>";
 
+//                    smsService.sendSms(driverPhone,
+//                            "Hello " + driverName + ", Congratulations You Are passed The physical Exam of Your License Your license come to you in a year ");
+
+
                 } else if ("FAIL".equals(normalizedResult)) {
                     subject = "Update on Your Trial Exam Result";
                     body = "<!DOCTYPE html>" +
@@ -280,6 +286,9 @@ public class TrialExamServiceImpl implements TrialExamService {
                             "</body>" +
                             "</html>";
 
+//                    smsService.sendSms(driverPhone,
+//                            "Hello " + driverName + ", Unfortunately, You Are Not passed The physical Exam of Your License Please Try Again " + updatedTrialExam.getExaminerNotes() + "Go And see your License Preview for know the next datails");
+
                 } else { // Absent or Pending
                     subject = "Update on Your Trial Exam Status";
                     body = "<!DOCTYPE html>" +
@@ -310,6 +319,10 @@ public class TrialExamServiceImpl implements TrialExamService {
                             "    </div>" +
                             "</body>" +
                             "</html>";
+
+//                    smsService.sendSms(driverPhone,
+//                            "Hello " + driverName + ",You are unable to participate to the physical exam " + updatedTrialExam.getExaminerNotes() + "Go And see your License Preview for know the next datails");
+
                 }
 
                 emailService.sendEmail(driverEmail, subject, body);

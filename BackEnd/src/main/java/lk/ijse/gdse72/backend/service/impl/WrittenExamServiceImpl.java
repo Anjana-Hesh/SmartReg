@@ -27,6 +27,8 @@ public class WrittenExamServiceImpl implements WrittenExamService {
     private final WrittenExamRepository writtenExamRepository;
     private final ApplicationRepository applicationRepository;
     private final EmailServiceImpl emailService;
+    private final TwilioSmsServiceImpl smsService;
+//    private final SendLkSmsServiceImpl smsService;
 
     @Override
     public WrittenExamDto scheduleWrittenExam(WrittenExamRequestDto requestDto) {
@@ -56,6 +58,7 @@ public class WrittenExamServiceImpl implements WrittenExamService {
         try {
             String driverName = application.getDriver().getFullName();
             String driverEmail = application.getDriver().getEmail();
+            String driverPhone = String.valueOf(application.getDriver().getPhoneNumber());
 
             String subject = "Your Written Exam Has Been Scheduled";
             String body = "<!DOCTYPE html>\n" +
@@ -114,6 +117,13 @@ public class WrittenExamServiceImpl implements WrittenExamService {
 
             emailService.sendHtmlEmail(driverEmail, subject, body);
             log.info("Written exam schedule email sent to {}", driverEmail);
+
+//            String smsMessage = "Hello " + driverName + ", your written exam is scheduled on " +
+//                    savedExam.getWrittenExamDate() + " at " + savedExam.getWrittenExamTime() +
+//                    " (" + savedExam.getWrittenExamLocation() + "). - DMT";
+//            smsService.sendSms(driverPhone, smsMessage);
+
+            log.info("Email and SMS sent to driver {}", driverName);
 
         } catch (Exception e) {
             log.warn("Failed to send exam schedule email: {}", e.getMessage());
@@ -331,6 +341,7 @@ public class WrittenExamServiceImpl implements WrittenExamService {
         String driverEmail = writtenExam.getApplication().getDriver().getEmail();
         String subject;
         String body;
+        String driverPhone = String.valueOf(writtenExam.getApplication().getDriver().getPhoneNumber());
 
         // Conditional logic to generate email content based on result
         if ("Pass".equalsIgnoreCase(result)) {
@@ -365,6 +376,16 @@ public class WrittenExamServiceImpl implements WrittenExamService {
                     "</body>" +
                     "</html>";
 
+//            smsService.sendSms(driverPhone,
+//                    "Congrats " + driverName + "! You passed the written exam. Trial date: " + trialDate);
+
+
+            // This Is Work To Me
+
+//            smsService.sendSms(driverPhone,
+//                    "Congrats " + driverName + "! You passed the written exam. Trial date: " + trialDate);
+
+
         } else if ("Fail".equalsIgnoreCase(result)) {
             subject = "Update on Your Exam Result";
             body = "<!DOCTYPE html>" +
@@ -397,6 +418,16 @@ public class WrittenExamServiceImpl implements WrittenExamService {
                     "</body>" +
                     "</html>";
 
+//            smsService.sendSms(driverPhone,
+//                    "Hello " + driverName + ", unfortunately you did not pass the exam. Next exam date: " + nextExamDate);
+
+
+            // This Is Work To Me
+
+//            smsService.sendSms(driverPhone,
+//                    "Hello " + driverName + ", unfortunately you did not pass the exam. Next exam date: " + nextExamDate);
+
+
         } else { // Absent or other status
             subject = "Update on Your Written Exam Status";
             body = "<!DOCTYPE html>" +
@@ -428,6 +459,15 @@ public class WrittenExamServiceImpl implements WrittenExamService {
                     "    </div>" +
                     "</body>" +
                     "</html>";
+
+//            smsService.sendSms(driverPhone,
+//                    "Hello " + driverName + ", you did not participate in the exam. Next exam date: " + nextExamDate);
+
+            // This Is Work To Me
+
+//            smsService.sendSms(driverPhone,
+//                    "Hello " + driverName + ", you did not paticipate to the exam. Next exam date: " + nextExamDate);
+
         }
 
         emailService.sendEmail(driverEmail, subject, body);

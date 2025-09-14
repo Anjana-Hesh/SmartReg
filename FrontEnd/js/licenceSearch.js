@@ -179,12 +179,7 @@ $(document).ready(function () {
       // =================== API CALLS ===================
 
       function loadApplications() {
-        console.log(
-          "Loading applications for user:",
-          currentUserId,
-          "Role:",
-          currentUserRole
-        );
+        console.log("Loading applications for user:", currentUserId, "Role:", currentUserRole );
 
         const loadingHtml = `
           <div class="loading-spinner">
