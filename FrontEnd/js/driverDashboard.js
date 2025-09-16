@@ -2010,7 +2010,7 @@ checkPayHereLoaded().then((loaded) => {
       "merchant_id": paymentData.merchantId,
       "return_url": paymentData.returnUrl || `${window.location.origin}/payment/success`,
       "cancel_url": paymentData.cancelUrl || `${window.location.origin}/payment/cancel`,
-      "notify_url": paymentData.notifyUrl || `https://pipedream.com/requestbin`,
+      "notify_url": paymentData.notifyUrl || `${API_BASE_URL}/payment/callback`,
       "order_id": paymentData.payhereOrderId,
       "items": `Driving License Exam Fee - Application #${paymentData.paymentId}`,
       "amount": parseFloat(paymentData.amount).toFixed(2),
@@ -2033,8 +2033,11 @@ checkPayHereLoaded().then((loaded) => {
 
     payhere.onCompleted = function onCompleted(orderId) {
       console.log("Payment completed successfully! Order ID:", orderId);
+
+      // Swal.fire({ title: 'Payment Processing...', html: <div class="payment-processing"> <div class="processing-spinner"></div> <p>Verifying your payment...</p> <p><strong>Order ID:</strong> ${orderId}</p> </div> <style> .processing-spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #28a745; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; } @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } } </style> , allowOutsideClick: false, showConfirmButton: false });
       
-      Swal.fire({
+      // Payment process simulation
+    Swal.fire({
         title: 'Payment Processing...',
         html: `
           <div class="payment-processing">
@@ -2058,12 +2061,24 @@ checkPayHereLoaded().then((loaded) => {
           </style>
         `,
         allowOutsideClick: false,
-        showConfirmButton: false
-      });
-      
-      setTimeout(() => {
-        startEnhancedPaymentStatusMonitoring(paymentData.transactionId);
-      }, 3000);
+        showConfirmButton: false,
+        didOpen: () => {
+            // Simulate payment verification
+            setTimeout(() => {
+                // Close processing popup
+                Swal.close();
+
+                // Show success popup
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Payment Successful!',
+                    html: `<p>Your payment for <strong>Order ID: ${orderId}</strong> has been completed.</p>`,
+                    confirmButtonText: 'OK'
+                });
+            }, 3000); // 3 seconds simulation
+        }
+    });
+
     };
 
     payhere.onDismissed = function onDismissed() {

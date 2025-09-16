@@ -7,21 +7,221 @@
     <title>Payment Process</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="../css/payment.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
+        .payment-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .payment-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .payment-card h4 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .form-label {
+            color: #555;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .form-control, .form-select {
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            border-radius: 10px;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            background: white;
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #667eea;
+            z-index: 5;
+        }
+
+        .input-group .form-control {
+            padding-left: 45px;
+        }
+
+        .btn {
+            border-radius: 10px;
+            padding: 12px 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .balance-display {
+            background: rgba(40, 40, 60, 0.8);
+            border: 2px solid rgba(255, 215, 0, 0.4);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            color: #ffd700;
+            font-weight: 600;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+        }
+
+        .info-display {
+            background: rgba(102, 126, 234, 0.1);
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .driver-info {
+            background: rgba(40, 167, 69, 0.1);
+            border: 2px solid rgba(40, 167, 69, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .exam-fee-breakdown {
+            background: rgba(255, 193, 7, 0.1);
+            border: 2px solid rgba(255, 193, 7, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .search-result-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .search-result-item:hover {
+            background: #f8f9fa;
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+    </style>
 </head>
 <body>
 
 <div class="payment-container">
     <div class="payment-card">
-        <h4><i class="fas fa-credit-card"></i>Payment Process</h4>
+        <h4><i class="fas fa-credit-card"></i> Payment Process</h4>
 
+        <!-- Driver Search Section -->
+        <div class="search-container">
+            <label for="driverSearch" class="form-label">
+                <i class="fas fa-search"></i> Search Driver
+            </label>
+            <div class="input-group">
+                <i class="fas fa-search"></i>
+                <input type="text" id="driverSearch" class="form-control" 
+                       placeholder="Search by Driver ID, Name, or NIC..." />
+            </div>
+            <div id="searchResults" class="search-results"></div>
+        </div>
+
+        <!-- Driver Info Display -->
+        <div id="driverInfo" class="driver-info hidden">
+            <h6><i class="fas fa-user"></i> Driver Information</h6>
+            <div id="driverDetails"></div>
+        </div>
+
+        <!-- Exam Fee Breakdown -->
+        <div id="examFeeBreakdown" class="exam-fee-breakdown hidden">
+            <h6><i class="fas fa-calculator"></i> Exam Fee Calculation</h6>
+            <div id="feeDetails"></div>
+        </div>
+
+        <!-- Payment Type Selection -->
         <div class="mb-4">
             <label for="paymentType" class="form-label">
-                <i class="fas fa-list"></i>Select Payment Type
+                <i class="fas fa-list"></i> Select Payment Type
             </label>
-            <select id="paymentType" class="form-select">
+            <select id="paymentType" class="form-select" disabled>
                 <option value="">-- Choose Payment Method --</option>
                 <option value="cash">💵 Cash Payment</option>
                 <option value="card">💳 Card Payment</option>
@@ -32,28 +232,28 @@
         <form id="cashForm" class="payment-form hidden">
             <div class="mb-3">
                 <label for="examFee" class="form-label">
-                    <i class="fas fa-tag"></i>Exam Fee (LKR)
+                    <i class="fas fa-tag"></i> Exam Fee (LKR)
                 </label>
                 <div class="input-group">
                     <i class="fas fa-rupee-sign"></i>
-                    <input type="number" id="examFee" class="form-control" value="3200.00" readonly />
+                    <input type="number" id="examFee" class="form-control" readonly />
                 </div>
             </div>
 
             <div class="mb-3">
                 <label for="cashAmount" class="form-label">
-                    <i class="fas fa-money-bill-wave"></i>Enter Amount Paid
+                    <i class="fas fa-money-bill-wave"></i> Enter Amount Paid
                 </label>
                 <div class="input-group">
                     <i class="fas fa-rupee-sign"></i>
-                    <input type="number" id="cashAmount" class="form-control" min="0" step="0.01"
-                           placeholder="Enter amount..." required />
+                    <input type="number" id="cashAmount" class="form-control" 
+                           min="0" step="0.01" placeholder="Enter amount..." required />
                 </div>
             </div>
 
             <div class="mb-4">
                 <label for="balance" class="form-label">
-                    <i class="fas fa-calculator"></i>Balance Due
+                    <i class="fas fa-calculator"></i> Balance Status
                 </label>
                 <div class="balance-display">
                     <span id="balanceText">LKR 0.00</span>
@@ -61,7 +261,7 @@
             </div>
 
             <button type="submit" class="btn btn-success w-100">
-                <i class="fas fa-hand-holding-usd"></i>Complete Cash Payment
+                <i class="fas fa-hand-holding-usd"></i> Complete Cash Payment
             </button>
         </form>
 
@@ -69,240 +269,402 @@
         <form id="cardForm" class="payment-form hidden">
             <div class="mb-3">
                 <label for="cardAmount" class="form-label">
-                    <i class="fas fa-tag"></i>Amount (LKR)
+                    <i class="fas fa-tag"></i> Amount (LKR)
                 </label>
                 <div class="input-group">
                     <i class="fas fa-rupee-sign"></i>
-                    <input type="number" name="amount" id="cardAmount" class="form-control"
-                           min="0" step="0.01" placeholder="Enter amount..." required />
+                    <input type="number" id="cardAmount" class="form-control" 
+                           min="0" step="0.01" placeholder="Enter amount..." readonly />
                 </div>
             </div>
 
             <div class="mb-3">
                 <label for="orderId" class="form-label">
-                    <i class="fas fa-hashtag"></i>Order ID
+                    <i class="fas fa-hashtag"></i> Order ID
                 </label>
                 <div class="input-group">
                     <i class="fas fa-hashtag"></i>
-                    <input type="text" name="order_id" id="orderId" class="form-control"
-                           placeholder="Enter order ID..." required />
+                    <input type="text" id="orderId" class="form-control" 
+                           placeholder="Auto-generated..." readonly />
                 </div>
             </div>
 
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label for="firstName" class="form-label">
-                        <i class="fas fa-user"></i>First Name
+                        <i class="fas fa-user"></i> First Name
                     </label>
-                    <input type="text" name="first_name" id="firstName" class="form-control"
-                           placeholder="First name..." required />
+                    <input type="text" id="firstName" class="form-control" 
+                           placeholder="First name..." readonly />
                 </div>
 
                 <div class="col-md-6 mb-3">
                     <label for="lastName" class="form-label">
-                        <i class="fas fa-user"></i>Last Name
+                        <i class="fas fa-user"></i> Last Name
                     </label>
-                    <input type="text" name="last_name" id="lastName" class="form-control"
-                           placeholder="Last name..." required />
+                    <input type="text" id="lastName" class="form-control" 
+                           placeholder="Last name..." readonly />
                 </div>
             </div>
 
             <div class="mb-4">
                 <label for="email" class="form-label">
-                    <i class="fas fa-envelope"></i>Email Address
+                    <i class="fas fa-envelope"></i> Email Address
                 </label>
                 <div class="input-group">
                     <i class="fas fa-envelope"></i>
-                    <input type="email" name="email" id="email" class="form-control"
+                    <input type="email" id="email" class="form-control" 
                            placeholder="Enter email..." required />
                 </div>
             </div>
 
             <button type="submit" class="btn btn-primary w-100">
-                <i class="fas fa-credit-card"></i>Pay with Card
+                <i class="fas fa-credit-card"></i> Pay with Card
             </button>
         </form>
     </div>
 </div>
 
 <script>
-    const paymentTypeSelect = document.getElementById('paymentType');
-    const cashForm = document.getElementById('cashForm');
-    const cardForm = document.getElementById('cardForm');
+$(document).ready(function () {
+    let selectedDriver = null;
+    let examFee = 0;
+    let applicationData = null;
+    let writtenExamData = null;
 
-    const examFeeInput = document.getElementById('examFee');
-    const cashAmountInput = document.getElementById('cashAmount');
-    const balanceText = document.getElementById('balanceText');
+    const API_BASE_URL = "http://localhost:8080/api/v1";
+    
+    const getToken = () => {
+        return localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token");
+    };
 
-    // Payment type selection
-    paymentTypeSelect.addEventListener('change', () => {
-        const val = paymentTypeSelect.value;
+    // Check authentication
+    const token = getToken();
+    if (!token) {
+        window.location.href = "../index.html";
+        return;
+    }
 
-        if (val === 'cash') {
-            cashForm.classList.remove('hidden');
-            cashForm.classList.add('fade-in');
-            cardForm.classList.add('hidden');
-            cashForm.reset();
-            examFeeInput.value = '3200.00';
-            balanceText.textContent = 'Balance: LKR 3200.00';
-        } else if (val === 'card') {
-            cardForm.classList.remove('hidden');
-            cardForm.classList.add('fade-in');
-            cashForm.classList.add('hidden');
-            cardForm.reset();
-            // Auto-fill card amount with exam fee
-            document.getElementById('cardAmount').value = '3200.00';
+    // API Request function
+    const apiRequest = async (endpoint, options = {}) => {
+        const token = getToken();
+        const defaultHeaders = {
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` })
+        };
+
+        try {
+            const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                ...options,
+                headers: { ...defaultHeaders, ...options.headers }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('API Request failed:', error);
+            throw error;
+        }
+    };
+
+    // 🔹 Fee Calculation
+    function calculateExamFee(licenseType, vehicleClasses = []) {
+        let baseFee = 3000;
+        switch (licenseType?.toLowerCase()) {
+            case "learner": baseFee = 2500; break;
+            case "restricted": baseFee = 3000; break;
+            case "full": baseFee = 4000; break;
+            case "heavy": baseFee = 6000; break;
+            case "commercial": baseFee = 7500; break;
+            case "international": baseFee = 5000; break;
+            case "motorcycle": baseFee = 3500; break;
+            case "special": baseFee = 8000; break;
+        }
+        return baseFee + Math.max(0, vehicleClasses.length - 1) * 500;
+    }
+
+    // 🔹 Search Drivers
+    $("#driverSearch").on("input", function () {
+        const query = $(this).val();
+        if (query.length < 2) {
+            $("#searchResults").hide();
+            return;
+        }
+
+        // Use the API request function correctly
+        apiRequest("/auth/getallusers")
+            .then(response => {
+                const users = response.data || [];
+                const filtered = users.filter(
+                    (u) =>
+                        (u.firstName && u.firstName.toLowerCase().includes(query.toLowerCase())) ||
+                        (u.lastName && u.lastName.toLowerCase().includes(query.toLowerCase())) ||
+                        (u.nic && u.nic.toLowerCase().includes(query.toLowerCase())) ||
+                        (u.driverId && u.driverId.toLowerCase().includes(query.toLowerCase()))
+                );
+
+                let html = "";
+                if (filtered.length === 0) {
+                    html = `<div class="search-result-item">No users found</div>`;
+                } else {
+                    filtered.forEach((user) => {
+                        html += `
+                            <div class="search-result-item" data-user='${JSON.stringify(user)}'>
+                                <strong>${user.firstName} ${user.lastName}</strong><br>
+                                <small>ID: ${user.driverId || user.id} | NIC: ${user.nic} | License: ${user.licenseType || 'N/A'}</small>
+                            </div>`;
+                    });
+                }
+                $("#searchResults").html(html).show();
+            })
+            .catch(error => {
+                console.error("Error fetching users:", error);
+                Swal.fire("Error", "Failed to fetch users", "error");
+            });
+    });
+
+    // 🔹 Select Driver
+    $(document).on("click", ".search-result-item", function () {
+        const userData = $(this).data("user");
+        selectedDriver = userData;
+
+        $("#driverSearch").val(`${userData.firstName} ${userData.lastName}`);
+        $("#searchResults").hide();
+
+        // First, get the application for this user
+        apiRequest(`/applications/user/${userData.id}`)
+            .then(applications => {
+                if (!applications || applications.length === 0) {
+                    Swal.fire("Error", "No applications found for this user", "error");
+                    return;
+                }
+
+                // Use the first application
+                applicationData = applications[0];
+
+                // Then get the written exam for this application
+                return apiRequest(`/written-exams/application/${applicationData.id}`);
+            })
+            .then(examData => {
+                writtenExamData = examData;
+
+                const vehicleClasses = applicationData.vehicleClasses
+                    ? applicationData.vehicleClasses.split(",")
+                    : [];
+                examFee = calculateExamFee(applicationData.licenseType, vehicleClasses);
+
+                // Driver Info
+                $("#driverDetails").html(`
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Name:</strong> ${selectedDriver.firstName} ${selectedDriver.lastName}<br>
+                            <strong>Driver ID:</strong> ${selectedDriver.driverId || selectedDriver.id}<br>
+                            <strong>NIC:</strong> ${selectedDriver.nic}<br>
+                            <strong>License Type:</strong> ${applicationData.licenseType}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Phone:</strong> ${selectedDriver.phoneNumber || 'N/A'}<br>
+                            <strong>Email:</strong> ${selectedDriver.email || 'N/A'}<br>
+                            <strong>Exam Status:</strong> ${examData.writtenExamResult || "Pending"}<br>
+                            <strong>Exam Date:</strong> ${examData.writtenExamDate || "Not scheduled"}
+                        </div>
+                    </div>
+                `);
+                $("#driverInfo").removeClass("hidden");
+
+                // Fee Breakdown
+                const baseFee = calculateExamFee(applicationData.licenseType, []);
+                const addFee = examFee - baseFee;
+                $("#feeDetails").html(`
+                    <div class="row">
+                        <div class="col-md-8">
+                            <strong>License Type:</strong> ${applicationData.licenseType}<br>
+                            <strong>Base Fee:</strong> LKR ${baseFee.toFixed(2)}<br>
+                            ${
+                                vehicleClasses.length > 1
+                                    ? `<strong>Additional Classes:</strong> LKR ${addFee.toFixed(2)}<br>`
+                                    : ""
+                            }
+                            <strong>Vehicle Classes:</strong> ${vehicleClasses.join(", ") || "None"}
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <h5><strong>Total Fee: LKR ${examFee.toFixed(2)}</strong></h5>
+                        </div>
+                    </div>
+                `);
+                $("#examFeeBreakdown").removeClass("hidden");
+
+                // Enable payment selection
+                $("#paymentType").prop("disabled", false);
+            })
+            .catch(error => {
+                console.error("Error getting driver data:", error);
+                Swal.fire("Error", "Failed to load driver information", "error");
+            });
+    });
+
+    // 🔹 Payment Type Change
+    $("#paymentType").on("change", function () {
+        const val = $(this).val();
+        if (val === "cash") {
+            $("#cashForm").removeClass("hidden").addClass("fade-in");
+            $("#cardForm").addClass("hidden");
+            $("#examFee").val(examFee.toFixed(2));
+            $("#balanceText").text(`Balance: LKR ${examFee.toFixed(2)}`);
+        } else if (val === "card") {
+            $("#cardForm").removeClass("hidden").addClass("fade-in");
+            $("#cashForm").addClass("hidden");
+            $("#cardAmount").val(examFee.toFixed(2));
+            $("#orderId").val("ORD-" + Date.now());
+            $("#firstName").val(selectedDriver.firstName);
+            $("#lastName").val(selectedDriver.lastName);
+            $("#email").val(selectedDriver.email);
         } else {
-            cashForm.classList.add('hidden');
-            cardForm.classList.add('hidden');
+            $(".payment-form").addClass("hidden");
         }
     });
 
-    // Cash amount calculation
-    cashAmountInput.addEventListener('input', () => {
-        const examFee = parseFloat(examFeeInput.value) || 0;
-        const paid = parseFloat(cashAmountInput.value) || 0;
-        const balanceDisplay = document.querySelector('.balance-display');
+    // 🔹 Cash Amount Calculation
+    $("#cashAmount").on("input", function () {
+        const examFeeValue = parseFloat($("#examFee").val()) || 0;
+        const paid = parseFloat($(this).val()) || 0;
+        const balanceDisplay = $(".balance-display");
 
-        if (paid > examFee) {
-            // Show excess amount
-            const excess = paid - examFee;
-            balanceText.textContent = `Excess: LKR ${excess.toFixed(2)}`;
-            balanceDisplay.style.background = 'rgba(255, 99, 132, 0.3)';
-            balanceDisplay.style.borderColor = 'rgba(255, 99, 132, 0.6)';
-            balanceDisplay.style.color = '#ff6384';
+        if (paid > examFeeValue) {
+            const excess = paid - examFeeValue;
+            $("#balanceText").text(`Excess: LKR ${excess.toFixed(2)}`);
+            balanceDisplay.css({
+                'background': 'rgba(255, 99, 132, 0.3)',
+                'border-color': 'rgba(255, 99, 132, 0.6)',
+                'color': '#ff6384'
+            });
         } else {
-            // Show remaining balance
-            const balance = examFee - paid;
-            balanceText.textContent = `Balance: LKR ${balance.toFixed(2)}`;
+            const balance = examFeeValue - paid;
+            $("#balanceText").text(`Balance: LKR ${balance.toFixed(2)}`);
 
             if (balance === 0) {
-                balanceDisplay.style.background = 'rgba(75, 192, 192, 0.3)';
-                balanceDisplay.style.borderColor = 'rgba(75, 192, 192, 0.6)';
-                balanceDisplay.style.color = '#4bc0c0';
+                balanceDisplay.css({
+                    'background': 'rgba(75, 192, 192, 0.3)',
+                    'border-color': 'rgba(75, 192, 192, 0.6)',
+                    'color': '#4bc0c0'
+                });
             } else {
-                balanceDisplay.style.background = 'rgba(40, 40, 60, 0.8)';
-                balanceDisplay.style.borderColor = 'rgba(255, 215, 0, 0.4)';
-                balanceDisplay.style.color = '#ffd700';
+                balanceDisplay.css({
+                    'background': 'rgba(40, 40, 60, 0.8)',
+                    'border-color': 'rgba(255, 215, 0, 0.4)',
+                    'color': '#ffd700'
+                });
             }
         }
     });
 
-    // Cash payment submission
-    cashForm.addEventListener('submit', async (e) => {
+    // 🔹 Cash Payment Submit
+    $("#cashForm").on("submit", function (e) {
         e.preventDefault();
 
-        const amountPaid = parseFloat(cashAmountInput.value);
-        const examFee = parseFloat(examFeeInput.value);
+        const amountPaid = parseFloat($("#cashAmount").val());
+        const examFeeValue = parseFloat($("#examFee").val());
 
         if (amountPaid <= 0) {
-            await Swal.fire({
-                title: 'Invalid Amount!',
-                text: 'Please enter a valid amount greater than 0.',
-                icon: 'error',
-                confirmButtonText: 'OK',
-                background: 'rgba(255, 255, 255, 0.95)',
-                backdrop: 'rgba(0, 0, 0, 0.4)'
-            });
+            Swal.fire("Invalid Amount", "Enter valid amount > 0", "error");
             return;
         }
 
-        if (amountPaid > examFee) {
-            const excess = amountPaid - examFee;
-            const result = await Swal.fire({
+        if (amountPaid > examFeeValue) {
+            const excess = amountPaid - examFeeValue;
+            Swal.fire({
                 title: 'Excess Payment!',
                 html: `
                     <div style="text-align: center; margin: 20px 0;">
                         <p>Amount Paid: <strong>LKR ${amountPaid.toFixed(2)}</strong></p>
-                        <p>Exam Fee: <strong>LKR ${examFee.toFixed(2)}</strong></p>
+                        <p>Exam Fee: <strong>LKR ${examFeeValue.toFixed(2)}</strong></p>
                         <p style="color: #ff6384;">Excess Amount: <strong>LKR ${excess.toFixed(2)}</strong></p>
                     </div>
                 `,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonText: 'Accept Payment',
-                cancelButtonText: 'Cancel',
-                background: 'rgba(255, 255, 255, 0.95)',
-                backdrop: 'rgba(0, 0, 0, 0.4)'
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    processCashPayment(amountPaid);
+                }
             });
-
-            if (!result.isConfirmed) {
-                return;
-            }
-        }
-
-        const balance = examFee - amountPaid;
-        let message = `Cash payment of LKR ${amountPaid.toFixed(2)} received successfully!`;
-
-        if (amountPaid > examFee) {
-            const excess = amountPaid - examFee;
-            message += `\nExcess amount: LKR ${excess.toFixed(2)}`;
-        } else if (balance > 0) {
-            message += `\nRemaining balance: LKR ${balance.toFixed(2)}`;
         } else {
-            message += `\nPayment completed in full!`;
+            processCashPayment(amountPaid);
         }
-
-        await Swal.fire({
-            title: 'Payment Successful!',
-            text: message,
-            icon: 'success',
-            confirmButtonText: 'Continue',
-            background: 'rgba(255, 255, 255, 0.95)',
-            backdrop: 'rgba(0, 0, 0, 0.4)',
-            timer: 3000,
-            timerProgressBar: true
-        });
-
-        // Reset form
-        cashForm.reset();
-        examFeeInput.value = '3200.00';
-        balanceText.textContent = 'Balance: LKR 0.00';
-        paymentTypeSelect.value = '';
-        cashForm.classList.add('hidden');
-
-        // Reset balance display style
-        const balanceDisplay = document.querySelector('.balance-display');
-        balanceDisplay.style.background = 'rgba(40, 40, 60, 0.8)';
-        balanceDisplay.style.borderColor = 'rgba(255, 215, 0, 0.4)';
-        balanceDisplay.style.color = '#ffd700';
     });
 
-    // Card payment submission
-    cardForm.addEventListener('submit', async (e) => {
+    function processCashPayment(amountPaid) {
+        const paymentData = {
+            applicationId: applicationData.id,
+            writtenExamId: writtenExamData.id,
+            driverId: selectedDriver.driverId || selectedDriver.id,
+            driverName: `${selectedDriver.firstName} ${selectedDriver.lastName}`,
+            amount: amountPaid,
+            paymentMethod: "CASH",
+            licenseType: applicationData.licenseType
+        };
+
+        apiRequest("/payment", {
+            method: "POST",
+            body: JSON.stringify(paymentData)
+        })
+        .then(() => {
+            const examFeeValue = parseFloat($("#examFee").val());
+            const balance = examFeeValue - amountPaid;
+            let message = `Cash payment of LKR ${amountPaid.toFixed(2)} received successfully!`;
+
+            if (amountPaid > examFeeValue) {
+                const excess = amountPaid - examFeeValue;
+                message += `\nExcess amount: LKR ${excess.toFixed(2)}`;
+            } else if (balance > 0) {
+                message += `\nRemaining balance: LKR ${balance.toFixed(2)}`;
+            } else {
+                message += `\nPayment completed in full!`;
+            }
+
+            Swal.fire({
+                title: 'Payment Successful!',
+                text: message,
+                icon: 'success',
+                confirmButtonText: 'Continue',
+                timer: 3000,
+                timerProgressBar: true
+            }).then(() => {
+                resetPaymentForm();
+            });
+        })
+        .catch(error => {
+            console.error("Payment failed:", error);
+            Swal.fire("Payment Failed", "There was an error processing your payment", "error");
+        });
+    }
+
+    $("#cardForm").on("submit", function (e) {
         e.preventDefault();
 
-        const amount = parseFloat(document.getElementById('cardAmount').value);
-        const orderId = document.getElementById('orderId').value.trim();
-        const firstName = document.getElementById('firstName').value.trim();
-        const lastName = document.getElementById('lastName').value.trim();
-        const email = document.getElementById('email').value.trim();
+        const amount = parseFloat($("#cardAmount").val());
+        const orderId = $("#orderId").val().trim();
+        const firstName = $("#firstName").val().trim();
+        const lastName = $("#lastName").val().trim();
+        const email = $("#email").val().trim();
 
         if (!amount || amount <= 0) {
-            await Swal.fire({
-                title: 'Invalid Amount!',
-                text: 'Please enter a valid amount greater than 0.',
-                icon: 'error',
-                confirmButtonText: 'OK',
-                background: 'rgba(255, 255, 255, 0.95)',
-                backdrop: 'rgba(0, 0, 0, 0.4)'
-            });
+            Swal.fire("Invalid Amount", "Enter valid amount > 0", "error");
             return;
         }
 
         if (!orderId || !firstName || !lastName || !email) {
-            await Swal.fire({
-                title: 'Missing Information!',
-                text: 'Please fill in all required fields.',
-                icon: 'warning',
-                confirmButtonText: 'OK',
-                background: 'rgba(255, 255, 255, 0.95)',
-                backdrop: 'rgba(0, 0, 0, 0.4)'
-            });
+            Swal.fire("Missing Information", "Please fill in all required fields", "warning");
             return;
         }
 
-        const result = await Swal.fire({
+        Swal.fire({
             title: 'Confirm Payment',
             html: `
                 <div style="text-align: left; margin: 20px 0;">
@@ -315,47 +677,78 @@
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: 'Proceed to PayHere',
-            cancelButtonText: 'Cancel',
-            background: 'rgba(255, 255, 255, 0.95)',
-            backdrop: 'rgba(0, 0, 0, 0.4)'
-        });
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const paymentData = {
+                    applicationId: applicationData.id,
+                    writtenExamId: writtenExamData.id,
+                    driverId: selectedDriver.driverId || selectedDriver.id,
+                    driverName: `${selectedDriver.firstName} ${selectedDriver.lastName}`,
+                    amount: amount,
+                    paymentMethod: "CARD",
+                    licenseType: applicationData.licenseType,
+                    payhereOrderId: orderId
+                };
 
-        if (result.isConfirmed) {
-            await Swal.fire({
-                title: 'Redirecting...',
-                text: 'You will be redirected to PayHere payment gateway.',
-                icon: 'info',
-                timer: 2000,
-                timerProgressBar: true,
-                showConfirmButton: false,
-                background: 'rgba(255, 255, 255, 0.95)',
-                backdrop: 'rgba(0, 0, 0, 0.4)'
-            });
-
-            // Here you would normally submit to PayHere
-            // For demo purposes, we'll just show a success message
-            setTimeout(async () => {
-                await Swal.fire({
-                    title: 'Payment Gateway Ready!',
-                    text: 'In a real implementation, you would be redirected to PayHere now.',
-                    icon: 'success',
-                    confirmButtonText: 'OK',
-                    background: 'rgba(255, 255, 255, 0.95)',
-                    backdrop: 'rgba(0, 0, 0, 0.4)'
+                apiRequest("/payment", {
+                    method: "POST",
+                    body: JSON.stringify(paymentData)
+                })
+                .then(() => {
+                    Swal.fire({
+                        title: 'Redirecting...',
+                        text: 'You will be redirected to PayHere payment gateway.',
+                        icon: 'info',
+                        timer: 2000,
+                        timerProgressBar: true,
+                        showConfirmButton: false
+                    }).then(() => {
+                        
+                        Swal.fire({
+                            title: 'Payment Gateway Ready!',
+                            text: 'In a real implementation, you would be redirected to PayHere now.',
+                            icon: 'success',
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            resetPaymentForm();
+                        });
+                    });
+                })
+                .catch(error => {
+                    console.error("Card payment failed:", error);
+                    Swal.fire("Payment Failed", "There was an error processing your payment", "error");
                 });
-            }, 2000);
-        }
+            }
+        });
     });
 
-    // Auto-generate order ID
-    document.getElementById('paymentType').addEventListener('change', () => {
-        if (paymentTypeSelect.value === 'card') {
-            setTimeout(() => {
-                const orderId = 'ORD-' + Date.now();
-                document.getElementById('orderId').value = orderId;
-            }, 100);
-        }
-    });
+    function resetPaymentForm() {
+        selectedDriver = null;
+        applicationData = null;
+        writtenExamData = null;
+        examFee = 0;
+        
+        $("#driverSearch").val("");
+        $("#paymentType").prop("disabled", true).val("");
+        
+        $("#driverInfo").addClass("hidden");
+        $("#examFeeBreakdown").addClass("hidden");
+        $("#cashForm").addClass("hidden");
+        $("#cardForm").addClass("hidden");
+        
+        $("#cashForm")[0].reset();
+        $("#cardForm")[0].reset();
+        
+        const balanceDisplay = $(".balance-display");
+        balanceDisplay.css({
+            'background': 'rgba(40, 40, 60, 0.8)',
+            'border-color': 'rgba(255, 215, 0, 0.4)',
+            'color': '#ffd700'
+        });
+        $("#balanceText").text('LKR 0.00');
+    }
+});
 </script>
 
 </body>

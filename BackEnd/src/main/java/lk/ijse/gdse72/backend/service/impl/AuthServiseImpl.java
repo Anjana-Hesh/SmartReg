@@ -364,4 +364,9 @@ public class AuthServiseImpl implements AuthServise {  // Fixed typo in interfac
             throw new RuntimeException("Google login failed: " + e.getMessage());
         }
     }
+
+    @Override
+    public Object getAllUsers() {
+        return userRepository.findAll();
+    }
 }

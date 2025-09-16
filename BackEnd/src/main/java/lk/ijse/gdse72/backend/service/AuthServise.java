@@ -11,4 +11,6 @@ public interface AuthServise {
     String forgotPassword(String email);
     void resetPassword(String email, String newPassword);
     AuthResponseDTO authenticateGoogle(GoogleAuthDTO googleAuthDTO);
+
+    Object getAllUsers();
 }

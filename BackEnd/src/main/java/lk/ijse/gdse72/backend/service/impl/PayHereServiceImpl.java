@@ -10,8 +10,10 @@ import lk.ijse.gdse72.backend.dto.PaymentStatusDTO;
 import lk.ijse.gdse72.backend.entity.Payment;
 import lk.ijse.gdse72.backend.entity.PaymentMethod;
 import lk.ijse.gdse72.backend.entity.PaymentStatus;
+import lk.ijse.gdse72.backend.entity.User;
 import lk.ijse.gdse72.backend.exception.GlobelExceptionHandler;
 import lk.ijse.gdse72.backend.repository.PaymentRepository;
+import lk.ijse.gdse72.backend.repository.UserRepository;
 import lk.ijse.gdse72.backend.service.PayHereService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +40,8 @@ public class PayHereServiceImpl implements PayHereService {
 
 
     private final PaymentRepository paymentRepository;
+    private final UserRepository userRepository;
+    private final EmailServiceImpl emailService;
 
     @Value("${payhere.merchant-id}")
     private String merchantId;
@@ -50,8 +54,6 @@ public class PayHereServiceImpl implements PayHereService {
 
     @Value("${app.base-url}")
     private String appBaseUrl;
-
-    // UPDATE YOUR PayHereServiceImpl.java initializePayment method
 
     @Override
     public PaymentResponseDTO initializePayment(PaymentRequestDTO requestDTO) {
@@ -111,6 +113,67 @@ public class PayHereServiceImpl implements PayHereService {
                     merchantSecret
             );
 
+            // === Send Email Notification ===
+            try {
+                String driverId = requestDTO.getDriverId();
+                String driverEmail = userRepository.findById(Long.valueOf(driverId))
+                        .map(User::getEmail)
+                        .orElseThrow(() -> new IllegalArgumentException("No user found with ID: " + driverId));
+                String subject = "Payment Initialization - Driving License Application";
+
+                String body = """
+                <html>
+                <body style="font-family: Arial, sans-serif; line-height:1.6;">
+                    <h2 style="color:#2c3e50;">Dear %s,</h2>
+                    <p>Your payment request has been initialized successfully for your Driving License Application.</p>
+                    
+                    <table style="border-collapse: collapse; width: 100%%; margin-top:15px;">
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 8px;"><b>Transaction ID</b></td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">%s</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 8px;"><b>Order ID</b></td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">%s</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 8px;"><b>Amount</b></td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">LKR %s</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 8px;"><b>Status</b></td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">%s</td>
+                        </tr>
+                    </table>
+                    
+                    <p style="margin-top:20px;">
+                        You can continue your payment by clicking the link below:
+                    </p>
+                    <p>
+                        <a href="%s" style="background:#27ae60; color:#fff; padding:10px 20px; text-decoration:none; border-radius:5px;">Proceed to Payment</a>
+                    </p>
+                    
+                    <p>If you did not request this payment, please ignore this email.</p>
+                    
+                    <p style="margin-top:30px;">Best Regards,<br/>License Department</p>
+                </body>
+                </html>
+                """.formatted(
+                        payment.getDriverName(),
+                        transactionId,
+                        payhereOrderId,
+                        amount,
+                        PaymentStatus.PENDING,
+                        payhereBaseUrl + "/pay/checkout"
+                );
+
+                emailService.sendHtmlEmail(driverEmail, subject, body);
+                log.info("Payment initialization email sent to {}", driverEmail);
+
+            } catch (Exception mailEx) {
+                log.error("Failed to send payment email: {}", mailEx.getMessage());
+            }
+
             // Log debug information
             log.info("=== Payment Initialization Debug ===");
             log.info("Payment ID: {}", payment.getId());
@@ -145,6 +208,7 @@ public class PayHereServiceImpl implements PayHereService {
             throw new GlobelExceptionHandler.PaymentException("Failed to initialize payment: " + e.getMessage());
         }
     }
+
 
 
     private Map<String, String> buildPayHereParameters(Payment payment) {

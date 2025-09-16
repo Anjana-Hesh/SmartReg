@@ -133,4 +133,18 @@ public class AuthController {
                     .body(new ApiResponse(401, "Google Authentication Failed", e.getMessage()));
         }
     }
+
+    @GetMapping("/getallusers")
+    public ResponseEntity<ApiResponse> getAllUsers() {
+        try {
+            return ResponseEntity.ok(new ApiResponse(
+                    200,
+                    "Users fetched successfully",
+                    authService.getAllUsers()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(new ApiResponse(500, "Server Error", e.getMessage()));
+        }
+    }
 }
