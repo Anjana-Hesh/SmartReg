@@ -2,15 +2,9 @@ $(document).ready(function () {
 
   const API_BASE_URL = "http://localhost:8080/api/v1";
 
-  // Authentication data
-  const authToken =
-    localStorage.getItem("smartreg_token") ||
-    sessionStorage.getItem("smartreg_token");
-  const userData = JSON.parse(
-    localStorage.getItem("smartreg_user") ||
-      sessionStorage.getItem("smartreg_user") ||
-      "{}"
-  );
+  const authToken = localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token");
+  const userData = JSON.parse( localStorage.getItem("smartreg_user") || "{}" );
+
   const currentDriverId = userData.id;
   const currentDriverName = userData.fullName;
 
@@ -19,16 +13,18 @@ $(document).ready(function () {
   let currentNotifications = [];
   let refreshInterval;
 
-checkPayHereLoaded().then((loaded) => {
-        if (loaded) {
-            console.log("✅ PayHere loaded successfully");
-        } else {
-            console.warn("⚠️ PayHere failed to load");
-        }
-    });
+  checkPayHereLoaded().then((loaded) => {
+      if (loaded) {
+          console.log("✅ PayHere loaded successfully");
+      } else {
+          console.warn("⚠️ PayHere failed to load");
+      }
+  });
 
   // =================== AUTHENTICATION CHECK ===================
+
   if (!authToken || !currentDriverId) {
+    
     Swal.fire({
       title: "Authentication Required",
       text: "Please login to continue",
@@ -39,9 +35,11 @@ checkPayHereLoaded().then((loaded) => {
       window.location.href = "../index.html";
     });
     return;
+  
   }
 
   // =================== AJAX SETUP WITH AUTH ===================
+
   $.ajaxSetup({
     beforeSend: function (xhr) {
       if (authToken) {
@@ -62,12 +60,15 @@ checkPayHereLoaded().then((loaded) => {
   });
 
   // =================== VEHICLE CLASSES DATA ===================
+
   const vehicleClassesByLicense = {
+    
     learner: [
       { value: "A1", text: "Class A1 - Light Motorcycles (up to 125cc)" },
       { value: "B1", text: "Class B1 - Light Motor Cars (up to 1000cc)" },
       { value: "G1", text: "Class G1 - Agricultural Tractors" },
     ],
+    
     restricted: [
       { value: "A1", text: "Class A1 - Light Motorcycles (up to 125cc)" },
       { value: "A", text: "Class A - Heavy Motorcycles (above 125cc)" },
@@ -75,6 +76,7 @@ checkPayHereLoaded().then((loaded) => {
       { value: "B", text: "Class B - Motor Cars (above 1000cc)" },
       { value: "G1", text: "Class G1 - Agricultural Tractors" },
     ],
+    
     full: [
       { value: "A1", text: "Class A1 - Light Motorcycles (up to 125cc)" },
       { value: "A", text: "Class A - Heavy Motorcycles (above 125cc)" },
@@ -87,6 +89,7 @@ checkPayHereLoaded().then((loaded) => {
       { value: "G1", text: "Class G1 - Agricultural Tractors" },
       { value: "G", text: "Class G - Heavy Agricultural Vehicles" },
     ],
+    
     heavy: [
       { value: "C1", text: "Class C1 - Light Goods Vehicles (3.5t - 7.5t)" },
       { value: "C", text: "Class C - Heavy Goods Vehicles (above 7.5t)" },
@@ -97,6 +100,7 @@ checkPayHereLoaded().then((loaded) => {
       { value: "G", text: "Class G - Heavy Agricultural Vehicles" },
       { value: "H", text: "Class H - Construction Vehicles" },
     ],
+    
     commercial: [
       { value: "J1", text: "Class J1 - Three Wheeler (Commercial)" },
       { value: "J2", text: "Class J2 - Taxi/Hire Cars" },
@@ -106,6 +110,7 @@ checkPayHereLoaded().then((loaded) => {
       { value: "D", text: "Class D - Large Buses (above 16 seats)" },
       { value: "DE", text: "Class DE - Articulated Buses" },
     ],
+    
     international: [
       { value: "A1", text: "Class A1 - Light Motorcycles (up to 125cc)" },
       { value: "A", text: "Class A - Heavy Motorcycles (above 125cc)" },
@@ -116,6 +121,7 @@ checkPayHereLoaded().then((loaded) => {
       { value: "D1", text: "Class D1 - Minibuses (9-16 seats)" },
       { value: "D", text: "Class D - Large Buses (above 16 seats)" },
     ],
+    
     motorcycle: [
       { value: "A1", text: "Class A1 - Light Motorcycles (up to 125cc)" },
       { value: "A2", text: "Class A2 - Medium Motorcycles (125cc - 400cc)" },
@@ -123,6 +129,7 @@ checkPayHereLoaded().then((loaded) => {
       { value: "AM", text: "Class AM - Mopeds (up to 50cc)" },
       { value: "Q", text: "Class Q - Three Wheelers (Private)" },
     ],
+    
     special: [
       { value: "F", text: "Class F - Emergency Vehicles (Ambulance, Fire)" },
       { value: "K", text: "Class K - Military Vehicles" },
@@ -133,21 +140,24 @@ checkPayHereLoaded().then((loaded) => {
       { value: "R", text: "Class R - Racing Vehicles" },
       { value: "S", text: "Class S - School Transport" },
     ],
+  
   };
   
 
   // =================== API FUNCTIONS ===================
 
-  // Load driver applications
   function loadDriverApplications() {
+    
     return $.ajax({
       url: `${API_BASE_URL}/applications/driver/${currentDriverId}`,
       method: "GET",
+      
       success: function (applications) {
         currentApplications = applications || [];
         updateDashboardWithApplications(currentApplications);
         console.log("Applications loaded:", applications);
       },
+      
       error: function (xhr) {
         if (xhr.status === 404) {
           currentApplications = [];
@@ -159,11 +169,12 @@ checkPayHereLoaded().then((loaded) => {
     });
   }
 
-  // Get decline reason for rejected application
   function getDeclineReason(applicationId) {
+    
     return $.ajax({
       url: `${API_BASE_URL}/declines/application/${applicationId}`,
       method: "GET",
+      
       success: function (declineData) {
         console.log("Decline data:", declineData);
         return (
@@ -172,6 +183,7 @@ checkPayHereLoaded().then((loaded) => {
           "No specific reason provided"
         );
       },
+      
       error: function (xhr) {
         console.error("Failed to get decline reason:", xhr.responseText);
         return "Unable to retrieve decline reason";
@@ -180,6 +192,7 @@ checkPayHereLoaded().then((loaded) => {
   }
 
   function getWrittenExamDetails(applicationId) {
+    
     return $.ajax({
         url: `${API_BASE_URL}/written-exams/application/${applicationId}`,
         method: "GET",
@@ -243,10 +256,10 @@ checkPayHereLoaded().then((loaded) => {
             error: true,
         };
     });
-}
+  }
 
-  // Submit license application
   function submitLicenseApplication(applicationData, photoFile, medicalFile) {
+    
     const formData = new FormData();
 
     const applicationJson = {
@@ -274,6 +287,129 @@ checkPayHereLoaded().then((loaded) => {
     });
   }
 
+    // =================== DASHBOARD UPDATES ===================
+
+  function updateDashboardWithApplications(applications) {
+    
+    const licenseCard = $(".license-info-card .card-content");
+
+    if (applications.length === 0) {
+      
+      licenseCard.html(`
+                <p>Complete your license registration to get started with your driving journey.</p>
+                <button class="btn-card" onclick="showLicenseForm()">
+                    <i class="fas fa-edit me-1"></i> Register License
+                </button>
+            `);
+      updateLicenseStatus("none");
+      return;
+    }
+
+    const latestApplication = applications[0];
+    const statusBadgeClass = getStatusBadgeClass(latestApplication.status);
+    const vehicleClasses = Array.isArray(latestApplication.vehicleClasses) ? latestApplication.vehicleClasses.join(", ") : "N/A";
+
+    licenseCard.html(`
+            <div class="application-summary">
+                <div class="summary-header">
+                    <h6>Latest Application: #${latestApplication.id}</h6>
+                    <span class="badge bg-${statusBadgeClass}">${latestApplication.status}</span>
+                </div>
+                <div class="summary-details" id="summary">
+                    <p><strong>License Type:</strong> ${latestApplication.licenseType.toUpperCase()}</p>
+                    <p><strong>Vehicle Classes:</strong> ${vehicleClasses}</p>
+                    <p><strong>Submitted:</strong> ${formatDate(
+                      latestApplication.submittedDate
+                    )}</p>
+                </div>
+                
+                <div class="summary-actions">
+                    <button class="btn-card me-2" onclick="viewApplicationDetails('${
+                      latestApplication.id
+                    }')">
+                        <i class="fas fa-eye me-1"></i> View Details
+                    </button>
+                    ${
+                      latestApplication.status === "REJECTED"
+                        ? `
+                        <button class="btn-card btn-warning" onclick="showLicenseForm()">
+                            <i class="fas fa-redo me-1"></i> Reapply
+                        </button>
+                    `
+                        : latestApplication.status === "APPROVED"
+                        ? `
+                        <button class="btn-card btn-success" onclick="showPaymentForm()">
+                            <i class="fas fa-credit-card me-1"></i> Make Payment
+                        </button>
+                    `
+                        : applications.filter((app) => app.status === "PENDING")
+                            .length === 0
+                        ? `
+                        <button class="btn-card btn-secondary" onclick="showLicenseForm()">
+                            <i class="fas fa-plus me-1"></i> New Application
+                        </button>
+                    `
+                        : ""
+                    }
+                </div>
+            </div>
+        `);
+
+    updateLicenseStatus(latestApplication.status, latestApplication);
+  }
+
+  function updateLicenseStatus(status, licenseData = null) {
+    
+    const statusBadge = $("#licenseStatus");
+
+    switch (status) {
+      case "APPROVED":
+        statusBadge
+          .removeClass("status-pending status-none status-rejected")
+          .addClass("status-active")
+          .html('<i class="fas fa-check-circle me-1"></i> Application Approved');
+        break;
+      case "PENDING":
+        statusBadge
+          .removeClass("status-active status-none status-rejected")
+          .addClass("status-pending")
+          .html('<i class="fas fa-clock me-1"></i> Application Pending');
+        break;
+      case "REJECTED":
+        statusBadge
+          .removeClass("status-active status-pending status-none")
+          .addClass("status-rejected")
+          .html(
+            '<i class="fas fa-times-circle me-1"></i> Application Rejected'
+          );
+        break;
+      case "none":
+          statusBadge
+          .removeClass("status-active status-pending status-rejected")
+          .addClass("status-none")
+          .html('<i class="fas fa-check-circle me-1" style="color: green;"></i> No License');
+      default:
+        statusBadge
+        .removeClass("status-active status-pending status-rejected")
+        .addClass("status-success")
+        .html('<i class="fas fa-check-circle me-1" style="color: green;"></i> COMPLETED');
+
+    }
+  }
+
+  function getStatusBadgeClass(status) {
+    switch (status) {
+      case "APPROVED":
+        return "success";
+      case "REJECTED":
+        return "danger";
+      case "PENDING":
+        return "warning";
+      default:
+        return "secondary";
+    }
+  }
+
   // =================== ENHANCED SMART NOTIFICATIONS ===================
 
   function loadSmartNotifications() {
@@ -282,7 +418,7 @@ checkPayHereLoaded().then((loaded) => {
     console.log("Notification load function wada ..!");
     
     if (currentApplications.length === 0) {
-      // Welcome notifications for new users
+     
       notifications.push({
         id: "welcome",
         message:
@@ -310,13 +446,11 @@ checkPayHereLoaded().then((loaded) => {
         actionFunction: () => showLicenseForm(),
       });
     } else {
-      // Process each application for notifications
       currentApplications.forEach((app) => {
         processApplicationNotifications(app, notifications);
       });
     }
 
-    // Sort notifications by priority and date
     currentNotifications = notifications.sort((a, b) => {
       const priorityOrder = { URGENT: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
       const aPriority = priorityOrder[a.priority] || 0;
@@ -335,12 +469,14 @@ checkPayHereLoaded().then((loaded) => {
   }
 
   async function processApplicationNotifications(app, notifications) {
+    
     const appId = app.id;
     const status = app.status;
     const submittedDate = new Date(app.submittedDate);
     const daysSinceSubmission = Math.floor(
-      (new Date() - submittedDate) / (1000 * 60 * 60 * 24)
+      (new Date() - submittedDate) / (1000 * 60 * 60 * 24)   // to get the millisecond of a day
     );
+
     console.log("appId of processApplicationNotifications: " + appId);
 
     switch (status) {
@@ -396,7 +532,7 @@ checkPayHereLoaded().then((loaded) => {
         try {
           const declineReason = await getDeclineReason(appId);
           const formattedReason =
-            declineReason || "No specific reason provided";
+            declineReason.declineReason || "No specific reason provided";
 
           notifications.push({
             id: `rejected_${appId}`,
@@ -445,12 +581,33 @@ checkPayHereLoaded().then((loaded) => {
         }
         break;
 
+      case "COMPLETED":
+        try {
+          notifications.push({
+            id: `completed_${appId}`,
+            message: `🎊 Congratulations! Application #${appId} is now COMPLETED!`,
+            details: `✅ Your license process has been successfully completed.\n\nYou will receive your driving license card soon. 🚗💨`,
+            type: "APPLICATION_COMPLETED",
+            priority: "HIGH",
+            createdDate: app.lastModifiedDate || new Date().toISOString(),
+            isRead: false,
+            icon: "fas fa-trophy",
+            bgColor: "#ffc107",
+            applicationId: appId,
+            actionText: "View License Status",
+            actionFunction: () => showLicenseStatus(appId),
+          });
+        } catch (error) {
+          console.error("Error handling COMPLETED state:", error);
+        }
+        break;
+ 
       case "APPROVED":
         try {
           const examDetails = await getWrittenExamDetails(appId);
 
           if (examDetails) {
-            const examDate = new Date(examDetails.examDate);
+            const examDate = new Date(examDetails.writtenExamDate);
             const isUpcoming = examDate > new Date();
             const daysUntilExam = Math.ceil(
               (examDate - new Date()) / (1000 * 60 * 60 * 24)
@@ -460,9 +617,9 @@ checkPayHereLoaded().then((loaded) => {
               id: `approved_${appId}`,
               message: `🎉 Congratulations! Application #${appId} has been approved!`,
               details: `📅 Exam Date: ${formatDate(
-                examDetails.examDate
-              )}\n⏰ Time: ${examDetails.examTime || "TBA"}\n📍 Location: ${
-                examDetails.examLocation || "Will be announced soon"
+                examDetails.writtenExamDate
+              )}\n⏰ Time: ${examDetails.writtenExamTime || "TBA"}\n📍 Location: ${
+                examDetails.writtenExamLocation || "Will be announced soon"
               }\n\n💳 Payment is now available for your exam fee.`,
               type: "APPLICATION_APPROVED",
               priority: "HIGH",
@@ -483,10 +640,10 @@ checkPayHereLoaded().then((loaded) => {
                   message: `🚨 URGENT: Written exam ${
                     daysUntilExam === 0 ? "TODAY" : "TOMORROW"
                   }!`,
-                  details: `📅 ${formatDate(examDetails.examDate)} at ${
-                    examDetails.examTime || "TBA"
+                  details: `📅 ${formatDate(examDetails.writtenExamDate)} at ${
+                    examDetails.writtenExamTime || "TBA"
                   }\n📍 ${
-                    examDetails.examLocation || "Location TBA"
+                    examDetails.writtenExamLocation || "Location TBA"
                   }\n\n⚡ Don't forget to bring your NIC and arrive 30 minutes early!`,
                   type: "EXAM_URGENT",
                   priority: "URGENT",
@@ -501,10 +658,10 @@ checkPayHereLoaded().then((loaded) => {
                 notifications.push({
                   id: `exam_week_${appId}`,
                   message: `📚 Written exam in ${daysUntilExam} days - Time to prepare!`,
-                  details: `📅 ${formatDate(examDetails.examDate)} at ${
-                    examDetails.examTime || "TBA"
+                  details: `📅 ${formatDate(examDetails.writtenExamDate)} at ${
+                    examDetails.writtenExamTime || "TBA"
                   }\n📍 ${
-                    examDetails.examLocation || "Location TBA"
+                    examDetails.writtenExamLocation || "Location TBA"
                   }\n\n📖 Study tips: Review traffic rules, road signs, and license-specific requirements.`,
                   type: "EXAM_PREPARATION",
                   priority: "HIGH",
@@ -611,9 +768,11 @@ checkPayHereLoaded().then((loaded) => {
         break;
     }
 
+    renderSmartNotifications(notifications);
     addContextualTips(app, notifications);
   }
 
+  // For the reminders , It may be helpful for the user 
   function addContextualTips(app, notifications) {
     const daysSinceSubmission = Math.floor(
       (new Date() - new Date(app.submittedDate)) / (1000 * 60 * 60 * 24)
@@ -651,6 +810,7 @@ checkPayHereLoaded().then((loaded) => {
   }
 
   function renderSmartNotifications(notifications) {
+    
     const container = $("#notificationList");
     container.empty();
 
@@ -666,62 +826,50 @@ checkPayHereLoaded().then((loaded) => {
     }
 
     notifications.forEach((notification) => {
-      const priorityClass = notification.priority
-        ? `priority-${notification.priority.toLowerCase()}`
-        : "";
+      const priorityClass = notification.priority ? `priority-${notification.priority.toLowerCase()}` : "";
       const unreadClass = !notification.isRead ? "unread" : "";
 
-      const notificationHtml = `
-                <li class="smart-notification-item ${unreadClass} ${priorityClass}" data-id="${
-        notification.id
-      }">
-                    <div class="notification-icon" style="background-color: ${
-                      notification.bgColor || "#6c757d"
-                    }">
-                        <i class="${notification.icon || "fas fa-bell"}"></i>
-                    </div>
-                    <div class="notification-content">
-                        <div class="notification-header">
-                            <div class="notification-message">${
-                              notification.message
-                            }</div>
-                            <div class="notification-date">
-                                <i class="far fa-calendar-alt me-1"></i> 
-                                ${formatRelativeDate(notification.createdDate)}
-                            </div>
-                        </div>
-                        ${
-                          notification.details
-                            ? `
-                            <div class="notification-details">
-                                ${notification.details.replace(/\n/g, "<br>")}
-                            </div>
-                        `
-                            : ""
-                        }
-                        ${
-                          notification.actionText
-                            ? `
-                            <div class="notification-action">
-                                <button class="btn-notification-action" onclick="handleNotificationAction('${notification.id}')">
-                                    <i class="fas fa-arrow-right me-1"></i>${notification.actionText}
-                                </button>
-                            </div>
-                        `
-                            : ""
-                        }
-                    </div>
-                    ${
-                      !notification.isRead
-                        ? '<div class="unread-indicator"></div>'
-                        : ""
-                    }
-                </li>
-            `;
+      const notificationHtml = `<li class="smart-notification-item ${unreadClass} ${priorityClass}" data-id="${ notification.id }">
+                                <div class="notification-icon" style="background-color: ${ notification.bgColor || "#6c757d" }">
+                                    <i class="${notification.icon || "fas fa-bell"}"></i>
+                                </div>
+                                <div class="notification-content">
+                                    <div class="notification-header">
+                                        <div class="notification-message">${ notification.message }</div>
+                                        <div class="notification-date">
+                                            <i class="far fa-calendar-alt me-1"></i> 
+                                            ${formatRelativeDate(notification.createdDate)}
+                                        </div>
+                                    </div>
+                                    ${ notification.details ? `
+                                        <div class="notification-details">
+                                            ${notification.details.replace(/\n/g, "<br>")}
+                                        </div>
+                                    `
+                                        : ""
+                                    }
+                                    ${
+                                      notification.actionText
+                                        ? `
+                                        <div class="notification-action">
+                                            <button class="btn-notification-action" onclick="handleNotificationAction('${notification.id}')">
+                                                <i class="fas fa-arrow-right me-1"></i>${notification.actionText}
+                                            </button>
+                                        </div>
+                                    `
+                                        : ""
+                                    }
+                                </div>
+                                ${
+                                  !notification.isRead
+                                    ? '<div class="unread-indicator"></div>'
+                                    : ""
+                                }
+                            </li>
+                        `;
 
       const item = $(notificationHtml);
 
-      // Add click handler to mark as read
       item.on("click", function (e) {
         if (!$(e.target).hasClass("btn-notification-action")) {
           if (!notification.isRead) {
@@ -744,7 +892,7 @@ checkPayHereLoaded().then((loaded) => {
       (n) => n.id === notificationId
     );
     if (notification && notification.actionFunction) {
-      notification.actionFunction();
+      notification.actionFunction();   // Call the functions , assosiate with that notification
     }
   };
 
@@ -2031,56 +2179,9 @@ checkPayHereLoaded().then((loaded) => {
     console.log("Hash from backend:", paymentData.hash);
     console.log("============================");
 
-    // payhere.onCompleted = function onCompleted(orderId) {
-    //   console.log("Payment completed successfully! Order ID:", orderId);
-
-    //   // Swal.fire({ title: 'Payment Processing...', html: <div class="payment-processing"> <div class="processing-spinner"></div> <p>Verifying your payment...</p> <p><strong>Order ID:</strong> ${orderId}</p> </div> <style> .processing-spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #28a745; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; } @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } } </style> , allowOutsideClick: false, showConfirmButton: false });
-      
-    //   Swal.fire({
-    //       title: 'Payment Processing...',
-    //       html: `
-    //         <div class="payment-processing">
-    //           <div class="processing-spinner"></div>
-    //           <p>Verifying your payment...</p>
-    //           <p><strong>Order ID:</strong> ${orderId}</p>
-    //         </div>
-    //         <style>
-    //           .processing-spinner {
-    //             width: 40px; height: 40px;
-    //             border: 4px solid #f3f3f3;
-    //             border-top: 4px solid #28a745;
-    //             border-radius: 50%;
-    //             animation: spin 1s linear infinite;
-    //             margin: 0 auto 15px;
-    //           }
-    //           @keyframes spin {
-    //             0% { transform: rotate(0deg); }
-    //             100% { transform: rotate(360deg); }
-    //           }
-    //         </style>
-    //       `,
-    //       allowOutsideClick: false,
-    //       showConfirmButton: false,
-    //       didOpen: () => {
-    //           setTimeout(() => {
-    //               Swal.close();
-
-    //               Swal.fire({
-    //                   icon: 'success',
-    //                   title: 'Payment Successful!',
-    //                   html: `<p>Your payment for <strong>Order ID: ${orderId}</strong> has been completed.</p>`,
-    //                   confirmButtonText: 'OK'
-    //               });
-    //           }, 3000);
-    //       }
-    //   });
-
-    // };
-
       payhere.onCompleted = function onCompleted(orderId) {
         console.log("Payment completed successfully! Order ID:", orderId);
         
-        // Show processing spinner
         Swal.fire({
           title: 'Payment Processing...',
           html: `
@@ -4097,123 +4198,6 @@ checkPayHereLoaded().then((loaded) => {
     }
   });
 
-  // =================== DASHBOARD UPDATES ===================
-
-  function updateDashboardWithApplications(applications) {
-    const licenseCard = $(".license-info-card .card-content");
-
-    if (applications.length === 0) {
-      licenseCard.html(`
-                <p>Complete your license registration to get started with your driving journey.</p>
-                <button class="btn-card" onclick="showLicenseForm()">
-                    <i class="fas fa-edit me-1"></i> Register License
-                </button>
-            `);
-      updateLicenseStatus("none");
-      return;
-    }
-
-    const latestApplication = applications[0];
-    const statusBadgeClass = getStatusBadgeClass(latestApplication.status);
-    const vehicleClasses = Array.isArray(latestApplication.vehicleClasses)
-      ? latestApplication.vehicleClasses.join(", ")
-      : "N/A";
-
-    licenseCard.html(`
-            <div class="application-summary">
-                <div class="summary-header">
-                    <h6>Latest Application: #${latestApplication.id}</h6>
-                    <span class="badge bg-${statusBadgeClass}">${latestApplication.status}</span>
-                </div>
-                <div class="summary-details" id="summary">
-                    <p><strong>License Type:</strong> ${latestApplication.licenseType.toUpperCase()}</p>
-                    <p><strong>Vehicle Classes:</strong> ${vehicleClasses}</p>
-                    <p><strong>Submitted:</strong> ${formatDate(
-                      latestApplication.submittedDate
-                    )}</p>
-                </div>
-                
-                <div class="summary-actions">
-                    <button class="btn-card me-2" onclick="viewApplicationDetails('${
-                      latestApplication.id
-                    }')">
-                        <i class="fas fa-eye me-1"></i> View Details
-                    </button>
-                    ${
-                      latestApplication.status === "REJECTED"
-                        ? `
-                        <button class="btn-card btn-warning" onclick="showLicenseForm()">
-                            <i class="fas fa-redo me-1"></i> Reapply
-                        </button>
-                    `
-                        : latestApplication.status === "APPROVED"
-                        ? `
-                        <button class="btn-card btn-success" onclick="showPaymentForm()">
-                            <i class="fas fa-credit-card me-1"></i> Make Payment
-                        </button>
-                    `
-                        : applications.filter((app) => app.status === "PENDING")
-                            .length === 0
-                        ? `
-                        <button class="btn-card btn-secondary" onclick="showLicenseForm()">
-                            <i class="fas fa-plus me-1"></i> New Application
-                        </button>
-                    `
-                        : ""
-                    }
-                </div>
-            </div>
-        `);
-
-    updateLicenseStatus(latestApplication.status, latestApplication);
-  }
-
-  function updateLicenseStatus(status, licenseData = null) {
-    const statusBadge = $("#licenseStatus");
-
-    switch (status) {
-      case "APPROVED":
-        statusBadge
-          .removeClass("status-pending status-none status-rejected")
-          .addClass("status-active")
-          .html('<i class="fas fa-check-circle me-1"></i> Application Approved');
-        break;
-      case "PENDING":
-        statusBadge
-          .removeClass("status-active status-none status-rejected")
-          .addClass("status-pending")
-          .html('<i class="fas fa-clock me-1"></i> Application Pending');
-        break;
-      case "REJECTED":
-        statusBadge
-          .removeClass("status-active status-pending status-none")
-          .addClass("status-rejected")
-          .html(
-            '<i class="fas fa-times-circle me-1"></i> Application Rejected'
-          );
-        break;
-      default:
-        statusBadge
-        .removeClass("status-active status-pending status-rejected")
-        .addClass("status-success")
-        .html('<i class="fas fa-check-circle me-1" style="color: green;"></i> COMPLETED');
-
-    }
-  }
-
-  function getStatusBadgeClass(status) {
-    switch (status) {
-      case "APPROVED":
-        return "success";
-      case "REJECTED":
-        return "danger";
-      case "PENDING":
-        return "warning";
-      default:
-        return "secondary";
-    }
-  }
-
   // =================== APPLICATION DETAILS MODAL ===================
 
   window.viewApplicationDetails = function (applicationId) {
@@ -5805,7 +5789,9 @@ checkPayHereLoaded().then((loaded) => {
   }
 
   function updateNotificationBadge(count) {
+    
     let badge = $("#notificationBadge");
+    
     if (badge.length === 0) {
       badge = $(
         '<span id="notificationBadge" class="notification-badge"></span>'
@@ -5864,10 +5850,11 @@ checkPayHereLoaded().then((loaded) => {
       cancelButtonText: '<i class="fas fa-times me-2"></i>Cancel',
     }).then((result) => {
       if (result.isConfirmed) {
-        localStorage.removeItem("smartreg_token");
+        localStorage.removeItem("email");
         localStorage.removeItem("smartreg_user");
         sessionStorage.removeItem("smartreg_token");
-        sessionStorage.removeItem("smartreg_user");
+        localStorage.removeItem("smartreg_user_data");
+        localStorage.removeItem("dashboard_filter");
 
         Swal.fire({
           title: "Logged Out",
