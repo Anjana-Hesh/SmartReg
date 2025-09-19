@@ -1,16 +1,14 @@
 $(document).ready(function () {
+
       // =================== CONFIGURATION ===================
+
       const API_BASE_URL = "http://localhost:8080/api/v1";
 
-      let authToken =
-        localStorage.getItem("smartreg_token") ||
-        sessionStorage.getItem("smartreg_token");
+      let authToken = localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token");
       let userData = null;
 
       try {
-        const userDataString =
-          localStorage.getItem("smartreg_user") ||
-          sessionStorage.getItem("smartreg_user");
+        const userDataString = localStorage.getItem("smartreg_user") || sessionStorage.getItem("smartreg_user");
         userData = userDataString ? JSON.parse(userDataString) : null;
       } catch (e) {
         console.error("Error parsing user data:", e);
@@ -26,11 +24,7 @@ $(document).ready(function () {
       let currentPage = 1;
       const applicationsPerPage = 10;
 
-      console.log("Auth check:", {
-        authToken: !!authToken,
-        userId: currentUserId,
-        role: currentUserRole,
-      });
+      console.log("Auth check:", {authToken: !!authToken, userId: currentUserId, role: currentUserRole,});
 
       // =================== AUTHENTICATION CHECK ===================
 
@@ -64,7 +58,7 @@ $(document).ready(function () {
           }
         },
         error: function (xhr, status, error) {
-          // Only handle auth errors, not all errors
+         
           if (xhr.status === 401) {
             console.log("Unauthorized request - handling session expiry");
             handleUnauthorized();

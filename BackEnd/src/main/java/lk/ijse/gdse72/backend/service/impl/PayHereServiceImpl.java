@@ -1,6 +1,7 @@
 package lk.ijse.gdse72.backend.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.io.IOException;
 import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import lk.ijse.gdse72.backend.dto.PayHereCallbackDTO;
@@ -17,15 +18,23 @@ import lk.ijse.gdse72.backend.repository.UserRepository;
 import lk.ijse.gdse72.backend.service.PayHereService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.sf.jasperreports.engine.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import javax.sql.DataSource;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -42,6 +51,7 @@ public class PayHereServiceImpl implements PayHereService {
     private final PaymentRepository paymentRepository;
     private final UserRepository userRepository;
     private final EmailServiceImpl emailService;
+    private final DataSource dataSource;
 
     @Value("${payhere.merchant-id}")
     private String merchantId;
@@ -92,7 +102,7 @@ public class PayHereServiceImpl implements PayHereService {
                     .amount(amount)
                     .currency("LKR")
                     .paymentMethod(paymentMethod)
-                    .status(PaymentStatus.PENDING)
+                    .status(PaymentStatus.COMPLETED)
                     .licenseType(licenseType)
                     .payhereOrderId(payhereOrderId)
                     .createdDate(LocalDateTime.now());
@@ -210,6 +220,87 @@ public class PayHereServiceImpl implements PayHereService {
     }
 
 
+    @Override
+    public byte[] generateSuccessfulPaymentsReport() throws Exception {
+        log.info("Starting payment report generation...");
+
+        InputStream reportStream = null;
+        try {
+            // Load the JRXML template
+            reportStream = getClass().getResourceAsStream("/reports/payment_report.jrxml");
+            if (reportStream == null) {
+                log.error("Report template not found at /reports/payment_report.jrxml");
+                throw new FileNotFoundException("Report template not found at /reports/payment_report.jrxml");
+            }
+
+            log.info("Compiling Jasper report...");
+            JasperReport jasperReport = JasperCompileManager.compileReport(reportStream);
+
+            // Set up parameters
+            Map<String, Object> parameters = new HashMap<>();
+            parameters.put("REPORT_TITLE", "Successful Payments Report");
+            parameters.put("GENERATED_DATE", new Date());
+
+            log.info("Connecting to database and filling report...");
+            try (Connection connection = dataSource.getConnection()) {
+                // Test the connection and query
+                String testQuery = "SELECT COUNT(*) FROM payments WHERE status = 'SUCCESS'";
+                try (PreparedStatement stmt = connection.prepareStatement(testQuery);
+                     ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        int count = rs.getInt(1);
+                        log.info("Found {} successful payments for report", count);
+
+                        if (count == 0) {
+                            log.warn("No successful payments found for report");
+                        }
+                    }
+                }
+
+                // Fill the report
+                JasperPrint jasperPrint = JasperFillManager.fillReport(
+                        jasperReport,
+                        parameters,
+                        connection
+                );
+
+                if (jasperPrint.getPages().isEmpty()) {
+                    log.warn("Generated report has no pages");
+                } else {
+                    log.info("Report filled successfully with {} pages", jasperPrint.getPages().size());
+                }
+
+                // Export to PDF
+                log.info("Exporting report to PDF...");
+                byte[] pdfBytes = JasperExportManager.exportReportToPdf(jasperPrint);
+
+                if (pdfBytes == null || pdfBytes.length == 0) {
+                    throw new RuntimeException("PDF generation failed - empty result");
+                }
+
+                log.info("Report exported successfully. PDF size: {} bytes", pdfBytes.length);
+                return pdfBytes;
+            }
+
+        } catch (JRException e) {
+            log.error("JasperReports error: ", e);
+            throw new RuntimeException("Report generation failed: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            log.error("Database error while generating report: ", e);
+            throw new RuntimeException("Database error: " + e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("Unexpected error during report generation: ", e);
+            throw new RuntimeException("Report generation failed: " + e.getMessage(), e);
+        } finally {
+            if (reportStream != null) {
+                try {
+                    reportStream.close();
+                } catch (IOException e) {
+                    log.warn("Failed to close report stream", e);
+                }
+            }
+        }
+    }
 
     private Map<String, String> buildPayHereParameters(Payment payment) {
         Map<String, String> params = new HashMap<>();

@@ -7,13 +7,10 @@ import lk.ijse.gdse72.backend.exception.GlobelExceptionHandler;
 import lk.ijse.gdse72.backend.service.PayHereService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
-
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -165,6 +162,42 @@ public class PaymentController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
         }
     }
+
+    @GetMapping("/report/success")
+    public ResponseEntity<byte[]> downloadSuccessfulPaymentsReport() {
+        try {
+            log.info("Generating successful payments report...");
+            byte[] pdf = payHereService.generateSuccessfulPaymentsReport();
+
+            if (pdf == null || pdf.length == 0) {
+                log.error("Generated PDF is null or empty");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Error generating report".getBytes());
+            }
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDisposition(ContentDisposition.attachment()
+                    .filename("Successful_Payments_Report_" + LocalDate.now() + ".pdf")
+                    .build());
+            headers.setContentLength(pdf.length);
+
+            log.info("Report generated successfully. Size: {} bytes", pdf.length);
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(pdf);
+
+        } catch (Exception e) {
+            log.error("Error generating successful payments report: ", e);
+
+            // Return proper error response
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .body(("Error generating report: " + e.getMessage()).getBytes());
+        }
+    }
+
 
 //    @PostMapping("/initialize-js")
 //    public ResponseEntity<ApiResponse> initializeJSPayment(

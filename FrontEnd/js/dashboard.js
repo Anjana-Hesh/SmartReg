@@ -82,6 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // }
 
 // Enhanced checkAuthentication function for dashboard.js
+
 function checkAuthentication() {
     // Check both localStorage and sessionStorage for token
     const token = localStorage.getItem('smartreg_token') || sessionStorage.getItem('smartreg_token');

@@ -2031,55 +2031,344 @@ checkPayHereLoaded().then((loaded) => {
     console.log("Hash from backend:", paymentData.hash);
     console.log("============================");
 
-    payhere.onCompleted = function onCompleted(orderId) {
-      console.log("Payment completed successfully! Order ID:", orderId);
+    // payhere.onCompleted = function onCompleted(orderId) {
+    //   console.log("Payment completed successfully! Order ID:", orderId);
 
-      // Swal.fire({ title: 'Payment Processing...', html: <div class="payment-processing"> <div class="processing-spinner"></div> <p>Verifying your payment...</p> <p><strong>Order ID:</strong> ${orderId}</p> </div> <style> .processing-spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #28a745; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; } @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } } </style> , allowOutsideClick: false, showConfirmButton: false });
+    //   // Swal.fire({ title: 'Payment Processing...', html: <div class="payment-processing"> <div class="processing-spinner"></div> <p>Verifying your payment...</p> <p><strong>Order ID:</strong> ${orderId}</p> </div> <style> .processing-spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #28a745; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; } @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } } </style> , allowOutsideClick: false, showConfirmButton: false });
       
-      // Payment process simulation
-    Swal.fire({
-        title: 'Payment Processing...',
-        html: `
-          <div class="payment-processing">
-            <div class="processing-spinner"></div>
-            <p>Verifying your payment...</p>
-            <p><strong>Order ID:</strong> ${orderId}</p>
-          </div>
-          <style>
-            .processing-spinner {
-              width: 40px; height: 40px;
-              border: 4px solid #f3f3f3;
-              border-top: 4px solid #28a745;
-              border-radius: 50%;
-              animation: spin 1s linear infinite;
-              margin: 0 auto 15px;
-            }
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-          </style>
-        `,
-        allowOutsideClick: false,
-        showConfirmButton: false,
-        didOpen: () => {
-            // Simulate payment verification
-            setTimeout(() => {
-                // Close processing popup
+    //   Swal.fire({
+    //       title: 'Payment Processing...',
+    //       html: `
+    //         <div class="payment-processing">
+    //           <div class="processing-spinner"></div>
+    //           <p>Verifying your payment...</p>
+    //           <p><strong>Order ID:</strong> ${orderId}</p>
+    //         </div>
+    //         <style>
+    //           .processing-spinner {
+    //             width: 40px; height: 40px;
+    //             border: 4px solid #f3f3f3;
+    //             border-top: 4px solid #28a745;
+    //             border-radius: 50%;
+    //             animation: spin 1s linear infinite;
+    //             margin: 0 auto 15px;
+    //           }
+    //           @keyframes spin {
+    //             0% { transform: rotate(0deg); }
+    //             100% { transform: rotate(360deg); }
+    //           }
+    //         </style>
+    //       `,
+    //       allowOutsideClick: false,
+    //       showConfirmButton: false,
+    //       didOpen: () => {
+    //           setTimeout(() => {
+    //               Swal.close();
+
+    //               Swal.fire({
+    //                   icon: 'success',
+    //                   title: 'Payment Successful!',
+    //                   html: `<p>Your payment for <strong>Order ID: ${orderId}</strong> has been completed.</p>`,
+    //                   confirmButtonText: 'OK'
+    //               });
+    //           }, 3000);
+    //       }
+    //   });
+
+    // };
+
+      payhere.onCompleted = function onCompleted(orderId) {
+        console.log("Payment completed successfully! Order ID:", orderId);
+        
+        // Show processing spinner
+        Swal.fire({
+          title: 'Payment Processing...',
+          html: `
+            <div class="payment-processing">
+              <div class="processing-spinner"></div>
+              <p>Verifying your payment...</p>
+              <p><strong>Order ID:</strong> ${orderId}</p>
+            </div>
+            <style>
+              .processing-spinner {
+                width: 40px; height: 40px;
+                border: 4px solid #f3f3f3;
+                border-top: 4px solid #28a745;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                margin: 0 auto 15px;
+              }
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+            </style>
+          `,
+          allowOutsideClick: false,
+          showConfirmButton: false,
+          didOpen: () => {
+            setTimeout(async () => {
+              try {
+                const authToken = localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token");
+                
+                if (!authToken) {
+                  throw new Error("Authentication token not found");
+                }
+
                 Swal.close();
-
-                // Show success popup
+                
+                // Show success dialog with preview and download options
                 Swal.fire({
-                    icon: 'success',
-                    title: 'Payment Successful!',
-                    html: `<p>Your payment for <strong>Order ID: ${orderId}</strong> has been completed.</p>`,
-                    confirmButtonText: 'OK'
+                  icon: 'success',
+                  title: 'Payment Successful!',
+                  html: `<p>Your payment for <strong>Order ID: ${orderId}</strong> has been completed successfully.</p>`,
+                  showCancelButton: true,
+                  showDenyButton: true,
+                  confirmButtonText: 'Preview Report',
+                  denyButtonText: 'Download Report', 
+                  cancelButtonText: 'Close',
+                  confirmButtonColor: '#17a2b8',
+                  denyButtonColor: '#28a745',
+                  cancelButtonColor: '#6c757d'
+                }).then(async (result) => {
+                  if (result.isConfirmed) {
+                    // Preview the report
+                    await previewPaymentReport(authToken);
+                  } else if (result.isDenied) {
+                    // Download the report directly
+                    await downloadPaymentReport(authToken);
+                  }
                 });
-            }, 3000); // 3 seconds simulation
-        }
-    });
 
-    };
+              } catch (error) {
+                console.error("Error during payment verification:", error);
+                Swal.close();
+                
+                Swal.fire({
+                  icon: 'warning',
+                  title: 'Payment Completed',
+                  html: `
+                    <p>Your payment has been processed, but we couldn't automatically verify it.</p>
+                    <p><strong>Order ID:</strong> ${orderId}</p>
+                    <p>You can view your report from the dashboard.</p>
+                  `,
+                  confirmButtonText: 'OK'
+                });
+              }
+            }, 3000);
+          }
+        });
+      };
+
+      // Function to preview the report in a new tab
+      async function previewPaymentReport(authToken) {
+        const loadingAlert = Swal.fire({
+          title: 'Loading Report Preview...',
+          html: 'Please wait while we prepare your payment report.',
+          allowOutsideClick: false,
+          showConfirmButton: false,
+          didOpen: () => {
+            Swal.showLoading();
+          }
+        });
+
+        try {
+          const reportResponse = await fetch(`${API_BASE_URL}/payment/report/success`, {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${authToken}`,
+              "Accept": "application/pdf"
+            }
+          });
+
+          if (!reportResponse.ok) {
+            throw new Error(`HTTP error! status: ${reportResponse.status} - ${reportResponse.statusText}`);
+          }
+
+          const contentType = reportResponse.headers.get('content-type');
+          if (!contentType || !contentType.includes('application/pdf')) {
+            throw new Error('Invalid response format - expected PDF');
+          }
+
+          const blob = await reportResponse.blob();
+          const url = window.URL.createObjectURL(blob);
+          
+          // Open in new tab for preview
+          const previewWindow = window.open(url, '_blank');
+          
+          Swal.close();
+          
+          if (previewWindow) {
+            // Show dialog asking if they want to download after preview
+            setTimeout(() => {
+              Swal.fire({
+                icon: 'info',
+                title: 'Report Preview Opened',
+                html: 'Your payment report has been opened in a new tab. Would you like to download it as well?',
+                showCancelButton: true,
+                confirmButtonText: 'Download Report',
+                cancelButtonText: 'No Thanks',
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d'
+              }).then((result) => {
+                if (result.isConfirmed) {
+                  // Create download link
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `Payment_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  
+                  Swal.fire({
+                    icon: 'success',
+                    title: 'Report Downloaded!',
+                    text: 'Your payment report has been downloaded successfully.',
+                    timer: 2000,
+                    showConfirmButton: false
+                  });
+                }
+                
+                // Clean up URL after some time
+                setTimeout(() => {
+                  window.URL.revokeObjectURL(url);
+                }, 5000);
+              });
+            }, 1000);
+          } else {
+            // If popup was blocked, show alternative
+            Swal.fire({
+              icon: 'warning',
+              title: 'Preview Blocked',
+              html: `
+                <p>Your browser blocked the popup. Please allow popups for this site or click below to download the report.</p>
+                <button id="downloadBtn" class="swal2-confirm swal2-styled" style="background-color: #28a745;">Download Report</button>
+              `,
+              showConfirmButton: false,
+              didOpen: () => {
+                document.getElementById('downloadBtn').onclick = () => {
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `Payment_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  window.URL.revokeObjectURL(url);
+                  
+                  Swal.close();
+                  Swal.fire({
+                    icon: 'success',
+                    title: 'Report Downloaded!',
+                    timer: 2000,
+                    showConfirmButton: false
+                  });
+                };
+              }
+            });
+          }
+
+        } catch (error) {
+          console.error("Report preview error:", error);
+          Swal.close();
+          
+          Swal.fire({
+            icon: 'error',
+            title: 'Preview Failed',
+            html: `
+              <p>We couldn't load the report preview at this time.</p>
+              <p><strong>Error:</strong> ${error.message}</p>
+              <p>Would you like to try downloading it instead?</p>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Download Report',
+            cancelButtonText: 'Cancel'
+          }).then((result) => {
+            if (result.isConfirmed) {
+              downloadPaymentReport(authToken);
+            }
+          });
+        }
+      }
+
+      // Function to download the report directly
+      async function downloadPaymentReport(authToken, retries = 3) {
+        const loadingAlert = Swal.fire({
+          title: 'Generating Report...',
+          html: 'Please wait while we prepare your payment report.',
+          allowOutsideClick: false,
+          showConfirmButton: false,
+          didOpen: () => {
+            Swal.showLoading();
+          }
+        });
+
+        try {
+          const reportResponse = await fetch(`${API_BASE_URL}/payment/report/success`, {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${authToken}`,
+              "Accept": "application/pdf"
+            }
+          });
+
+          if (!reportResponse.ok) {
+            throw new Error(`HTTP error! status: ${reportResponse.status} - ${reportResponse.statusText}`);
+          }
+
+          const contentType = reportResponse.headers.get('content-type');
+          if (!contentType || !contentType.includes('application/pdf')) {
+            throw new Error('Invalid response format - expected PDF');
+          }
+
+          const blob = await reportResponse.blob();
+          const url = window.URL.createObjectURL(blob);
+          
+          // Create download link
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `Payment_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          
+          // Clean up
+          window.URL.revokeObjectURL(url);
+          
+          Swal.close();
+          
+          Swal.fire({
+            icon: 'success',
+            title: 'Report Downloaded!',
+            text: 'Your payment report has been downloaded successfully.',
+            timer: 2000,
+            showConfirmButton: false
+          });
+
+        } catch (error) {
+          console.error("Report download error:", error);
+          Swal.close();
+          
+          if (retries > 0) {
+            console.log(`Retrying report download... (${retries} attempts left)`);
+            setTimeout(() => {
+              downloadPaymentReport(authToken, retries - 1);
+            }, 2000);
+            return;
+          }
+
+          Swal.fire({
+            icon: 'error',
+            title: 'Download Failed',
+            html: `
+              <p>We couldn't download your payment report at this time.</p>
+              <p><strong>Error:</strong> ${error.message}</p>
+              <p>Please try again later or contact support.</p>
+            `,
+            confirmButtonText: 'OK'
+          });
+        }
+      }
+
 
     payhere.onDismissed = function onDismissed() {
       console.log("PayHere payment window dismissed");

@@ -25,4 +25,6 @@ public interface PayHereService {
     boolean isApplicationPaid(Long applicationId);
 
     String generatePaymentReceipt(String transactionId);
+
+    byte[] generateSuccessfulPaymentsReport() throws Exception;
 }
