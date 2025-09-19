@@ -7,6 +7,34 @@ A modern, comprehensive web application designed to make driving license managem
 ![Frontend](https://img.shields.io/badge/Frontend-HTML%2FCSS%2FJS-blue)
 ![Security](https://img.shields.io/badge/Security-Spring_Security-green)
 
+
+## 📸 Screenshots
+
+### Login & Authentication
+![SmartReg Login Page](screenshots/login-page.png)
+*Secure login interface with Google OAuth integration and traditional username/password authentication*
+
+### Admin Dashboard
+![Admin Dashboard](screenshots/admin-dashboard.png)
+*Comprehensive admin dashboard with real-time statistics, quick actions, and system monitoring*
+
+### License Application Management
+![License Applications](screenshots/license-applications.png)
+*Application review interface with detailed applicant information, status tracking, and approval controls*
+
+### Staff Management
+![Staff Management](screenshots/staff-management.png)
+*Staff member management with role-based access control and administrative privileges*
+
+### Driver Dashboard
+![Driver Dashboard](screenshots/driver-dashboard.png)
+*User-friendly driver interface showing application status, notifications, and available actions*
+
+### License Preview & Generation
+![License Preview](screenshots/license-preview.png)
+*Digital license preview with complete license details and printing capabilities*
+
+
 ## 🌟 Features
 
 ### 👨‍💼 User Management
