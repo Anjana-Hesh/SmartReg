@@ -1417,30 +1417,26 @@ $(document).ready(function () {
 
   function handleNoPaymentAvailable() {
     
-    const pendingApps = currentApplications.filter(
-      (app) => app.status === "PENDING"
-    );
-    
-    const rejectedApps = currentApplications.filter(
-      (app) => app.status === "REJECTED"
-    );
+    const pendingApps = currentApplications.filter((app) => app.status === "PENDING");
+    const rejectedApps = currentApplications.filter((app) => app.status === "REJECTED");
+    const completeApps = currentApplications.filter((app) => app.status === "COMPLETED");
 
     let message,
       type,
       showApplyButton = false;
 
     if (pendingApps.length > 0) {
-      message =
-        "Your application is still under review. Payment will be available once approved.";
+      message = "Your application is still under review. Payment will be available once approved.";
       type = "info";
     } else if (rejectedApps.length > 0) {
-      message =
-        "Your application was rejected. Please submit a new application first.";
+      message = "Your application was rejected. Please submit a new application first.";
       type = "warning";
       showApplyButton = true;
+    } else if (completeApps){
+      message = "You have complete your license , if you expand that you can sen another application";
+      type = "info";
     } else {
-      message =
-        "You don't have any applications yet. Please submit an application first.";
+      message = "You don't have any applications yet. Please submit an application first.";
       type = "info";
       showApplyButton = true;
     }
@@ -1464,326 +1460,323 @@ $(document).ready(function () {
   }
 
   async function showEnhancedPaymentModal(applications) {
-  const applicationsList = await Promise.all(
-    applications.map(async (app) => {
-      const vehicleClasses = app.vehicleClasses
-        ? Array.isArray(app.vehicleClasses)
-          ? app.vehicleClasses.join(", ")
-          : app.vehicleClasses
-        : "N/A";
-      
-      let examFee = 3000;
-      try {
-        const feeResponse = await fetch(`${API_BASE_URL}/payment/calculate-fee?licenseType=${app.licenseType}&vehicleClasses=${app.vehicleClasses || ''}`, {
-          method: 'GET',
-          headers: {
-            Authorization: "Bearer " + (localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token")),
-            'Content-Type': 'application/json'
-          }
-        });
+    
+    const applicationsList = await Promise.all( applications.map(async (app) => {const vehicleClasses = app.vehicleClasses ? Array.isArray(app.vehicleClasses) ? app.vehicleClasses.join(", ") : app.vehicleClasses : "N/A";
         
-        if (feeResponse.ok) {
-          const feeData = await feeResponse.json();
-          if (feeData.status === 200) {
-            examFee = feeData.data.examFee;
+        let examFee = 3000;
+        try {
+          const feeResponse = await fetch(`${API_BASE_URL}/payment/calculate-fee?licenseType=${app.licenseType}&vehicleClasses=${app.vehicleClasses || ''}`, {
+            method: 'GET',
+            headers: {
+              Authorization: "Bearer " + (localStorage.getItem("smartreg_token") || sessionStorage.getItem("smartreg_token")),
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (feeResponse.ok) {
+            const feeData = await feeResponse.json();
+            if (feeData.status === 200) {
+              examFee = feeData.data.examFee;
+            }
           }
+        } catch (error) {
+          console.error('Error fetching exam fee:', error);
         }
-      } catch (error) {
-        console.error('Error fetching exam fee:', error);
-      }
 
-      let examInfo = "";
-      try {
-        const examDetails = await getWrittenExamDetails(app.id);
-        if (examDetails) {
-          examInfo = `
-            <div class="exam-info-mini">
-                <i class="fas fa-calendar me-1"></i>${formatDate(examDetails.writtenExamDate)} 
-                <i class="fas fa-clock ms-2 me-1"></i>${examDetails.writtenExamTime || "TBA"}
-                ${examDetails.examLocation ? `<br><i class="fas fa-map-marker-alt me-1"></i>${examDetails.examLocation}` : ""}
+        let examInfo = "";
+        try {
+          const examDetails = await getWrittenExamDetails(app.id);
+          if (examDetails) {
+            examInfo = `
+              <div class="exam-info-mini">
+                  <i class="fas fa-calendar me-1"></i>${formatDate(examDetails.writtenExamDate)} 
+                  <i class="fas fa-clock ms-2 me-1"></i>${examDetails.writtenExamTime || "TBA"}
+                  ${examDetails.writtenExamLocation ? `<br><i class="fas fa-map-marker-alt me-1"></i>${examDetails.writtenExamLocation}` : ""}
+              </div>
+            `;
+          }
+        } catch (error) {
+          console.log("No exam details for app:", app.id);
+        }
+
+        return `
+          <div class="payment-application-card" data-id="${app.id}">
+              <input type="radio" name="paymentApplication" value="${app.id}" id="app_${app.id}" class="payment-radio">
+              <label for="app_${app.id}" class="payment-card-label">
+                  <div class="payment-card-header">
+                      <div class="payment-app-info">
+                          <div class="payment-app-title">
+                              <i class="fas fa-file-alt me-2"></i>
+                              <strong>Application #${app.id}</strong>
+                              <span class="badge bg-success ms-2">APPROVED</span>
+                          </div>
+                          <div class="payment-app-details">
+                              <div class="detail-row">
+                                  <i class="fas fa-certificate me-2"></i>
+                                  <span>${app.licenseType.toUpperCase()} License</span>
+                              </div>
+                              <div class="detail-row">
+                                  <i class="fas fa-car me-2"></i>
+                                  <span>Classes: ${vehicleClasses}</span>
+                              </div>
+                              ${examInfo}
+                          </div>
+                      </div>
+                      <div class="payment-amount-section">
+                          <div class="amount-display">
+                              <div class="currency">Rs.</div>
+                              <div class="amount">${examFee.toLocaleString()}</div>
+                          </div>
+                          <div class="amount-label">Exam Fee</div>
+                      </div>
+                  </div>
+              </label>
+          </div>
+        `;
+      })
+    );
+
+    Swal.fire({
+      title: '<i class="fas fa-credit-card me-2"></i>Exam Fee Payment',
+      html: `
+        <div class="enhanced-payment-modal">
+            <div class="payment-intro-banner">
+                <i class="fas fa-shield-alt me-2"></i>
+                <span>Secure payment for your approved applications</span>
             </div>
-          `;
-        }
-      } catch (error) {
-        console.log("No exam details for app:", app.id);
-      }
-
-      return `
-        <div class="payment-application-card" data-id="${app.id}">
-            <input type="radio" name="paymentApplication" value="${app.id}" id="app_${app.id}" class="payment-radio">
-            <label for="app_${app.id}" class="payment-card-label">
-                <div class="payment-card-header">
-                    <div class="payment-app-info">
-                        <div class="payment-app-title">
-                            <i class="fas fa-file-alt me-2"></i>
-                            <strong>Application #${app.id}</strong>
-                            <span class="badge bg-success ms-2">APPROVED</span>
-                        </div>
-                        <div class="payment-app-details">
-                            <div class="detail-row">
-                                <i class="fas fa-certificate me-2"></i>
-                                <span>${app.licenseType.toUpperCase()} License</span>
+            
+            <div class="applications-section">
+                <h6 class="section-title">
+                    <i class="fas fa-file-invoice me-2"></i>Select Application to Pay:
+                </h6>
+                <div class="applications-container">
+                    ${applicationsList.join("")}
+                </div>
+            </div>
+            
+            <div class="payment-methods-section">
+                <h6 class="section-title">
+                    <i class="fas fa-credit-card me-2"></i>Choose Payment Method:
+                </h6>
+                <div class="payment-methods-grid">
+                    <div class="payment-method-option">
+                        <input type="radio" name="paymentMethod" id="card" value="CARD" class="method-radio" checked>
+                        <label for="card" class="method-label">
+                            <div class="method-icon card-gradient">
+                                <i class="fas fa-credit-card"></i>
                             </div>
-                            <div class="detail-row">
-                                <i class="fas fa-car me-2"></i>
-                                <span>Classes: ${vehicleClasses}</span>
+                            <div class="method-info">
+                                <strong>Credit/Debit Card</strong>
+                                <small>Visa • MasterCard • American Express</small>
                             </div>
-                            ${examInfo}
-                        </div>
+                            <div class="method-indicator">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        </label>
                     </div>
-                    <div class="payment-amount-section">
-                        <div class="amount-display">
-                            <div class="currency">Rs.</div>
-                            <div class="amount">${examFee.toLocaleString()}</div>
-                        </div>
-                        <div class="amount-label">Exam Fee</div>
+                    
+                    <div class="payment-method-option">
+                        <input type="radio" name="paymentMethod" id="bank" value="BANK" class="method-radio">
+                        <label for="bank" class="method-label">
+                            <div class="method-icon bank-gradient">
+                                <i class="fas fa-university"></i>
+                            </div>
+                            <div class="method-info">
+                                <strong>Bank Transfer</strong>
+                                <small>Direct online banking</small>
+                            </div>
+                            <div class="method-indicator">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        </label>
+                    </div>
+                    
+                    <div class="payment-method-option">
+                        <input type="radio" name="paymentMethod" id="mobile" value="MOBILE" class="method-radio">
+                        <label for="mobile" class="method-label">
+                            <div class="method-icon mobile-gradient">
+                                <i class="fas fa-mobile-alt"></i>
+                            </div>
+                            <div class="method-info">
+                                <strong>Mobile Payment</strong>
+                                <small>eZ Cash • mCash • Frimi</small>
+                            </div>
+                            <div class="method-indicator">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        </label>
                     </div>
                 </div>
-            </label>
+            </div>
+            
+            <div class="payment-security-footer">
+                <i class="fas fa-lock me-2"></i>
+                <span>256-bit SSL encryption • PCI DSS compliant • Your data is safe</span>
+            </div>
         </div>
-      `;
-    })
-  );
+        
+        <style>
+            .enhanced-payment-modal { text-align: left; }
+            .payment-intro-banner {
+                background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
+                color: #155724; padding: 12px 20px; border-radius: 10px;
+                text-align: center; margin-bottom: 25px; font-weight: 500;
+            }
+            .section-title {
+                color: #495057; font-weight: 600; margin-bottom: 15px;
+                padding-bottom: 8px; border-bottom: 2px solid #e9ecef;
+            }
+            .applications-section { margin-bottom: 25px; }
+            .applications-container { max-height: 400px; overflow-y: auto; }
+            .payment-application-card {
+                border: 2px solid #e9ecef; border-radius: 12px;
+                margin-bottom: 15px; transition: all 0.3s ease;
+                background: #f8f9fa; overflow: hidden;
+            }
+            .payment-application-card:hover {
+                border-color: #007bff; box-shadow: 0 4px 12px rgba(0,123,255,0.15);
+            }
+            .payment-radio { position: absolute; opacity: 0; }
+            .payment-radio:checked + .payment-card-label {
+                background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+                border: 2px solid #007bff;
+            }
+            .payment-card-label {
+                display: block; padding: 20px; cursor: pointer;
+                border: 2px solid transparent; border-radius: 10px;
+                transition: all 0.3s ease;
+            }
+            .payment-card-header {
+                display: flex; justify-content: space-between; align-items: center;
+            }
+            .payment-app-title {
+                display: flex; align-items: center; margin-bottom: 12px;
+            }
+            .payment-app-details { }
+            .detail-row {
+                display: flex; align-items: center; margin-bottom: 6px;
+                color: #6c757d; font-size: 0.9rem;
+            }
+            .exam-info-mini {
+                margin-top: 8px; padding: 8px; background: rgba(0,123,255,0.1);
+                border-radius: 6px; font-size: 0.85rem; color: #0056b3;
+            }
+            .payment-amount-section { text-align: right; }
+            .amount-display {
+                display: flex; align-items: baseline; justify-content: flex-end;
+                margin-bottom: 5px;
+            }
+            .currency {
+                font-size: 1rem; font-weight: 500; color: #28a745;
+                margin-right: 4px;
+            }
+            .amount {
+                font-size: 1.8rem; font-weight: bold; color: #28a745;
+            }
+            .amount-label {
+                font-size: 0.8rem; color: #6c757d; font-weight: 500;
+            }
+            .payment-methods-section { margin-bottom: 20px; }
+            .payment-methods-grid {
+                display: grid; grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            .payment-method-option { position: relative; }
+            .method-radio { position: absolute; opacity: 0; }
+            .method-radio:checked + .method-label {
+                border-color: #007bff;
+                background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            }
+            .method-radio:checked + .method-label .method-indicator {
+                color: #007bff;
+            }
+            .method-label {
+                display: flex; align-items: center; padding: 15px;
+                border: 2px solid #e9ecef; border-radius: 10px;
+                cursor: pointer; transition: all 0.3s ease;
+                background: #f8f9fa;
+            }
+            .method-label:hover {
+                border-color: #007bff; box-shadow: 0 2px 8px rgba(0,123,255,0.1);
+            }
+            .method-icon {
+                width: 50px; height: 50px; border-radius: 12px;
+                display: flex; align-items: center; justify-content: center;
+                margin-right: 15px; color: white; font-size: 1.3rem;
+            }
+            .card-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+            .bank-gradient { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+            .mobile-gradient { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+            .method-info { flex: 1; }
+            .method-info strong { display: block; margin-bottom: 3px; }
+            .method-info small { color: #6c757d; }
+            .method-indicator {
+                font-size: 1.2rem; color: #e9ecef; transition: color 0.3s ease;
+            }
+            .payment-security-footer {
+                background: #f8f9fa; padding: 12px 20px; border-radius: 8px;
+                text-align: center; color: #6c757d; font-size: 0.9rem;
+                border: 1px solid #e9ecef;
+            }
+            @media (max-width: 768px) {
+                .payment-card-header { flex-direction: column; text-align: center; }
+                .payment-amount-section { margin-top: 15px; text-align: center; }
+            }
+        </style>
+      `,
+      showCancelButton: true,
+      confirmButtonText: '<i class="fas fa-lock me-2"></i>Proceed to Secure Payment',
+      cancelButtonText: '<i class="fas fa-times me-2"></i>Cancel',
+      confirmButtonColor: "#28a745",
+      cancelButtonColor: "#6c757d",
+      width: "900px",
+      preConfirm: () => {
+        const selectedApp = $('input[name="paymentApplication"]:checked').val();
+        const paymentMethod = $('input[name="paymentMethod"]:checked').val();
 
-  Swal.fire({
-    title: '<i class="fas fa-credit-card me-2"></i>Exam Fee Payment',
-    html: `
-      <div class="enhanced-payment-modal">
-          <div class="payment-intro-banner">
-              <i class="fas fa-shield-alt me-2"></i>
-              <span>Secure payment for your approved applications</span>
-          </div>
-          
-          <div class="applications-section">
-              <h6 class="section-title">
-                  <i class="fas fa-file-invoice me-2"></i>Select Application to Pay:
-              </h6>
-              <div class="applications-container">
-                  ${applicationsList.join("")}
-              </div>
-          </div>
-          
-          <div class="payment-methods-section">
-              <h6 class="section-title">
-                  <i class="fas fa-credit-card me-2"></i>Choose Payment Method:
-              </h6>
-              <div class="payment-methods-grid">
-                  <div class="payment-method-option">
-                      <input type="radio" name="paymentMethod" id="card" value="CARD" class="method-radio" checked>
-                      <label for="card" class="method-label">
-                          <div class="method-icon card-gradient">
-                              <i class="fas fa-credit-card"></i>
-                          </div>
-                          <div class="method-info">
-                              <strong>Credit/Debit Card</strong>
-                              <small>Visa • MasterCard • American Express</small>
-                          </div>
-                          <div class="method-indicator">
-                              <i class="fas fa-check-circle"></i>
-                          </div>
-                      </label>
-                  </div>
-                  
-                  <div class="payment-method-option">
-                      <input type="radio" name="paymentMethod" id="bank" value="BANK" class="method-radio">
-                      <label for="bank" class="method-label">
-                          <div class="method-icon bank-gradient">
-                              <i class="fas fa-university"></i>
-                          </div>
-                          <div class="method-info">
-                              <strong>Bank Transfer</strong>
-                              <small>Direct online banking</small>
-                          </div>
-                          <div class="method-indicator">
-                              <i class="fas fa-check-circle"></i>
-                          </div>
-                      </label>
-                  </div>
-                  
-                  <div class="payment-method-option">
-                      <input type="radio" name="paymentMethod" id="mobile" value="MOBILE" class="method-radio">
-                      <label for="mobile" class="method-label">
-                          <div class="method-icon mobile-gradient">
-                              <i class="fas fa-mobile-alt"></i>
-                          </div>
-                          <div class="method-info">
-                              <strong>Mobile Payment</strong>
-                              <small>eZ Cash • mCash • Frimi</small>
-                          </div>
-                          <div class="method-indicator">
-                              <i class="fas fa-check-circle"></i>
-                          </div>
-                      </label>
-                  </div>
-              </div>
-          </div>
-          
-          <div class="payment-security-footer">
-              <i class="fas fa-lock me-2"></i>
-              <span>256-bit SSL encryption • PCI DSS compliant • Your data is safe</span>
-          </div>
-      </div>
-      
-      <style>
-          .enhanced-payment-modal { text-align: left; }
-          .payment-intro-banner {
-              background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
-              color: #155724; padding: 12px 20px; border-radius: 10px;
-              text-align: center; margin-bottom: 25px; font-weight: 500;
-          }
-          .section-title {
-              color: #495057; font-weight: 600; margin-bottom: 15px;
-              padding-bottom: 8px; border-bottom: 2px solid #e9ecef;
-          }
-          .applications-section { margin-bottom: 25px; }
-          .applications-container { max-height: 400px; overflow-y: auto; }
-          .payment-application-card {
-              border: 2px solid #e9ecef; border-radius: 12px;
-              margin-bottom: 15px; transition: all 0.3s ease;
-              background: #f8f9fa; overflow: hidden;
-          }
-          .payment-application-card:hover {
-              border-color: #007bff; box-shadow: 0 4px 12px rgba(0,123,255,0.15);
-          }
-          .payment-radio { position: absolute; opacity: 0; }
-          .payment-radio:checked + .payment-card-label {
-              background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-              border: 2px solid #007bff;
-          }
-          .payment-card-label {
-              display: block; padding: 20px; cursor: pointer;
-              border: 2px solid transparent; border-radius: 10px;
-              transition: all 0.3s ease;
-          }
-          .payment-card-header {
-              display: flex; justify-content: space-between; align-items: center;
-          }
-          .payment-app-title {
-              display: flex; align-items: center; margin-bottom: 12px;
-          }
-          .payment-app-details { }
-          .detail-row {
-              display: flex; align-items: center; margin-bottom: 6px;
-              color: #6c757d; font-size: 0.9rem;
-          }
-          .exam-info-mini {
-              margin-top: 8px; padding: 8px; background: rgba(0,123,255,0.1);
-              border-radius: 6px; font-size: 0.85rem; color: #0056b3;
-          }
-          .payment-amount-section { text-align: right; }
-          .amount-display {
-              display: flex; align-items: baseline; justify-content: flex-end;
-              margin-bottom: 5px;
-          }
-          .currency {
-              font-size: 1rem; font-weight: 500; color: #28a745;
-              margin-right: 4px;
-          }
-          .amount {
-              font-size: 1.8rem; font-weight: bold; color: #28a745;
-          }
-          .amount-label {
-              font-size: 0.8rem; color: #6c757d; font-weight: 500;
-          }
-          .payment-methods-section { margin-bottom: 20px; }
-          .payment-methods-grid {
-              display: grid; grid-template-columns: 1fr;
-              gap: 12px;
-          }
-          .payment-method-option { position: relative; }
-          .method-radio { position: absolute; opacity: 0; }
-          .method-radio:checked + .method-label {
-              border-color: #007bff;
-              background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-          }
-          .method-radio:checked + .method-label .method-indicator {
-              color: #007bff;
-          }
-          .method-label {
-              display: flex; align-items: center; padding: 15px;
-              border: 2px solid #e9ecef; border-radius: 10px;
-              cursor: pointer; transition: all 0.3s ease;
-              background: #f8f9fa;
-          }
-          .method-label:hover {
-              border-color: #007bff; box-shadow: 0 2px 8px rgba(0,123,255,0.1);
-          }
-          .method-icon {
-              width: 50px; height: 50px; border-radius: 12px;
-              display: flex; align-items: center; justify-content: center;
-              margin-right: 15px; color: white; font-size: 1.3rem;
-          }
-          .card-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-          .bank-gradient { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-          .mobile-gradient { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
-          .method-info { flex: 1; }
-          .method-info strong { display: block; margin-bottom: 3px; }
-          .method-info small { color: #6c757d; }
-          .method-indicator {
-              font-size: 1.2rem; color: #e9ecef; transition: color 0.3s ease;
-          }
-          .payment-security-footer {
-              background: #f8f9fa; padding: 12px 20px; border-radius: 8px;
-              text-align: center; color: #6c757d; font-size: 0.9rem;
-              border: 1px solid #e9ecef;
-          }
-          @media (max-width: 768px) {
-              .payment-card-header { flex-direction: column; text-align: center; }
-              .payment-amount-section { margin-top: 15px; text-align: center; }
-          }
-      </style>
-    `,
-    showCancelButton: true,
-    confirmButtonText: '<i class="fas fa-lock me-2"></i>Proceed to Secure Payment',
-    cancelButtonText: '<i class="fas fa-times me-2"></i>Cancel',
-    confirmButtonColor: "#28a745",
-    cancelButtonColor: "#6c757d",
-    width: "900px",
-    preConfirm: () => {
-      const selectedApp = $('input[name="paymentApplication"]:checked').val();
-      const paymentMethod = $('input[name="paymentMethod"]:checked').val();
+        if (!selectedApp) {
+          Swal.showValidationMessage("Please select an application to pay for");
+          return false;
+        }
 
-      if (!selectedApp) {
-        Swal.showValidationMessage("Please select an application to pay for");
-        return false;
+        return { applicationId: selectedApp, method: paymentMethod };
+      },
+    }).then((result) => {
+      if (result.isConfirmed) {
+        processEnhancedPayment(result.value);
       }
-
-      return { applicationId: selectedApp, method: paymentMethod };
-    },
-  }).then((result) => {
-    if (result.isConfirmed) {
-      processEnhancedPayment(result.value);
-    }
-  });
+    });
   }
 
   function checkPayHereLoaded() {
-  return new Promise((resolve) => {
-    if (typeof payhere !== 'undefined') {
-      resolve(true);
-      return;
-    }
     
-    let attempts = 0;
-    const maxAttempts = 10;
-    
-    const checkInterval = setInterval(() => {
-      attempts++;
+    return new Promise((resolve) => {
       if (typeof payhere !== 'undefined') {
-        clearInterval(checkInterval);
         resolve(true);
-      } else if (attempts >= maxAttempts) {
-        clearInterval(checkInterval);
-        resolve(false);
+        return;
       }
-    }, 500);
-  });
+      
+      let attempts = 0;
+      const maxAttempts = 10; // Try 10 times
+      
+      const checkInterval = setInterval(() => {
+        attempts++;
+        if (typeof payhere !== 'undefined') {
+          clearInterval(checkInterval);  // if loaded success
+          resolve(true);
+        } else if (attempts >= maxAttempts) {
+          clearInterval(checkInterval);  // after 10 time error 
+          resolve(false);
+        }
+      }, 500);
+    });
   }
 
   async function processEnhancedPayment(paymentData) {
   
    const payhereLoaded = await checkPayHereLoaded();
-    if (!payhereLoaded) {
+    
+   if (!payhereLoaded) {
       Swal.fire({
         title: 'Payment System Unavailable',
         html: `
@@ -1905,9 +1898,7 @@ $(document).ready(function () {
     });
 
     try {
-      const selectedApp = currentApplications.find(
-        (app) => app.id == paymentData.applicationId
-      );
+      const selectedApp = currentApplications.find((app) => app.id == paymentData.applicationId );
 
       let writtenExamId = null;
       try {
@@ -2218,7 +2209,6 @@ $(document).ready(function () {
 
                 Swal.close();
                 
-                // Show success dialog with preview and download options
                 Swal.fire({
                   icon: 'success',
                   title: 'Payment Successful!',
@@ -2232,11 +2222,10 @@ $(document).ready(function () {
                   denyButtonColor: '#28a745',
                   cancelButtonColor: '#6c757d'
                 }).then(async (result) => {
+
                   if (result.isConfirmed) {
-                    // Preview the report
                     await previewPaymentReport(authToken);
                   } else if (result.isDenied) {
-                    // Download the report directly
                     await downloadPaymentReport(authToken);
                   }
                 });
@@ -2261,8 +2250,8 @@ $(document).ready(function () {
         });
       };
 
-      // Function to preview the report in a new tab
       async function previewPaymentReport(authToken) {
+        
         const loadingAlert = Swal.fire({
           title: 'Loading Report Preview...',
           html: 'Please wait while we prepare your payment report.',
@@ -2294,13 +2283,12 @@ $(document).ready(function () {
           const blob = await reportResponse.blob();
           const url = window.URL.createObjectURL(blob);
           
-          // Open in new tab for preview
           const previewWindow = window.open(url, '_blank');
           
           Swal.close();
           
           if (previewWindow) {
-            // Show dialog asking if they want to download after preview
+           
             setTimeout(() => {
               Swal.fire({
                 icon: 'info',
@@ -2312,8 +2300,8 @@ $(document).ready(function () {
                 confirmButtonColor: '#28a745',
                 cancelButtonColor: '#6c757d'
               }).then((result) => {
+
                 if (result.isConfirmed) {
-                  // Create download link
                   const a = document.createElement('a');
                   a.href = url;
                   a.download = `Payment_Report_${new Date().toISOString().split('T')[0]}.pdf`;
@@ -2330,14 +2318,13 @@ $(document).ready(function () {
                   });
                 }
                 
-                // Clean up URL after some time
                 setTimeout(() => {
                   window.URL.revokeObjectURL(url);
                 }, 5000);
               });
             }, 1000);
           } else {
-            // If popup was blocked, show alternative
+           
             Swal.fire({
               icon: 'warning',
               title: 'Preview Blocked',
@@ -2391,7 +2378,6 @@ $(document).ready(function () {
         }
       }
 
-      // Function to download the report directly
       async function downloadPaymentReport(authToken, retries = 3) {
         const loadingAlert = Swal.fire({
           title: 'Generating Report...',
@@ -2424,7 +2410,6 @@ $(document).ready(function () {
           const blob = await reportResponse.blob();
           const url = window.URL.createObjectURL(blob);
           
-          // Create download link
           const a = document.createElement('a');
           a.href = url;
           a.download = `Payment_Report_${new Date().toISOString().split('T')[0]}.pdf`;
@@ -2432,7 +2417,6 @@ $(document).ready(function () {
           a.click();
           document.body.removeChild(a);
           
-          // Clean up
           window.URL.revokeObjectURL(url);
           
           Swal.close();
@@ -2574,7 +2558,6 @@ $(document).ready(function () {
       }).then(() => location.reload());
     }
   }
-
 
   function startEnhancedPaymentStatusMonitoring(transactionId) {
     const checkInterval = 4000;
@@ -2736,69 +2719,70 @@ $(document).ready(function () {
   }
 
   function showPaymentMonitoringError(transactionId, error) {
-  Swal.fire({
-    title: 'Payment Verification Issue',
-    html: `
-      <div class="monitoring-error">
-        <i class="fas fa-exclamation-triangle text-warning mb-3" style="font-size: 3rem;"></i>
-        <p>We're having trouble verifying your payment status automatically.</p>
-        
-        <div class="error-details">
-          <h6>What this means:</h6>
-          <ul class="text-start">
-            <li>Your payment might still be processing</li>
-            <li>There might be a temporary network issue</li>
-            <li>The payment system is experiencing delays</li>
-          </ul>
-        </div>
-        
-        <div class="next-steps">
-          <h6>What you can do:</h6>
-          <div class="step-buttons">
-            <button class="btn-step" onclick="recheckPaymentStatus('${transactionId}')">
-              <i class="fas fa-sync-alt me-2"></i>Try Again
-            </button>
-            <button class="btn-step" onclick="contactSupport('${transactionId}')">
-              <i class="fas fa-phone me-2"></i>Contact Support
-            </button>
+ 
+    Swal.fire({
+      title: 'Payment Verification Issue',
+      html: `
+        <div class="monitoring-error">
+          <i class="fas fa-exclamation-triangle text-warning mb-3" style="font-size: 3rem;"></i>
+          <p>We're having trouble verifying your payment status automatically.</p>
+          
+          <div class="error-details">
+            <h6>What this means:</h6>
+            <ul class="text-start">
+              <li>Your payment might still be processing</li>
+              <li>There might be a temporary network issue</li>
+              <li>The payment system is experiencing delays</li>
+            </ul>
+          </div>
+          
+          <div class="next-steps">
+            <h6>What you can do:</h6>
+            <div class="step-buttons">
+              <button class="btn-step" onclick="recheckPaymentStatus('${transactionId}')">
+                <i class="fas fa-sync-alt me-2"></i>Try Again
+              </button>
+              <button class="btn-step" onclick="contactSupport('${transactionId}')">
+                <i class="fas fa-phone me-2"></i>Contact Support
+              </button>
+            </div>
+          </div>
+          
+          <div class="transaction-ref">
+            <p><strong>Reference:</strong> ${transactionId}</p>
+            <p><small>Save this reference number for support inquiries</small></p>
           </div>
         </div>
         
-        <div class="transaction-ref">
-          <p><strong>Reference:</strong> ${transactionId}</p>
-          <p><small>Save this reference number for support inquiries</small></p>
-        </div>
-      </div>
-      
-      <style>
-        .monitoring-error { text-align: center; }
-        .error-details, .next-steps {
-          background: #f8f9fa; padding: 15px; border-radius: 8px;
-          margin: 15px 0; text-align: left;
-        }
-        .error-details h6, .next-steps h6 { 
-          color: #495057; margin-bottom: 10px; 
-        }
-        .step-buttons { 
-          display: flex; gap: 10px; justify-content: center;
-          flex-wrap: wrap; 
-        }
-        .btn-step {
-          background: #007bff; color: white; border: none;
-          padding: 8px 16px; border-radius: 6px; cursor: pointer;
-          transition: background 0.3s;
-        }
-        .btn-step:hover { background: #0056b3; }
-        .transaction-ref {
-          background: #e8f5e8; padding: 15px; border-radius: 8px;
-          border-left: 4px solid #28a745;
-        }
-      </style>
-    `,
-    confirmButtonText: 'Close',
-    confirmButtonColor: '#6c757d',
-    allowOutsideClick: false
-  });
+        <style>
+          .monitoring-error { text-align: center; }
+          .error-details, .next-steps {
+            background: #f8f9fa; padding: 15px; border-radius: 8px;
+            margin: 15px 0; text-align: left;
+          }
+          .error-details h6, .next-steps h6 { 
+            color: #495057; margin-bottom: 10px; 
+          }
+          .step-buttons { 
+            display: flex; gap: 10px; justify-content: center;
+            flex-wrap: wrap; 
+          }
+          .btn-step {
+            background: #007bff; color: white; border: none;
+            padding: 8px 16px; border-radius: 6px; cursor: pointer;
+            transition: background 0.3s;
+          }
+          .btn-step:hover { background: #0056b3; }
+          .transaction-ref {
+            background: #e8f5e8; padding: 15px; border-radius: 8px;
+            border-left: 4px solid #28a745;
+          }
+        </style>
+      `,
+      confirmButtonText: 'Close',
+      confirmButtonColor: '#6c757d',
+      allowOutsideClick: false
+    });
   }
 
   window.recheckPaymentStatus = function(transactionId) {
@@ -3811,9 +3795,7 @@ $(document).ready(function () {
   }
 
   window.removeVehicleClass = function (value) {
-    selectedVehicleClasses = selectedVehicleClasses.filter(
-      (item) => item.value !== value
-    );
+    selectedVehicleClasses = selectedVehicleClasses.filter((item) => item.value !== value);
     updateSelectedVehicleClassesDisplay();
   };
 
@@ -4153,9 +4135,7 @@ $(document).ready(function () {
       if (value.length <= 9) {
         value = "+94 " + value.replace(/(\d{2})(\d{3})(\d{4})/, "$1 $2 $3");
       } else {
-        value =
-          "+94 " +
-          value.substring(0, 9).replace(/(\d{2})(\d{3})(\d{4})/, "$1 $2 $3");
+        value = "+94 " + value.substring(0, 9).replace(/(\d{2})(\d{3})(\d{4})/, "$1 $2 $3");
       }
     }
 
@@ -4214,15 +4194,9 @@ $(document).ready(function () {
     }
 
     Promise.all([
-      application.status === "REJECTED"
-        ? getDeclineReason(applicationId)
-        : Promise.resolve(null),
-      application.status === "APPROVED"
-        ? getWrittenExamDetails(applicationId)
-        : Promise.resolve(null),
-      application.status !== "REJECTED" &&
-      application.status !== "APPROVED" &&
-      application.status !== "PENDING"
+      application.status === "REJECTED" ? getDeclineReason(applicationId) : Promise.resolve(null),
+      application.status === "APPROVED" ? getWrittenExamDetails(applicationId) : Promise.resolve(null),
+      application.status !== "REJECTED" && application.status !== "APPROVED" && application.status !== "PENDING" 
         ? Promise.resolve(`
           <div class="license-success-box">
             <i class="fas fa-check-circle"></i>
@@ -4250,19 +4224,12 @@ $(document).ready(function () {
   function showDetailedApplicationModal(application, additionalInfo = {}) {
     
     const statusBadgeClass = getStatusBadgeClass(application.status);
-    const vehicleClasses = Array.isArray(application.vehicleClasses)
-      ? application.vehicleClasses.join(", ")
-      : application.vehicleClasses || "N/A";
-    const examFee = calculateExamFee(
-      application.licenseType,
-      application.vehicleClasses
-    );
+    const vehicleClasses = Array.isArray(application.vehicleClasses) ? application.vehicleClasses.join(", ") : application.vehicleClasses || "N/A";
+    const examFee = calculateExamFee(application.licenseType,application.vehicleClasses);
+    
     console.log("Additinal Info: " + JSON.stringify(additionalInfo));
 
-    let statusSpecificContent = getStatusSpecificContent(
-      application,
-      additionalInfo
-    );
+    let statusSpecificContent = getStatusSpecificContent(application, additionalInfo );
 
     Swal.fire({
       title: `📋 Application Details - #${application.id}`,
@@ -4412,7 +4379,6 @@ $(document).ready(function () {
     });
   }
 
-  // Function to check if exam date is expired
   function isExamDateExpired(examDate) {
       if (!examDate) return false;
       const today = new Date();
@@ -4420,7 +4386,6 @@ $(document).ready(function () {
       return exam < today;
   }
 
-  // Function to get exam change request button HTML
   async function getExamChangeButtonHTML(application) {
 
     if (!application.examDate || !isExamDateExpired(application.examDate)) {
@@ -4662,7 +4627,6 @@ $(document).ready(function () {
       }
   }
 
-  // Helper function for authenticated requests
   async function makeAuthenticatedRequest({ url, method, token, data = null }) {
       return new Promise((resolve, reject) => {
           const ajaxConfig = {
@@ -4709,7 +4673,6 @@ $(document).ready(function () {
       });
   }
 
-  // Updated license preview modal function
   function showLicensePreviewModal(trialExamData, exam, applications, licenseDetails) {
       const smartUser = JSON.parse(localStorage.getItem("smartreg_user"));
       const issueDate = trialExamData.trialDate;
@@ -4994,7 +4957,6 @@ $(document).ready(function () {
       });
   }
 
-  // Function to show trial absent modal with 3-month waiting period
   function showTrialAbsentModal(trialExamData) {
 
     function getNextTrialDate(trialDate) {
@@ -5128,7 +5090,6 @@ $(document).ready(function () {
       });
   }
 
-  // Function to show trial incomplete modal
   function showTrialIncompleteModal() {
       Swal.fire({
           title: '📋 Trial Exam Incomplete',
@@ -5226,7 +5187,6 @@ $(document).ready(function () {
       });
   }
 
-  // Keep existing utility functions
   function showLoadingSpinner() {
       $('#licencePreview').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Loading...');
   }
@@ -5258,15 +5218,14 @@ $(document).ready(function () {
       }, 5000);
   }
 
-  function generateLicense() {
-      console.log('Generating license...');
-      showAlert('info', 'License generation started...');
-      // Add your license generation logic here
+  window.generateLicense = function(id) {
+    console.log('Generating license for ID:', id);
+    showAlert('info', 'License generation started for ID: ' + id);
   }
 
-  function printLicense() {
-      console.log('Printing license...');
-      window.print();
+  window.printLicense = function(id) {
+    console.log('Printing license for ID:', id);
+    window.print();
   }
 
   function getStatusSpecificContent(application, additionalInfo) {
@@ -5913,13 +5872,12 @@ $(document).ready(function () {
     }
   });
 
-  // Auto-refresh functionality
   function startAutoRefresh() {
     refreshInterval = setInterval(() => {
       if (!document.hidden) {
         loadSmartNotifications();
       }
-    }, 3 * 60 * 1000); // 3 minutes
+    }, 3 * 60 * 1000);
   }
 
   document.addEventListener("visibilitychange", function () {
@@ -6085,10 +6043,8 @@ $(document).ready(function () {
 
     showLoading(true);
 
-    // Set driver name
     $("#driverName").text(currentDriverName || "Driver");
 
-    // Set date constraints for DOB
     const today = new Date();
     const eighteenYearsAgo = new Date(
       today.getFullYear() - 18,
@@ -6097,12 +6053,10 @@ $(document).ready(function () {
     );
     $("#dateOfBirth").attr("max", eighteenYearsAgo.toISOString().split("T")[0]);
 
-    // Initialize form state
     $("#vehicleClass").prop("disabled", true);
     selectedVehicleClasses = [];
     updateSelectedVehicleClassesDisplay();
 
-    // Load initial data
     loadDriverApplications()
       .then(() => {
         return loadSmartNotifications();
@@ -6111,7 +6065,6 @@ $(document).ready(function () {
         showLoading(false);
         console.log("✅ Dashboard loaded successfully");
 
-        // Show welcome message for first-time users
         if (currentApplications.length === 0) {
           setTimeout(() => {
             Swal.fire({
@@ -6140,7 +6093,6 @@ $(document).ready(function () {
       });
   }
 
-  // Start auto-refresh and initialize
   startAutoRefresh();
   initialize();
 
