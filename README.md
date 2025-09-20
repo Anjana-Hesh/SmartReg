@@ -234,7 +234,7 @@ For support and queries, please contact:
 - Email: anjanaheshan676@gmail.com
 - Phone: +94-764-810-851
 - Documentation: [Wiki](https://github.com/Anjana-Hesh/SmartReg/wiki)
-- Video Tutorial: [YouTube]( https://youtu.be/M04spJgC9RA)
+- Video Tutorial: [YouTube](https://youtu.be/nmYbd46a9ho)
 ## 🚀 Future Enhancements
 
 - Upgraded to Renewal and Suspension Management (!important)
@@ -266,4 +266,4 @@ For support and queries, please contact:
 
 Made with ❤️ by [Anjana Heshan]
 
-You can see more details in the You Tube video: https://youtu.be/M04spJgC9RA
+You can see more details in the You Tube video: https://youtu.be/nmYbd46a9ho
